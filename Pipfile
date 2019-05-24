@@ -6,9 +6,20 @@ verify_ssl = true
 [dev-packages]
 sphinx = "*"
 pylint = "*"
+pytest = "*"
+autopep8 = "*"
+matplotlib = "*"
+pdoc3 = "*"
+twine = "*"
 
 [packages]
 arus = {editable = true,path = "."}
 
 [requires]
 python_version = "3"
+
+[scripts]
+dev-doc="pdoc . --http localhost:1234 --template-dir templates"
+build-doc="pdoc --html --html-dir docs ."
+build="python setup.py sdist bdist_wheel"
+publish="python -m twine upload --repository-url https://test.pypi.org/legacy/ dist/*"

@@ -1,3 +1,9 @@
-# arus (Activity Recognition with Ubiquitous Sensing)
+## ARUS (Activity Recognition Using Sensors)
 
-Python package to develop activity recognition system with ubiquitous sensing data.
+## License
+
+## Contribution
+
+## Aknowledge
+
+## Copyright
