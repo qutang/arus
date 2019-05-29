@@ -1,4 +1,4 @@
-from .. import path as dataset
+from .. import path
 
 
 def test_is_mhealth_filepath():
@@ -25,10 +25,10 @@ def test_is_mhealth_filepath():
         'D:/data/spades_lab/SPADES_7/Mastenced/2015/16/17/21/'
     ]
     for test_case in correct_test_cases:
-        assert dataset.is_mhealth_filepath(test_case)
+        assert path.is_mhealth_filepath(test_case)
 
     for test_case in incorrect_test_cases:
-        assert not dataset.is_mhealth_filepath(test_case)
+        assert not path.is_mhealth_filepath(test_case)
 
 
 def test_is_mhealth_flat_filepath():
@@ -53,10 +53,10 @@ def test_is_mhealth_flat_filepath():
         AccelerationCalibrated.2015-11-19-16-00-00-000-M0500.sensor.csv'''
     ]
     for test_case in correct_test_cases:
-        assert dataset.is_mhealth_flat_filepath(test_case)
+        assert path.is_mhealth_flat_filepath(test_case)
 
     for test_case in incorrect_test_cases:
-        assert not dataset.is_mhealth_flat_filepath(test_case)
+        assert not path.is_mhealth_flat_filepath(test_case)
 
 
 def test_is_mhealth_filename():
@@ -78,10 +78,10 @@ def test_is_mhealth_filename():
     ]
 
     for test_case in correct_test_cases:
-        assert dataset.is_mhealth_filename(test_case)
+        assert path.is_mhealth_filename(test_case)
 
     for test_case in incorrect_test_cases:
-        assert not dataset.is_mhealth_filename(test_case)
+        assert not path.is_mhealth_filename(test_case)
 
 
 def test_get_pid():
@@ -113,10 +113,10 @@ def test_get_pid():
     ]
 
     for test_case in correct_test_cases:
-        assert dataset.get_pid(test_case) == 'SPADES_7'
+        assert path.extract_pid(test_case) == 'SPADES_7'
 
     for test_case in incorrect_test_cases:
-        assert dataset.get_pid(test_case) is None
+        assert path.extract_pid(test_case) is None
 
 
 def test_get_sensor_type():
@@ -129,9 +129,9 @@ def test_get_sensor_type():
 
     for test_case in correct_test_cases:
         print(test_case)
-        assert dataset.get_sensor_type(
+        assert path.extract_sensor_type(
             test_case) == 'ActigraphGT9X' or \
-            dataset.get_sensor_type(test_case) == 'SPADESInLab'
+            path.extract_sensor_type(test_case) == 'SPADESInLab'
 
 
 def test_get_data_type():
@@ -147,10 +147,10 @@ def test_get_data_type():
     ]
 
     for test_case in sensor_test_cases:
-        assert dataset.get_data_type(test_case) == 'AccelerationCalibrated'
+        assert path.extract_data_type(test_case) == 'AccelerationCalibrated'
 
     for test_case in annotation_test_cases:
-        assert dataset.get_data_type(test_case) is None
+        assert path.extract_data_type(test_case) is None
 
 
 def test_get_version_code():
@@ -166,10 +166,10 @@ def test_get_version_code():
     ]
 
     for test_case in sensor_test_cases:
-        assert dataset.get_version_code(test_case) == 'NA'
+        assert path.extract_version_code(test_case) == 'NA'
 
     for test_case in annotation_test_cases:
-        assert dataset.get_version_code(test_case) is None
+        assert path.extract_version_code(test_case) is None
 
 
 def test_get_sid():
@@ -185,10 +185,10 @@ def test_get_sid():
     ]
 
     for test_case in sensor_test_cases:
-        assert dataset.get_sid(test_case) == 'TAS1E23150152'
+        assert path.extract_sid(test_case) == 'TAS1E23150152'
 
     for test_case in annotation_test_cases:
-        assert dataset.get_sid(test_case).lower() == 'diego'
+        assert path.extract_sid(test_case).lower() == 'diego'
 
 
 def test_get_file_type():
@@ -204,10 +204,10 @@ def test_get_file_type():
     ]
 
     for test_case in sensor_test_cases:
-        assert dataset.get_file_type(test_case) == 'sensor'
+        assert path.extract_file_type(test_case) == 'sensor'
 
     for test_case in annotation_test_cases:
-        assert dataset.get_file_type(test_case) == 'annotation'
+        assert path.extract_file_type(test_case) == 'annotation'
 
 
 def test_get_file_timestamp():
@@ -224,11 +224,11 @@ def test_get_file_timestamp():
     ]
 
     for test_case in sensor_test_cases:
-        assert dataset.get_file_timestamp(
+        assert path.extract_file_timestamp(
             test_case).timestamp() == 1447966800.0
 
     for test_case in annotation_test_cases:
-        assert dataset.get_file_timestamp(
+        assert path.extract_file_timestamp(
             test_case).timestamp() == 1447966800.0
 
 
@@ -246,10 +246,10 @@ def test_get_timezone_name():
     ]
 
     for test_case in sensor_test_cases:
-        assert dataset.get_timezone_name(test_case) == 'UTC-05:00'
+        assert path.extract_timezone_name(test_case) == 'UTC-05:00'
 
     for test_case in annotation_test_cases:
-        assert dataset.get_timezone_name(test_case) == 'UTC-05:00'
+        assert path.extract_timezone_name(test_case) == 'UTC-05:00'
 
 
 def test_get_session_times():
@@ -265,8 +265,8 @@ def test_get_session_times():
         "./SPADES_12/MasterSynced/2015/12/15/11/ActigraphGT9X-AccelerationCalibrated-NA.TAS1E23150084-AccelerationCalibrated.2015-12-14-11-15-00-000-M0500.sensor.csv",
         "./SPADES_12/MasterSynced/2015/12/15/11/ActigraphGT9X-AccelerationCalibrated-NA.TAS1E23150084-AccelerationCalibrated.2015-12-14-11-15-00-000-M0500.sensor.csv.gz",
     ]
-    start_time = dataset.get_session_start_time(
+    start_time = path.extract_session_start_time(
         test_file_list[0], test_file_list)
-    end_time = dataset.get_session_end_time(test_file_list[0], test_file_list)
+    end_time = path.extract_session_end_time(test_file_list[0], test_file_list)
     assert start_time.strftime('%Y-%m-%d-%H-%M-%S') == '2015-09-24-14-00-00'
     assert end_time.strftime('%Y-%m-%d-%H-%M-%S') == '2015-09-24-16-00-00'

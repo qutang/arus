@@ -2,10 +2,75 @@ import pandas as pd
 import numpy as np
 
 
+def is_sensor_data(df):
+    # numerical from the second column
+    is_from_sensor = True
+    arr = df.iloc[:, 1:].values
+    is_from_sensor = is_from_sensor and (np.issubdtype(
+        arr.dtype, np.float) or np.issubdtype(arr.dtype, np.integer))
+    # first column is timestamp
+    ts = df.iloc[:, 0].values
+    is_from_sensor = is_from_sensor and ts.dtype.type == np.datetime64
+    return is_from_sensor
+
+
+def is_annotation_data(df):
+    # label name should be string
+    is_from_annotation = True
+    arr = df.values[:, 3]
+    is_from_annotation = is_from_annotation and (
+        arr.dtype.type == np.unicode_ or arr.dtype.type == np.string_)
+    # first three columns are timestamp
+    ts = df.values[:, 0:2]
+    is_from_annotation = is_from_annotation and ts.dtype.type == np.datetime64
+    return is_from_annotation
+
+
+def get_datetime_columns(file_type):
+    if file_type == 'sensor':
+        return [0]
+    elif file_type == 'annotation':
+        return [0, 1, 2]
+
+
+def convert_datetime_columns_to_string(df, file_type):
+    def _to_timestamp_string(arr):
+        result = np.core.defchararray.replace(
+            np.datetime_as_string(arr, unit='ms'), 'T', ' ')
+        return result
+    result = df.copy(deep=True)
+    result.iloc[:, 0] = _to_timestamp_string(result.iloc[:, 0].values)
+    if file_type == 'annotation':
+        result.iloc[:, 1:2] = _to_timestamp_string(result.iloc[:, 1:2].values)
+    return result
+
+
+def convert_datetime_columns_to_datetime64ms(df, file_type):
+    def _to_datetime64ms(arr):
+        result = arr.astype('datetime64[ms]')
+        return result
+    result = df.copy(deep=True)
+    result.iloc[:, 0] = _to_datetime64ms(result.iloc[:, 0].values)
+    if file_type == 'annotation':
+        result.iloc[:, 1:2] = _to_datetime64ms(result.iloc[:, 1:2].values)
+    return result
+
+
+def rename_columns(df, file_type):
+    assert is_sensor_data(df) or is_annotation_data(df)
+    result = df
+    result = result.rename(columns={result.columns[0]: 'HEADER_TIME_STAMP'})
+    if file_type == 'annotation':
+        result = result.rename(
+            columns={result.columns[1]: 'START_TIME', result.columns[2]: 'STOP_TIME'})
+    return result
+
+
 def append_times_as_index(df, st, et):
-    df.insert(0, 'START_TIME', st)
-    df.insert(1, 'STOP_TIME', et)
-    df = df.set_index(['START_TIME', 'STOP_TIME'])
+    df.insert(0, 'HEADER_TIME_STAMP', st)
+    df.insert(1, 'START_TIME', st)
+    df.insert(2, 'STOP_TIME', et)
+    df = df.set_index(['HEADER_TIME_STAMP', 'START_TIME', 'STOP_TIME'])
     return df
 
 
@@ -73,7 +138,7 @@ def get_annotation_labels(df):
 
 
 def append_edge_data(df, before_df=None, after_df=None, duration=120,
-                 start_time_col=0, stop_time_col=0):
+                     start_time_col=0, stop_time_col=0):
     lbound_time = df.iloc[0, start_time_col]
     rbound_time = df.iloc[-1, stop_time_col]
 

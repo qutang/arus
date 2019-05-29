@@ -7,7 +7,7 @@ with open("README.md", "r") as fh:
 setuptools.setup(
     name="arus",
     license="GNU",
-    version="0.0.1.dev2",
+    version="0.0.1.dev3",
     author="Qu Tang",
     author_email="tang.q@husky.neu.edu",
     description="Activity Recognition with Ubiquitous Sensing",

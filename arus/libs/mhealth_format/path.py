@@ -18,12 +18,13 @@ MHEALTH_FILEPATH_PATTERN = r'(\w+)[\/\\]{1}(?:(?:MasterSynced[\/\\]{1})|(?:Deriv
 MHEALTH_FILE_TIMESTAMP_FORMAT = '%Y-%m-%d-%H-%M-%S-%f'
 MHEALTH_FILE_TIMESTAMP_WITH_TZ_FORMAT = '%Y-%m-%d-%H-%M-%S-%f-%z'
 
+
 def is_mhealth_filepath(filepath):
     """Validate if input file path is in mhealth format
-    
+
     Args:
         filepath (str): input file path
-    
+
     Returns:
         is_mhealth (bool): `True` if the input is in mhealth format
     """
@@ -33,14 +34,15 @@ def is_mhealth_filepath(filepath):
         filepath)
     return matched is not None
 
+
 def is_mhealth_flat_filepath(filepath):
     """Validate if input file path is in mhealth format (flat structure)
 
     The flat structure stores all files directly in the `MasterSynced` folder in the pid folder, ignoring all date and hour folders.
-    
+
     Args:
         filepath (str): input file path
-    
+
     Returns:
         is_mhealth (bool): `True` if the input is in mhealth flat format
     """
@@ -53,10 +55,10 @@ def is_mhealth_flat_filepath(filepath):
 
 def extract_mhealth_rootpath(filepath):
     """Extract the root folder path for the whole dataset from the input mhealth file path
-    
+
     Args:
         filepath (str): The input mhealth file path
-    
+
     Returns:
         rootpath (str): The root folder path of the whole dataset
     """
@@ -67,10 +69,10 @@ def extract_mhealth_rootpath(filepath):
 
 def extract_pid_rootpath(filepath):
     """Extract the pid folder path for the participant from the input mhealth file path
-    
+
     Args:
         filepath (str): The input mhealth file path
-    
+
     Returns:
         pidpath (str): The pid folder path of the participant's data
     """
@@ -83,10 +85,10 @@ def extract_location_mapping_filepath(filepath):
     """Extract the file path of the `location_mapping` meta file
 
     If `location_mapping` files are stored separately for each participant, the one that matches the pid of the given input file path will be returned.
-    
+
     Args:
         filepath (str): The input mhealth file path
-    
+
     Returns:
         location_mapping_file (str): The `location_mapping` file path for the entire dataset. If no file is found, return `None`.
     """
@@ -109,10 +111,10 @@ def extract_offset_mapping_filepath(filepath):
     """Extract the file path of the `offset_mapping` meta file
 
     If `offset_mapping` files are stored separately for each participant, the one that matches the pid of the given input file path will be returned.
-    
+
     Args:
         filepath (str): The input mhealth file path
-    
+
     Returns:
         offset_mapping_file (str): The `offset_mapping` file path for the entire dataset. If no file is found, return `None`.
     """
@@ -130,14 +132,15 @@ def extract_offset_mapping_filepath(filepath):
         else:
             return None
 
+
 def extract_pid_exceptions_filepath(filepath):
     """Extract the file path of the `pid_exceptions` meta file
 
     If `pid_exceptions` files are stored separately for each participant, the one that matches the pid of the given input file path will be returned.
-    
+
     Args:
         filepath (str): The input mhealth file path
-    
+
     Returns:
         pid_exceptions_file (str): The `pid_exceptions` file path for the entire dataset. If no file is found, return `None`.
     """
@@ -306,10 +309,10 @@ def extract_session_end_time(filepath, filepaths):
 
 def extract_timezone(filepath):
     """Extract time zone object from the input mhealth file path
-    
+
     Args:
         filepath (str): File path in mhealth format
-    
+
     Returns:
         tz (tzinfo): The extracted time zone object
     """
@@ -319,13 +322,72 @@ def extract_timezone(filepath):
 
 def extract_timezone_name(filepath):
     """Extract time zone name from the input mhealth file path
-    
+
     Args:
         filepath (str): File path in mhealth format
-    
+
     Returns:
         tz_name (str): Time zone name as formatted with `%Z`
     """
     dt = extract_file_timestamp(filepath, ignore_tz=False)
     tz_name = dt.strftime('%Z')
     return tz_name
+
+
+def build_mhealth_file_timestamp(timestamp):
+    if type(timestamp) == np.datetime64:
+        ts = timestamp.astype('datetime64[ms]')
+    elif type(timestamp) == datetime.datetime:
+        ts = np.datetime64(timestamp, 'ms')
+    ts_str = np.datetime_as_string(
+        ts, unit='ms').replace(':', '-').replace('T', '-')
+    if ts.item().tzinfo is None:
+        ts_str += '-P0000'
+    else:
+        tz_name = ts.item().strftime('%Z').replace('UTC', '').replace(
+            '-', 'M').replace('+', 'P').replace(':', '')
+        ts_str += tz_name
+    return ts_str
+
+
+def build_mhealth_hourly_structure(timestamp):
+    if type(timestamp) == np.datetime64:
+        ts = timestamp.astype('datetime64[ms]')
+    elif type(timestamp) == datetime.datetime:
+        ts = np.datetime64(timestamp, 'ms')
+    ts = ts.item()
+    return os.path.join('{year}', '{month}', '{day}', '{hour}').format(year=ts.year, month=ts.month, day=ts.day, hour=ts.hour)
+
+
+def build_mhealth_filename(timestamp, file_type, *,
+                           sensor_or_annotation_type='Unknown',
+                           data_type='Unknown',
+                           version_code='NA',
+                           sensor_or_annotator_id='XXX'):
+
+    ts_str = build_mhealth_file_timestamp(timestamp)
+    extension = 'csv.gz' if file_type == 'sensor' else 'csv'
+
+    if file_type == 'sensor':
+        result = '{sensor_type}-{data_type}-{version_code}.{sensor_id}-{data_type}.{timestamp}.{file_type}.{extension}'.format(
+            sensor_type=sensor_or_annotation_type,
+            data_type=data_type,
+            version_code=version_code,
+            sensor_id=sensor_or_annotator_id,
+            timestamp=ts_str,
+            file_type=file_type,
+            extension=extension
+        )
+    elif file_type == 'annotation':
+        result = '{annotation_type}.{annotator_id}-{annotation_type}.{timestamp}.{file_type}.{extension}'.format(
+            annotation_type=sensor_or_annotation_type,
+            annotator_id=sensor_or_annotator_id,
+            timestamp=ts_str,
+            file_type=file_type,
+            extension=extension
+        )
+    return result
+
+
+def build_mhealth_filepath(rootpath, pid, timestamp, filename, flat=False):
+    return os.path.join(rootpath, pid, 'MasterSynced', build_mhealth_hourly_structure(timestamp), filename) if not flat else os.path.join(rootpath, pid, 'MasterSynced', filename)
