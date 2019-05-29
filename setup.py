@@ -7,7 +7,7 @@ with open("README.md", "r") as fh:
 setuptools.setup(
     name="arus",
     license="GNU",
-    version="0.0.1.dev1",
+    version="0.0.1.dev2",
     author="Qu Tang",
     author_email="tang.q@husky.neu.edu",
     description="Activity Recognition with Ubiquitous Sensing",
@@ -26,13 +26,6 @@ setuptools.setup(
         'pandas>=0.24.2',
         'scipy>=1.3.0'
     ],
-    setup_requires=[
-        'setuptools_git',
-        'setuptools_scm',
-    ],
-    use_scm_version={
-        'write_to': os.path.join('pdoc', '_version.py'),
-    },
     test_suite="setup._discover_tests",
     python_requires='>= 3.6'
 )

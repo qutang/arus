@@ -1,7 +1,7 @@
 import numpy as np
 
 
-def as_scalar_or_np_array(arg):
+def atleast_scalar(arg):
     if np.isscalar(arg):
         result = np.float64(arg)
     else:

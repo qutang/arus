@@ -1,10 +1,10 @@
 from scipy.signal import butter, filtfilt
-from ..data_formatting import as_scalar_or_np_array
+from ..num import atleast_scalar
 
 
 def _get_wn(cut_offs, sr):
     nyquist = sr / 2.0
-    return as_scalar_or_np_array(cut_offs) / nyquist
+    return atleast_scalar(cut_offs) / nyquist
 
 
 def butterworth(X, sr, cut_offs, order=-1, filter_type='low'):
