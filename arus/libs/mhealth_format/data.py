@@ -1,8 +1,18 @@
 import pandas as pd
 import numpy as np
+import datetime
+from functools import partial
 
 
 def is_sensor_data(df):
+    """Validate if the given sensor dataframe matches mhealth format
+
+    Args:
+        df (pandas.DataFrame): The input dataframe to be validated
+
+    Returns:
+        is_from_sensor (bool): `True` if the input sensor dataframe meets mhealth format specification.
+    """
     # numerical from the second column
     is_from_sensor = True
     arr = df.iloc[:, 1:].values
@@ -15,6 +25,14 @@ def is_sensor_data(df):
 
 
 def is_annotation_data(df):
+    """Validate if the given annotation dataframe matches mhealth format
+
+    Args:
+        df (pandas.DataFrame): The input dataframe to be validated
+
+    Returns:
+        is_from_annotation (bool): `True` if the input annotation dataframe meets mhealth format specification.
+    """
     # label name should be string
     is_from_annotation = True
     arr = df.values[:, 3]
@@ -27,13 +45,33 @@ def is_annotation_data(df):
 
 
 def get_datetime_columns(file_type):
+    """Utility to get the timestamp column indices given file type
+
+    Args:
+        file_type (str): mhealth file type. Now only support `sensor` and `annotation`.
+
+    Returns:
+        col_indices (list): list of column indices (0 based)
+    """
     if file_type == 'sensor':
         return [0]
     elif file_type == 'annotation':
         return [0, 1, 2]
+    else:
+        raise NotImplementedError(
+            'The given file type {} is not supported'.format(file_type))
 
 
 def convert_datetime_columns_to_string(df, file_type):
+    """Convert elements in the timestamp columns of the input mhealth dataframe to human readable strings
+
+    Args:
+        df (pandas.DataFrame): The input mhealth dataframe. Timestamp columns should always be in `np.datetime64` type.
+        file_type (str): mhealth file type. Now only support `sensor` and `annotation`.
+
+    Returns:
+        result {pandas.DataFrame}: Dataframe with timestamp columns converted.
+    """
     def _to_timestamp_string(arr):
         result = np.core.defchararray.replace(
             np.datetime_as_string(arr, unit='ms'), 'T', ' ')
@@ -46,17 +84,65 @@ def convert_datetime_columns_to_string(df, file_type):
 
 
 def convert_datetime_columns_to_datetime64ms(df, file_type):
+    """Convert elements in the timestamp columns of the input mhealth dataframe to `datetime64[ms]` type.
+
+    Args:
+        df (pandas.DataFrame): The input mhealth dataframe. Timestamp columns should always be in `np.datetime64` type.
+        file_type (str): mhealth file type. Now only support `sensor` and `annotation`.
+
+    Returns:
+        result (pandas.DataFrame): Dataframe with timestamp columns converted.
+    """
     def _to_datetime64ms(arr):
         result = arr.astype('datetime64[ms]')
         return result
-    result = df.copy(deep=True)
+    result = df
     result.iloc[:, 0] = _to_datetime64ms(result.iloc[:, 0].values)
     if file_type == 'annotation':
         result.iloc[:, 1:2] = _to_datetime64ms(result.iloc[:, 1:2].values)
     return result
 
 
+def convert_string_columns_to_datetime64ms(df, file_type):
+    """Convert elements in the timestamp columns of the input dataframe to `datetime64[ms]` type.
+
+    Args:
+        df (pandas.DataFrame): The input mhealth dataframe. Timestamp columns are still human readable strings and need to be converted
+        file_type (str): mhealth file type. Now only support `actigraph`.
+
+    Returns:
+        result (pandas.DataFrame): Dataframe with timestamp columns converted.
+    """
+    def _to_datetime64ms(arr, file_type):
+        if file_type == 'sensor' or file_type == 'annotation':
+            dt_format = '%Y-%m-%d %H:%M:%S.%f'
+        elif file_type == 'actigraph':
+            dt_format = '%m/%d/%Y %H:%M:%S.%f'
+        vfun = partial(
+            pd.to_datetime, format=dt_format, box=False)
+        new_arr = vfun(arr)
+        result = new_arr.astype('datetime64[ms]')
+        return result
+
+    result = df
+    result.iloc[:, 0] = _to_datetime64ms(
+        result.iloc[:, 0].values, file_type=file_type)
+    if file_type == 'annotation':
+        result.iloc[:, 1:2] = _to_datetime64ms(
+            result.iloc[:, 1:2].values, file_type)
+    return result
+
+
 def rename_columns(df, file_type):
+    """Rename column names of input dataframe to meet mhealth specification requirement
+
+    Args:
+        df (pandas.DataFrame): The input mhealth dataframe.
+        file_type (str): mhealth file type. Now support only `sensor` and `annotation`.
+
+    Returns:
+        result (pandas.DataFrame): The mhealth dataframe with columns renamed.
+    """
     assert is_sensor_data(df) or is_annotation_data(df)
     result = df
     result = result.rename(columns={result.columns[0]: 'HEADER_TIME_STAMP'})
@@ -74,17 +160,17 @@ def append_times_as_index(df, st, et):
     return df
 
 
-def offset(df, offset_in_secs, start_time_col=0, stop_time_col=None):
-    df_copy = df.copy(deep=True)
-    if start_time_col is not None:
-        start_time_col = df_copy.columns[start_time_col]
-        df_copy[start_time_col] = df_copy[start_time_col] + \
-            pd.Timedelta(offset_in_secs, unit='s')
-    if stop_time_col is not None:
-        stop_time_col = df_copy.columns[stop_time_col]
-        df_copy[stop_time_col] = df_copy[stop_time_col] + \
-            pd.Timedelta(offset_in_secs, unit='s')
-    return df_copy
+# def offset(df, offset_in_secs, start_time_col=0, stop_time_col=None):
+#     df_copy = df.copy(deep=True)
+#     if start_time_col is not None:
+#         start_time_col = df_copy.columns[start_time_col]
+#         df_copy[start_time_col] = df_copy[start_time_col] +
+#         pd.Timedelta(offset_in_secs, unit='s')
+#     if stop_time_col is not None:
+#         stop_time_col = df_copy.columns[stop_time_col]
+#         df_copy[stop_time_col] = df_copy[stop_time_col] +
+#         pd.Timedelta(offset_in_secs, unit='s')
+#     return df_copy
 
 
 def segment(df, start_time=None, stop_time=None, start_time_col=0,

@@ -11,16 +11,34 @@ from .data import is_sensor_data
 from .data import rename_columns
 from .data import get_datetime_columns
 from .data import convert_datetime_columns_to_string
+from .data import convert_datetime_columns_to_datetime64ms
+from .data import convert_string_columns_to_datetime64ms
 from functools import partial
 import os
 
 
-def read_data_csv(filepath):
+def _is_large_file(filepath):
+    size_in_bytes = os.path.getsize(filepath)
+    size_in_mb = size_in_bytes / 1024 / 1024
+    if filepath.endswith('gz'):
+        threshold = 3
+    else:
+        threshold = 20
+    if size_in_mb > threshold:
+        return True
+    else:
+        return False
+
+
+def read_data_csv(filepath, chunksize=None, iterator=False):
     file_type = extract_file_type(filepath)
     result = None if filepath is None else pd.read_csv(
-        filepath, parse_dates=get_datetime_columns(file_type), infer_datetime_format=True)
-    assert is_sensor_data(result) or is_annotation_data(result)
-    return rename_columns(result, file_type)
+        filepath, parse_dates=get_datetime_columns(file_type), infer_datetime_format=True, chunksize=chunksize, iterator=iterator, engine='c')
+    if not iterator:
+        assert is_sensor_data(result) or is_annotation_data(result)
+        return rename_columns(result, file_type)
+    else:
+        return result
 
 
 def read_meta_csv(filepath):
@@ -72,3 +90,20 @@ def write_data_csv(df, output_folder, pid, file_type, *,
         df.groupby(pd.Grouper(key=group_key, freq='H')).apply(saver)
     else:
         saver(df)
+
+
+def read_actigraph_csv(filepath, chunksize=None, iterator=False):
+    def format_actigraph_csv(df):
+        convert_datetime = partial(
+            convert_string_columns_to_datetime64ms, file_type='actigraph')
+        rename = partial(rename_columns, file_type='sensor')
+        return rename(convert_datetime(df))
+
+    if filepath is None:
+        result = None
+    else:
+        reader = pd.read_csv(
+            filepath, skiprows=10, engine='c', chunksize=chunksize, iterator=iterator)
+        format_as_mhealth = format_actigraph_csv
+        result = reader, format_as_mhealth
+    return result

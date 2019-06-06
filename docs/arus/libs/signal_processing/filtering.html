@@ -22,13 +22,14 @@
 <section id="section-intro">
 <details class="source">
 <summary>Source code</summary>
-<pre><code class="python">from scipy.signal import butter, filtfilt
-from ..data_formatting import as_scalar_or_np_array
+<pre><code class="python">from scipy.signal import butter, filtfilt, resample_poly
+from ..num import atleast_scalar
+import numpy as np
 
 
 def _get_wn(cut_offs, sr):
     nyquist = sr / 2.0
-    return as_scalar_or_np_array(cut_offs) / nyquist
+    return atleast_scalar(cut_offs) / nyquist
 
 
 def butterworth(X, sr, cut_offs, order=-1, filter_type=&#39;low&#39;):
@@ -50,7 +51,27 @@ def butterworth(X, sr, cut_offs, order=-1, filter_type=&#39;low&#39;):
     Wn = _get_wn(cut_offs, sr)
     B, A = butter(order, Wn, btype=filter_type, output=&#39;ba&#39;)
     result = filtfilt(B, A, X, axis=0, method=&#39;pad&#39;, padtype=&#39;even&#39;)
-    return result</code></pre>
+    return result
+
+
+def resample(X, sr, new_sr):
+    &#34;&#34;&#34;Apply resampling IIR filter to a 2D array
+
+    Parameters
+    ----------
+        X {ndarray} -- A 1D or 2D numpy array
+        sr {float} -- sampling rate in Hz
+        new_sr {float} -- resampled sampling rate in Hz
+
+    Returns:
+        [ndarray] -- A numpy array with the new sampling rate
+    &#34;&#34;&#34;
+    lcm = np.lcm(sr, new_sr)
+    up = lcm / sr
+    down = lcm / new_sr
+    # TODO: use prime factorization to generate a cascade of downsampling filter
+    new_X = resample_poly(X, up=up, down=down, axis=0)
+    return new_X</code></pre>
 </details>
 </section>
 <section>
@@ -99,6 +120,40 @@ filter_type {str} &ndash; type of the filter. Could be 'low', 'high', 'pass' or 
     return result</code></pre>
 </details>
 </dd>
+<dt id="arus.libs.signal_processing.filtering.resample"><code class="name flex">
+<span>def <span class="ident">resample</span></span>(<span>X, sr, new_sr)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Apply resampling IIR filter to a 2D array</p>
+<h2 id="parameters">Parameters</h2>
+<pre><code>X {ndarray} -- A 1D or 2D numpy array
+sr {float} -- sampling rate in Hz
+new_sr {float} -- resampled sampling rate in Hz
+</code></pre>
+<h2 id="returns">Returns</h2>
+<p>[ndarray] &ndash; A numpy array with the new sampling rate</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def resample(X, sr, new_sr):
+    &#34;&#34;&#34;Apply resampling IIR filter to a 2D array
+
+    Parameters
+    ----------
+        X {ndarray} -- A 1D or 2D numpy array
+        sr {float} -- sampling rate in Hz
+        new_sr {float} -- resampled sampling rate in Hz
+
+    Returns:
+        [ndarray] -- A numpy array with the new sampling rate
+    &#34;&#34;&#34;
+    lcm = np.lcm(sr, new_sr)
+    up = lcm / sr
+    down = lcm / new_sr
+    # TODO: use prime factorization to generate a cascade of downsampling filter
+    new_X = resample_poly(X, up=up, down=down, axis=0)
+    return new_X</code></pre>
+</details>
+</dd>
 </dl>
 </section>
 <section>
@@ -118,6 +173,7 @@ filter_type {str} &ndash; type of the filter. Could be 'low', 'high', 'pass' or 
 <li><h3><a href="#header-functions">Functions</a></h3>
 <ul class="">
 <li><code><a title="arus.libs.signal_processing.filtering.butterworth" href="#arus.libs.signal_processing.filtering.butterworth">butterworth</a></code></li>
+<li><code><a title="arus.libs.signal_processing.filtering.resample" href="#arus.libs.signal_processing.filtering.resample">resample</a></code></li>
 </ul>
 </li>
 </ul>

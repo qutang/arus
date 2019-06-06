@@ -7,7 +7,7 @@ with open("README.md", "r") as fh:
 setuptools.setup(
     name="arus",
     license="GNU",
-    version="0.0.1.dev3",
+    version="0.0.1.dev4",
     author="Qu Tang",
     author_email="tang.q@husky.neu.edu",
     description="Activity Recognition with Ubiquitous Sensing",
@@ -27,5 +27,5 @@ setuptools.setup(
         'scipy>=1.3.0'
     ],
     test_suite="setup._discover_tests",
-    python_requires='>= 3.6'
+    python_requires='>= 3.5'
 )

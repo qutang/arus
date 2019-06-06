@@ -91,12 +91,10 @@
   h1 code { background: transparent }
 
   pre {
-    background: #f8f8f8;
     border: 0;
     border-top: 1px solid #ccc;
     border-bottom: 1px solid #ccc;
     margin: 1em 0;
-    padding: 1ex;
   }
 
   #http-server-module-list {
@@ -275,7 +273,7 @@
       border-left: 1px solid #ddd;
     }
     pre code {
-      font-size: 1em;
+      font-size: 0.9em;
     }
     .item .name {
       font-size: 1em;

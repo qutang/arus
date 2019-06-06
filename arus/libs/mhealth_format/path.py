@@ -219,14 +219,14 @@ def get_pids_list(rootpath):
 
 
 def extract_sensor_type(filepath):
-    assert is_mhealth_filename(filepath)
+    assert is_mhealth_filepath(filepath) or is_mhealth_flat_filepath(filepath)
     filename = os.path.basename(filepath)
     result = filename.split('.')[0].split('-')[0]
     return result
 
 
 def extract_data_type(filepath):
-    assert is_mhealth_filename(filepath)
+    assert is_mhealth_filepath(filepath) or is_mhealth_flat_filepath(filepath)
     filename = os.path.basename(filepath)
     tokens = filename.split('.')[0]
     tokens = tokens.split('-')
@@ -237,7 +237,7 @@ def extract_data_type(filepath):
 
 
 def extract_version_code(filepath):
-    assert is_mhealth_filename(filepath)
+    assert is_mhealth_filepath(filepath) or is_mhealth_flat_filepath(filepath)
     filename = os.path.basename(filepath)
     tokens = filename.split('.')[0]
     tokens = tokens.split('-')
@@ -248,13 +248,13 @@ def extract_version_code(filepath):
 
 
 def extract_sid(filepath):
-    assert is_mhealth_filename(filepath)
+    assert is_mhealth_filepath(filepath) or is_mhealth_flat_filepath(filepath)
     filename = os.path.basename(filepath)
     return filename.split('.')[1].split('-')[0]
 
 
 def extract_file_type(filepath):
-    assert is_mhealth_filename(filepath)
+    assert is_mhealth_filepath(filepath) or is_mhealth_flat_filepath(filepath)
     filename = os.path.basename(filepath)
     if filename.endswith('gz'):
         return filename.split('.')[-3]
@@ -263,7 +263,7 @@ def extract_file_type(filepath):
 
 
 def extract_file_timestamp(filepath, ignore_tz=True):
-    assert is_mhealth_filename(filepath)
+    assert is_mhealth_filepath(filepath) or is_mhealth_flat_filepath(filepath)
     filename = os.path.basename(filepath)
     if filename.endswith('gz'):
         timestamp_index = -4
