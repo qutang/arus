@@ -18,17 +18,19 @@ class Stream:
         stream (Stream): an instance object of type `Stream`.
     """
 
-    def __init__(self, data_source, name='default-stream'):
+    def __init__(self, data_source, name='default-stream', scheduler='thread'):
         """
 
         Args:
             data_source (object): An object that may be loaded into memory. The type of the object is decided by the implementation of subclass.
             name (str, optional): The name of the data stream will also be used as the name of the sub-thread that is used to load data. Defaults to 'default-stream'.
+            scheduler (str, optional): The scheduler used to load the data source. It can be either 'thread' or 'sync'. Defaults to 'thread'.
         """
         self._queue = queue.Queue()
         self._data_source = data_source
         self.started = False
         self.name = name
+        self._scheduler = scheduler
 
     @property
     def started(self):
@@ -91,20 +93,21 @@ class Stream:
             self.stop()
         return data
 
-    def start(self, scheduler='thread'):
+    def start(self, scheduler=None):
         """Method to start loading data from the provided data source.
         Args:
-            processor (str, optional): The processor used to load data. Currently only support `thread` and `sync`. Defaults to 'thread'.
+            scheduler (str, optional): The scheduler used to load data. This will override the scheduler set in the constructor if the value is not `None`, otherwise it will fall back to the setting in the constructor.
 
         Raises:
             NotImplementedError: raised if the scheduler is not supported.
         """
         self.started = True
-        if scheduler == 'thread':
+        self._scheduler = self._scheduler if scheduler is None else scheduler
+        if self._scheduler == 'thread':
             self._loading_thread = self._get_thread_for_loading(
                 self._data_source)
             self._loading_thread.start()
-        elif scheduler == 'sync':
+        elif self._scheduler == 'sync':
             self.load_(self._data_source)
         else:
             raise NotImplementedError(

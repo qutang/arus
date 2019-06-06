@@ -23,3 +23,4 @@ publish="python -m twine upload --repository-url https://test.pypi.org/legacy/ d
 
 [packages]
 arus = {editable = true,path = "."}
+pathos = "*"
