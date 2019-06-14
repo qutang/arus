@@ -29,6 +29,7 @@
 
 import pandas as pd
 from .path import extract_file_type
+from .path import extract_existing_hourly_filepaths
 from .path import build_mhealth_filename
 from .path import build_mhealth_filepath
 from .data import is_annotation_data
@@ -40,6 +41,7 @@ from .data import convert_datetime_columns_to_datetime64ms
 from .data import convert_string_columns_to_datetime64ms
 from functools import partial
 import os
+from glob import glob
 
 
 def _is_large_file(filepath):
@@ -85,7 +87,15 @@ def write_data_csv(df, output_folder, pid, file_type, *,
                    version_code=&#39;NA&#39;,
                    sensor_or_annotator_id=&#39;XXX&#39;,
                    split_hours=False,
-                   flat=False):
+                   flat=False, append=False):
+
+    def _get_existing_or_new_hourly_file(output_filepath):
+        existing_files = extract_existing_hourly_filepaths(output_filepath)
+        if len(existing_files) &gt; 0:
+            existing_files.sort()
+            return existing_files[0]
+        else:
+            return output_filepath
 
     def _get_saver(path_generator, filename_generator, file_type):
         def _saver(d):
@@ -96,7 +106,15 @@ def write_data_csv(df, output_folder, pid, file_type, *,
             output_filepath = path_generator(
                 timestamp=timestamp, filename=filename_generator(timestamp))
             d = convert_datetime_columns_to_string(d, file_type=file_type)
-            write_data_csv_(d, output_filepath)
+            if append:
+                output_filepath = _get_existing_or_new_hourly_file(
+                    output_filepath)
+                if os.path.exists(output_filepath):
+                    write_data_csv_(d, output_filepath, append=True)
+                else:
+                    write_data_csv_(d, output_filepath)
+            else:
+                write_data_csv_(d, output_filepath)
         return _saver
 
     build_filename_with_ts = partial(build_mhealth_filename, file_type=file_type, sensor_or_annotation_type=sensor_or_annotation_type,
@@ -196,7 +214,7 @@ def read_actigraph_csv(filepath, chunksize=None, iterator=False):
 </details>
 </dd>
 <dt id="arus.libs.mhealth_format.io.write_data_csv"><code class="name flex">
-<span>def <span class="ident">write_data_csv</span></span>(<span>df, output_folder, pid, file_type, *, sensor_or_annotation_type='Unknown', data_type='Unknown', version_code='NA', sensor_or_annotator_id='XXX', split_hours=False, flat=False)</span>
+<span>def <span class="ident">write_data_csv</span></span>(<span>df, output_folder, pid, file_type, *, sensor_or_annotation_type='Unknown', data_type='Unknown', version_code='NA', sensor_or_annotator_id='XXX', split_hours=False, flat=False, append=False)</span>
 </code></dt>
 <dd>
 <section class="desc"></section>
@@ -208,7 +226,15 @@ def read_actigraph_csv(filepath, chunksize=None, iterator=False):
                    version_code=&#39;NA&#39;,
                    sensor_or_annotator_id=&#39;XXX&#39;,
                    split_hours=False,
-                   flat=False):
+                   flat=False, append=False):
+
+    def _get_existing_or_new_hourly_file(output_filepath):
+        existing_files = extract_existing_hourly_filepaths(output_filepath)
+        if len(existing_files) &gt; 0:
+            existing_files.sort()
+            return existing_files[0]
+        else:
+            return output_filepath
 
     def _get_saver(path_generator, filename_generator, file_type):
         def _saver(d):
@@ -219,7 +245,15 @@ def read_actigraph_csv(filepath, chunksize=None, iterator=False):
             output_filepath = path_generator(
                 timestamp=timestamp, filename=filename_generator(timestamp))
             d = convert_datetime_columns_to_string(d, file_type=file_type)
-            write_data_csv_(d, output_filepath)
+            if append:
+                output_filepath = _get_existing_or_new_hourly_file(
+                    output_filepath)
+                if os.path.exists(output_filepath):
+                    write_data_csv_(d, output_filepath, append=True)
+                else:
+                    write_data_csv_(d, output_filepath)
+            else:
+                write_data_csv_(d, output_filepath)
         return _saver
 
     build_filename_with_ts = partial(build_mhealth_filename, file_type=file_type, sensor_or_annotation_type=sensor_or_annotation_type,

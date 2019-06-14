@@ -42,17 +42,19 @@ class Stream:
         stream (Stream): an instance object of type `Stream`.
     &#34;&#34;&#34;
 
-    def __init__(self, data_source, name=&#39;default-stream&#39;):
+    def __init__(self, data_source, name=&#39;default-stream&#39;, scheduler=&#39;thread&#39;):
         &#34;&#34;&#34;
 
         Args:
             data_source (object): An object that may be loaded into memory. The type of the object is decided by the implementation of subclass.
             name (str, optional): The name of the data stream will also be used as the name of the sub-thread that is used to load data. Defaults to &#39;default-stream&#39;.
+            scheduler (str, optional): The scheduler used to load the data source. It can be either &#39;thread&#39; or &#39;sync&#39;. Defaults to &#39;thread&#39;.
         &#34;&#34;&#34;
         self._queue = queue.Queue()
         self._data_source = data_source
         self.started = False
         self.name = name
+        self._scheduler = scheduler
 
     @property
     def started(self):
@@ -115,20 +117,21 @@ class Stream:
             self.stop()
         return data
 
-    def start(self, scheduler=&#39;thread&#39;):
+    def start(self, scheduler=None):
         &#34;&#34;&#34;Method to start loading data from the provided data source.
         Args:
-            processor (str, optional): The processor used to load data. Currently only support `thread` and `sync`. Defaults to &#39;thread&#39;.
+            scheduler (str, optional): The scheduler used to load data. This will override the scheduler set in the constructor if the value is not `None`, otherwise it will fall back to the setting in the constructor.
 
         Raises:
             NotImplementedError: raised if the scheduler is not supported.
         &#34;&#34;&#34;
         self.started = True
-        if scheduler == &#39;thread&#39;:
+        self._scheduler = self._scheduler if scheduler is None else scheduler
+        if self._scheduler == &#39;thread&#39;:
             self._loading_thread = self._get_thread_for_loading(
                 self._data_source)
             self._loading_thread.start()
-        elif scheduler == &#39;sync&#39;:
+        elif self._scheduler == &#39;sync&#39;:
             self.load_(self._data_source)
         else:
             raise NotImplementedError(
@@ -489,7 +492,7 @@ for data in stream.get_iterator():
 </dd>
 <dt id="arus.core.stream.Stream"><code class="flex name class">
 <span>class <span class="ident">Stream</span></span>
-<span>(</span><span>data_source, name='default-stream')</span>
+<span>(</span><span>data_source, name='default-stream', scheduler='thread')</span>
 </code></dt>
 <dd>
 <section class="desc"><p>The base class for data stream</p>
@@ -506,6 +509,8 @@ for data in stream.get_iterator():
 <dd>An object that may be loaded into memory. The type of the object is decided by the implementation of subclass.</dd>
 <dt><strong><code>name</code></strong> :&ensp;<code>str</code>, optional</dt>
 <dd>The name of the data stream will also be used as the name of the sub-thread that is used to load data. Defaults to 'default-stream'.</dd>
+<dt><strong><code>scheduler</code></strong> :&ensp;<code>str</code>, optional</dt>
+<dd>The scheduler used to load the data source. It can be either 'thread' or 'sync'. Defaults to 'thread'.</dd>
 </dl></section>
 <details class="source">
 <summary>Source code</summary>
@@ -520,17 +525,19 @@ for data in stream.get_iterator():
         stream (Stream): an instance object of type `Stream`.
     &#34;&#34;&#34;
 
-    def __init__(self, data_source, name=&#39;default-stream&#39;):
+    def __init__(self, data_source, name=&#39;default-stream&#39;, scheduler=&#39;thread&#39;):
         &#34;&#34;&#34;
 
         Args:
             data_source (object): An object that may be loaded into memory. The type of the object is decided by the implementation of subclass.
             name (str, optional): The name of the data stream will also be used as the name of the sub-thread that is used to load data. Defaults to &#39;default-stream&#39;.
+            scheduler (str, optional): The scheduler used to load the data source. It can be either &#39;thread&#39; or &#39;sync&#39;. Defaults to &#39;thread&#39;.
         &#34;&#34;&#34;
         self._queue = queue.Queue()
         self._data_source = data_source
         self.started = False
         self.name = name
+        self._scheduler = scheduler
 
     @property
     def started(self):
@@ -593,20 +600,21 @@ for data in stream.get_iterator():
             self.stop()
         return data
 
-    def start(self, scheduler=&#39;thread&#39;):
+    def start(self, scheduler=None):
         &#34;&#34;&#34;Method to start loading data from the provided data source.
         Args:
-            processor (str, optional): The processor used to load data. Currently only support `thread` and `sync`. Defaults to &#39;thread&#39;.
+            scheduler (str, optional): The scheduler used to load data. This will override the scheduler set in the constructor if the value is not `None`, otherwise it will fall back to the setting in the constructor.
 
         Raises:
             NotImplementedError: raised if the scheduler is not supported.
         &#34;&#34;&#34;
         self.started = True
-        if scheduler == &#39;thread&#39;:
+        self._scheduler = self._scheduler if scheduler is None else scheduler
+        if self._scheduler == &#39;thread&#39;:
             self._loading_thread = self._get_thread_for_loading(
                 self._data_source)
             self._loading_thread.start()
-        elif scheduler == &#39;sync&#39;:
+        elif self._scheduler == &#39;sync&#39;:
             self.load_(self._data_source)
         else:
             raise NotImplementedError(
@@ -770,14 +778,14 @@ def started(self):
 </details>
 </dd>
 <dt id="arus.core.stream.Stream.start"><code class="name flex">
-<span>def <span class="ident">start</span></span>(<span>self, scheduler='thread')</span>
+<span>def <span class="ident">start</span></span>(<span>self, scheduler=None)</span>
 </code></dt>
 <dd>
 <section class="desc"><p>Method to start loading data from the provided data source.</p>
 <h2 id="args">Args</h2>
 <dl>
-<dt><strong><code>processor</code></strong> :&ensp;<code>str</code>, optional</dt>
-<dd>The processor used to load data. Currently only support <code>thread</code> and <code>sync</code>. Defaults to 'thread'.</dd>
+<dt><strong><code>scheduler</code></strong> :&ensp;<code>str</code>, optional</dt>
+<dd>The scheduler used to load data. This will override the scheduler set in the constructor if the value is not <code>None</code>, otherwise it will fall back to the setting in the constructor.</dd>
 </dl>
 <h2 id="raises">Raises</h2>
 <dl>
@@ -786,20 +794,21 @@ def started(self):
 </dl></section>
 <details class="source">
 <summary>Source code</summary>
-<pre><code class="python">def start(self, scheduler=&#39;thread&#39;):
+<pre><code class="python">def start(self, scheduler=None):
     &#34;&#34;&#34;Method to start loading data from the provided data source.
     Args:
-        processor (str, optional): The processor used to load data. Currently only support `thread` and `sync`. Defaults to &#39;thread&#39;.
+        scheduler (str, optional): The scheduler used to load data. This will override the scheduler set in the constructor if the value is not `None`, otherwise it will fall back to the setting in the constructor.
 
     Raises:
         NotImplementedError: raised if the scheduler is not supported.
     &#34;&#34;&#34;
     self.started = True
-    if scheduler == &#39;thread&#39;:
+    self._scheduler = self._scheduler if scheduler is None else scheduler
+    if self._scheduler == &#39;thread&#39;:
         self._loading_thread = self._get_thread_for_loading(
             self._data_source)
         self._loading_thread.start()
-    elif scheduler == &#39;sync&#39;:
+    elif self._scheduler == &#39;sync&#39;:
         self.load_(self._data_source)
     else:
         raise NotImplementedError(
