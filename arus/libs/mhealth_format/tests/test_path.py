@@ -48,9 +48,7 @@ def test_is_mhealth_flat_filepath():
         'D:/data/spades_lab/SPADES_7/MasterSyn/',
         'D:/data/spades_lab/SPADES_7/MasterSynced/20/16',
         'D:/data/spades_lab/SPADES_7/Mastenced/2015/16/17/21/',
-        '''D:/data/spades_lab/SPADES_7/MasterSynced/2015/11/19/16/\
-        ActigraphGT9X-AccelerationCalibrated-NA.TAS1E23150152-\
-        AccelerationCalibrated.2015-11-19-16-00-00-000-M0500.sensor.csv'''
+        '''D:/data/spades_lab/SPADES_7/MasterSynced/2015/11/19/16/ActigraphGT9X-AccelerationCalibrated-NA.TAS1E23150152-AccelerationCalibrated.2015-11-19-16-00-00-000-M0500.sensor.csv'''
     ]
     for test_case in correct_test_cases:
         assert path.is_mhealth_flat_filepath(test_case)
@@ -130,8 +128,7 @@ def test_get_sensor_type():
     for test_case in correct_test_cases:
         print(test_case)
         assert path.extract_sensor_type(
-            test_case) == 'ActigraphGT9X' or \
-            path.extract_sensor_type(test_case) == 'SPADESInLab'
+            test_case) == 'ActigraphGT9X' or path.extract_sensor_type(test_case) == 'SPADESInLab'
 
 
 def test_get_data_type():

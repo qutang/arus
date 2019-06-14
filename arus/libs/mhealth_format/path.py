@@ -219,14 +219,16 @@ def get_pids_list(rootpath):
 
 
 def extract_sensor_type(filepath):
-    assert is_mhealth_filepath(filepath) or is_mhealth_flat_filepath(filepath)
+    assert is_mhealth_filepath(filepath) or is_mhealth_flat_filepath(
+        filepath) or is_mhealth_filename(os.path.basename(filepath))
     filename = os.path.basename(filepath)
     result = filename.split('.')[0].split('-')[0]
     return result
 
 
 def extract_data_type(filepath):
-    assert is_mhealth_filepath(filepath) or is_mhealth_flat_filepath(filepath)
+    assert is_mhealth_filepath(filepath) or is_mhealth_flat_filepath(
+        filepath) or is_mhealth_filename(os.path.basename(filepath))
     filename = os.path.basename(filepath)
     tokens = filename.split('.')[0]
     tokens = tokens.split('-')
@@ -237,7 +239,8 @@ def extract_data_type(filepath):
 
 
 def extract_version_code(filepath):
-    assert is_mhealth_filepath(filepath) or is_mhealth_flat_filepath(filepath)
+    assert is_mhealth_filepath(filepath) or is_mhealth_flat_filepath(
+        filepath) or is_mhealth_filename(os.path.basename(filepath))
     filename = os.path.basename(filepath)
     tokens = filename.split('.')[0]
     tokens = tokens.split('-')
@@ -248,13 +251,15 @@ def extract_version_code(filepath):
 
 
 def extract_sid(filepath):
-    assert is_mhealth_filepath(filepath) or is_mhealth_flat_filepath(filepath)
+    assert is_mhealth_filepath(filepath) or is_mhealth_flat_filepath(
+        filepath) or is_mhealth_filename(os.path.basename(filepath))
     filename = os.path.basename(filepath)
     return filename.split('.')[1].split('-')[0]
 
 
 def extract_file_type(filepath):
-    assert is_mhealth_filepath(filepath) or is_mhealth_flat_filepath(filepath)
+    assert is_mhealth_filepath(filepath) or is_mhealth_flat_filepath(
+        filepath) or is_mhealth_filename(os.path.basename(filepath))
     filename = os.path.basename(filepath)
     if filename.endswith('gz'):
         return filename.split('.')[-3]
@@ -263,7 +268,8 @@ def extract_file_type(filepath):
 
 
 def extract_file_timestamp(filepath, ignore_tz=True):
-    assert is_mhealth_filepath(filepath) or is_mhealth_flat_filepath(filepath)
+    assert is_mhealth_filepath(filepath) or is_mhealth_flat_filepath(
+        filepath) or is_mhealth_filename(os.path.basename(filepath))
     filename = os.path.basename(filepath)
     if filename.endswith('gz'):
         timestamp_index = -4
@@ -279,6 +285,30 @@ def extract_file_timestamp(filepath, ignore_tz=True):
         result = datetime.datetime.strptime(
             timestamp_str, '%Y-%m-%d-%H-%M-%S-%f-%z')
     return result
+
+
+def extract_existing_hourly_filepaths(filepath):
+    pid_path = extract_pid_rootpath(filepath)
+    file_type = extract_file_type(filepath)
+    data_type = extract_data_type(filepath)
+    version_code = extract_version_code(filepath)
+    sensor_or_annotator_id = extract_sid(filepath)
+    sensor_or_annotation_type = extract_sensor_type(filepath)
+    ts = extract_file_timestamp(filepath, ignore_tz=True)
+    tz = extract_timezone_mhealth_str(filepath)
+    timestamp_pattern = build_mhealth_file_timestamp_hourly_pattern(ts, tz)
+
+    hourly_file_pattern = build_mhealth_filename(timestamp_pattern,
+                                                 file_type,
+                                                 sensor_or_annotation_type=sensor_or_annotation_type,
+                                                 data_type=data_type, version_code=version_code, sensor_or_annotator_id=sensor_or_annotator_id)
+
+    found_files = glob(os.path.join(pid_path, "MasterSynced",
+                                    "**", hourly_file_pattern), recursive=True)
+    if len(found_files) == 0:
+        return []
+    else:
+        return found_files
 
 
 def extract_session_start_time(filepath, filepaths):
@@ -320,6 +350,19 @@ def extract_timezone(filepath):
     return dt.tzinfo
 
 
+def extract_timezone_mhealth_str(filepath):
+    assert is_mhealth_filepath(filepath) or is_mhealth_flat_filepath(
+        filepath) or is_mhealth_filename(os.path.basename(filepath))
+    filename = os.path.basename(filepath)
+    if filename.endswith('gz'):
+        timestamp_index = -4
+    else:
+        timestamp_index = -3
+    timestamp_str = filename.split('.')[timestamp_index]
+    tz_str = timestamp_str[-5:]
+    return tz_str
+
+
 def extract_timezone_name(filepath):
     """Extract time zone name from the input mhealth file path
 
@@ -334,20 +377,39 @@ def extract_timezone_name(filepath):
     return tz_name
 
 
+def build_mhealth_file_timestamp_hourly_pattern(timestamp, tz):
+    ts_str = build_mhealth_file_timestamp(timestamp)
+    hourly_ts_str = ts_str[:14]
+    hourly_ts_str_pattern = hourly_ts_str + '??-??-???-' + tz
+    return hourly_ts_str_pattern
+
+
 def build_mhealth_file_timestamp(timestamp):
     if type(timestamp) == np.datetime64:
         ts = timestamp.astype('datetime64[ms]')
     elif type(timestamp) == datetime.datetime:
         ts = np.datetime64(timestamp, 'ms')
+    elif type(timestamp) == str:
+        return timestamp
     ts_str = np.datetime_as_string(
-        ts, unit='ms').replace(':', '-').replace('T', '-')
-    if ts.item().tzinfo is None:
-        ts_str += '-P0000'
+        ts, unit='ms').replace(':', '-').replace('T', '-').replace('.', '-')
+    tz_str = build_mhealth_file_timezone(timestamp)
+    return ts_str + '-' + tz_str
+
+
+def build_mhealth_file_timezone(timestamp):
+    if type(timestamp) == np.datetime64:
+        ts = pd.to_datetime(timestamp).to_pydatetime()
+    elif type(timestamp) == datetime.datetime:
+        ts = timestamp
     else:
-        tz_name = ts.item().strftime('%Z').replace('UTC', '').replace(
+        raise NotImplementedError('Input argument is in unknown type')
+    if ts.tzinfo is None:
+        tz_str = 'P0000'
+    else:
+        tz_str = ts.strftime('%Z').replace('UTC', '').replace(
             '-', 'M').replace('+', 'P').replace(':', '')
-        ts_str += tz_name
-    return ts_str
+    return tz_str
 
 
 def build_mhealth_hourly_structure(timestamp):
@@ -356,17 +418,17 @@ def build_mhealth_hourly_structure(timestamp):
     elif type(timestamp) == datetime.datetime:
         ts = np.datetime64(timestamp, 'ms')
     ts = ts.item()
-    return os.path.join('{year}', '{month}', '{day}', '{hour}').format(year=ts.year, month=ts.month, day=ts.day, hour=ts.hour)
+    return os.path.join('{year:04d}', '{month:02d}', '{day:02d}', '{hour:02d}').format(year=ts.year, month=ts.month, day=ts.day, hour=ts.hour)
 
 
 def build_mhealth_filename(timestamp, file_type, *,
                            sensor_or_annotation_type='Unknown',
                            data_type='Unknown',
                            version_code='NA',
-                           sensor_or_annotator_id='XXX'):
+                           sensor_or_annotator_id='XXX', compress=False):
 
     ts_str = build_mhealth_file_timestamp(timestamp)
-    extension = 'csv.gz' if file_type == 'sensor' else 'csv'
+    extension = 'csv.gz' if compress else 'csv'
 
     if file_type == 'sensor':
         result = '{sensor_type}-{data_type}-{version_code}.{sensor_id}-{data_type}.{timestamp}.{file_type}.{extension}'.format(

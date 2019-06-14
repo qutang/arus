@@ -30,10 +30,6 @@ class Pipeline:
     def started(self, value):
         self._started = value
 
-    def get_stream(self, stream_name):
-        found = list(filter(lambda s: s.name == stream_name, self._streams))
-        return None if len(found) == 0 else found[0]
-
     def _is_running(self):
         if self.started:
             logging.warning(
@@ -41,6 +37,10 @@ class Pipeline:
             return True
         else:
             return False
+
+    def get_stream(self, stream_name):
+        found = list(filter(lambda s: s.name == stream_name, self._streams))
+        return None if len(found) == 0 else found[0]
 
     def add_streams(self, *streams):
         if self._is_running():
@@ -102,8 +102,8 @@ class Pipeline:
     def _put_result_in_queue(self, result):
         self._queue.put(result)
 
-    def start(self, scheduler_each='process_pool', scheduler_together='thread', mode='online'):
-        if scheduler_each == 'process_pool':
+    def start(self, stream_subprocess=True, mode='online'):
+        if stream_subprocess:
             results = self._run_streams_in_process_pool(self._streams)
         else:
             raise NotImplementedError('This given scheduler is not supported')
