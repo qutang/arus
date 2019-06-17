@@ -42,6 +42,8 @@ from .data import convert_string_columns_to_datetime64ms
 from functools import partial
 import os
 from glob import glob
+import logging
+import numpy as np
 
 
 def _is_large_file(filepath):
@@ -71,6 +73,25 @@ def read_data_csv(filepath, chunksize=None, iterator=False):
 def read_meta_csv(filepath):
     result = None if filepath is None else pd.read_csv(filepath)
     return result
+
+
+def write_data_csv_no_pandas_(df, output_filepath, append=False, file_type=&#39;sensor&#39;):
+    os.makedirs(os.path.dirname(output_filepath), exist_ok=True)
+    text = df.values
+    header = &#39;,&#39;.join(df.columns.values)
+    if file_type == &#39;sensor&#39;:
+        fmt = [&#39;%s&#39;] + [&#39;%f&#39;] * (len(df.columns) - 1)
+    elif file_type == &#39;annotation&#39;:
+        fmt = &#39;%s&#39;
+    if append == False:
+        logging.debug(&#39;saving {} with no appending&#39;.format(output_filepath))
+        np.savetxt(output_filepath, text, delimiter=&#34;,&#34;,
+                   fmt=fmt, header=header, comments=&#39;&#39;)
+    else:
+        logging.debug(&#39;saving {} with appending&#39;.format(output_filepath))
+        with open(output_filepath, &#39;ab&#39;) as f:
+            np.savetxt(f, text, delimiter=&#34;,&#34;,
+                       fmt=fmt)
 
 
 def write_data_csv_(df, output_filepath, append=False):
@@ -110,11 +131,14 @@ def write_data_csv(df, output_folder, pid, file_type, *,
                 output_filepath = _get_existing_or_new_hourly_file(
                     output_filepath)
                 if os.path.exists(output_filepath):
-                    write_data_csv_(d, output_filepath, append=True)
+                    write_data_csv_no_pandas_(
+                        d, output_filepath, append=True, file_type=file_type)
                 else:
-                    write_data_csv_(d, output_filepath)
+                    write_data_csv_no_pandas_(
+                        d, output_filepath, file_type=file_type)
             else:
-                write_data_csv_(d, output_filepath)
+                write_data_csv_no_pandas_(
+                    d, output_filepath, file_type=file_type)
         return _saver
 
     build_filename_with_ts = partial(build_mhealth_filename, file_type=file_type, sensor_or_annotation_type=sensor_or_annotation_type,
@@ -130,7 +154,10 @@ def write_data_csv(df, output_folder, pid, file_type, *,
             group_key = &#39;HEADER_TIME_STAMP&#39;
         elif file_type == &#39;annotation&#39;:
             group_key = &#39;START_TIME&#39;
-        df.groupby(pd.Grouper(key=group_key, freq=&#39;H&#39;)).apply(saver)
+        groups = df.groupby(pd.Grouper(key=group_key, freq=&#39;H&#39;))
+        for name, group in groups:
+            logging.info(&#39;saving {} with {}&#39;.format(name, str(group.shape)))
+            saver(group)
     else:
         saver(df)
 
@@ -249,11 +276,14 @@ def read_actigraph_csv(filepath, chunksize=None, iterator=False):
                 output_filepath = _get_existing_or_new_hourly_file(
                     output_filepath)
                 if os.path.exists(output_filepath):
-                    write_data_csv_(d, output_filepath, append=True)
+                    write_data_csv_no_pandas_(
+                        d, output_filepath, append=True, file_type=file_type)
                 else:
-                    write_data_csv_(d, output_filepath)
+                    write_data_csv_no_pandas_(
+                        d, output_filepath, file_type=file_type)
             else:
-                write_data_csv_(d, output_filepath)
+                write_data_csv_no_pandas_(
+                    d, output_filepath, file_type=file_type)
         return _saver
 
     build_filename_with_ts = partial(build_mhealth_filename, file_type=file_type, sensor_or_annotation_type=sensor_or_annotation_type,
@@ -269,7 +299,10 @@ def read_actigraph_csv(filepath, chunksize=None, iterator=False):
             group_key = &#39;HEADER_TIME_STAMP&#39;
         elif file_type == &#39;annotation&#39;:
             group_key = &#39;START_TIME&#39;
-        df.groupby(pd.Grouper(key=group_key, freq=&#39;H&#39;)).apply(saver)
+        groups = df.groupby(pd.Grouper(key=group_key, freq=&#39;H&#39;))
+        for name, group in groups:
+            logging.info(&#39;saving {} with {}&#39;.format(name, str(group.shape)))
+            saver(group)
     else:
         saver(df)</code></pre>
 </details>
@@ -287,6 +320,32 @@ def read_actigraph_csv(filepath, chunksize=None, iterator=False):
         df.to_csv(output_filepath, index=False)
     else:
         df.to_csv(output_filepath, index=False, header=False, mode=&#39;a&#39;)</code></pre>
+</details>
+</dd>
+<dt id="arus.libs.mhealth_format.io.write_data_csv_no_pandas_"><code class="name flex">
+<span>def <span class="ident">write_data_csv_no_pandas_</span></span>(<span>df, output_filepath, append=False, file_type='sensor')</span>
+</code></dt>
+<dd>
+<section class="desc"></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def write_data_csv_no_pandas_(df, output_filepath, append=False, file_type=&#39;sensor&#39;):
+    os.makedirs(os.path.dirname(output_filepath), exist_ok=True)
+    text = df.values
+    header = &#39;,&#39;.join(df.columns.values)
+    if file_type == &#39;sensor&#39;:
+        fmt = [&#39;%s&#39;] + [&#39;%f&#39;] * (len(df.columns) - 1)
+    elif file_type == &#39;annotation&#39;:
+        fmt = &#39;%s&#39;
+    if append == False:
+        logging.debug(&#39;saving {} with no appending&#39;.format(output_filepath))
+        np.savetxt(output_filepath, text, delimiter=&#34;,&#34;,
+                   fmt=fmt, header=header, comments=&#39;&#39;)
+    else:
+        logging.debug(&#39;saving {} with appending&#39;.format(output_filepath))
+        with open(output_filepath, &#39;ab&#39;) as f:
+            np.savetxt(f, text, delimiter=&#34;,&#34;,
+                       fmt=fmt)</code></pre>
 </details>
 </dd>
 </dl>
@@ -312,6 +371,7 @@ def read_actigraph_csv(filepath, chunksize=None, iterator=False):
 <li><code><a title="arus.libs.mhealth_format.io.read_meta_csv" href="#arus.libs.mhealth_format.io.read_meta_csv">read_meta_csv</a></code></li>
 <li><code><a title="arus.libs.mhealth_format.io.write_data_csv" href="#arus.libs.mhealth_format.io.write_data_csv">write_data_csv</a></code></li>
 <li><code><a title="arus.libs.mhealth_format.io.write_data_csv_" href="#arus.libs.mhealth_format.io.write_data_csv_">write_data_csv_</a></code></li>
+<li><code><a title="arus.libs.mhealth_format.io.write_data_csv_no_pandas_" href="#arus.libs.mhealth_format.io.write_data_csv_no_pandas_">write_data_csv_no_pandas_</a></code></li>
 </ul>
 </li>
 </ul>

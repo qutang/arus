@@ -1,3 +1,20 @@
+"""Module that loads external data sources (e.g., file, network port, socket and etc.) into a data queue using separate thread or not.
+
+Examples:
+
+* Usage of `arus.core.stream.MhealthFileStream`
+
+```python
+.. include:: ../../examples/mhealth_stream.py
+```
+
+* Usage of `arus.core.stream.ActigraphFileStream`
+
+```python
+.. include:: ../../examples/actigraph_stream.py
+```
+"""
+
 import queue
 import threading
 from ..libs.mhealth_format.io import read_data_csv

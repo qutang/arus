@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
 <meta name="generator" content="pdoc 0.6.2" />
 <title>arus.core.broadcaster API documentation</title>
-<meta name="description" content="Broadcaster module that sends results or intermediate results to external pipe (e.g., file, network port, socket and etc.) using separate thread" />
+<meta name="description" content="Module that sends results or intermediate results to external pipe (e.g., file, network port, socket and etc.) using separate thread or process …" />
 <link href='https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.0/normalize.min.css' rel='stylesheet'>
 <link href='https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/8.0.0/sanitize.min.css' rel='stylesheet'>
 <link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github.min.css" rel="stylesheet">
@@ -20,10 +20,50 @@
 <h1 class="title">Module <code>arus.core.broadcaster</code></h1>
 </header>
 <section id="section-intro">
-<p>Broadcaster module that sends results or intermediate results to external pipe (e.g., file, network port, socket and etc.) using separate thread</p>
+<p>Module that sends results or intermediate results to external pipe (e.g., file, network port, socket and etc.) using separate thread or process.</p>
+<p>Examples:</p>
+<ul>
+<li>Use broadcaster with stream</li>
+</ul>
+<pre><code class="python">from arus.core.broadcaster import MhealthFileBroadcaster
+from arus.core.stream import ActigraphFileStream
+from arus.libs.mhealth_format.logging import display_start_and_stop_time
+import logging
+
+if __name__ == &quot;__main__&quot;:
+    logging.basicConfig(
+        level=logging.DEBUG, format='[%(levelname)s]%(asctime)s &lt;P%(process)d-%(threadName)s&gt; %(message)s')
+    streamer = ActigraphFileStream(
+        data_source='/mnt/d/data/spades-2day/SPADES_12/OriginalRaw/Spades_12_dominant_ankle (2015-12-11)RAW.csv', sr=80, name='SPADES_12_DA')
+    broadcaster = MhealthFileBroadcaster(name='SPADES_12_DA_writer')
+    streamer.start(scheduler='thread')
+    broadcaster.start(scheduler='thread', output_folder='./outputs/', pid='SPADES_12', file_type='sensor',
+                      sensor_or_annotation_type='ActigraphGT9X',
+                      data_type='AccelerationCalibrated',
+                      version_code='NA',
+                      sensor_or_annotator_id='TAS1E2XXXXX',
+                      split_hours=True,
+                      flat=True)
+    for data in streamer.get_iterator():
+        logging.info('Loaded {}'.format(
+            display_start_and_stop_time(data, file_type='sensor')))
+        broadcaster.send_data(data)
+    broadcaster.send_data(None)
+    streamer.stop()
+    broadcaster.wait_to_finish()
+    logging.info('finished')
+</code></pre>
 <details class="source">
 <summary>Source code</summary>
-<pre><code class="python">&#34;&#34;&#34; Broadcaster module that sends results or intermediate results to external pipe (e.g., file, network port, socket and etc.) using separate thread
+<pre><code class="python">&#34;&#34;&#34; Module that sends results or intermediate results to external pipe (e.g., file, network port, socket and etc.) using separate thread or process.
+
+Examples:
+
+* Use broadcaster with stream
+
+```python
+.. include:: ../../examples/mhealth_broadcaster.py
+```
 &#34;&#34;&#34;
 
 import queue
@@ -33,15 +73,34 @@ from ..libs.mhealth_format.logging import display_start_and_stop_time
 import logging
 from pathos.multiprocessing import ProcessPool
 from pathos.helpers import cpu_count
+from pathos.helpers import mp as pathos_mp
 
 
 class Broadcaster:
+    &#34;&#34;&#34;Base class to define a broadcaster that can accept data and broadcast it to external pipes on a separate thread or process via a FIFO queue.
+
+    One may use this base class to implement broadcasters to do various external tasks, such as file saving, sending to server, sending to socket.
+
+    Returns:
+        broadcaster (Broadcaster): An instance of Broadcaster class
+    &#34;&#34;&#34;
+
     def __init__(self, *, name=&#39;default-broadcaster&#39;):
+        &#34;&#34;&#34;
+
+        Args:
+            name (str, optional): The name of the broadcaster. If using broadcaster in thread mode, this will be the name of the thread. Defaults to &#39;default-broadcaster&#39;.
+        &#34;&#34;&#34;
         self.name = name
-        self._queue = queue.Queue()
+        self._queue = None
 
     @property
     def name(self):
+        &#34;&#34;&#34;Name of the broadcaster
+
+        Returns:
+            name (str): name of the broadcaster.
+        &#34;&#34;&#34;
         return self._name
 
     @name.setter
@@ -49,37 +108,81 @@ class Broadcaster:
         self._name = value
 
     def send_data(self, data_obj):
+        &#34;&#34;&#34;Call this function to pass any data object to the broadcaster AFTER it starts.
+
+        Args:
+            data_obj (object): Can be any type of data. Subclass may restrict the type by overriding it.
+        &#34;&#34;&#34;
         self._queue.put(data_obj)
 
     def start(self, scheduler=&#39;thread&#39;, **kwargs):
         &#34;&#34;&#34;Method to start broadcasting data from the queue.
 
+        This method must be called before `Broadcaster.send_data` method.
+
         Args:
             scheduler (str, optional): Scheduler to run the broadcasting function in, could be &#39;thread&#39; or &#39;process&#39;. Defaults to &#39;thread&#39;.
             kwargs (dict): keyword arguments that will be passed to the underlying broadcast function
         &#34;&#34;&#34;
+        self._scheduler = scheduler
         if scheduler == &#39;thread&#39;:
             self._broadcasting_runner = self._get_thread_for_broadcasting(
                 kwargs)
             self._broadcasting_runner.start()
         elif scheduler == &#39;process&#39;:
+            self._broadcasting_runner = self._get_process_for_broadcasting(
+                kwargs)
+        else:
             raise NotImplementedError(&#34;This scheduler is not implemented&#34;)
 
+    def wait_to_finish(self):
+        &#34;&#34;&#34;Function to be called after sending all data to the broadcaster and wait for their completion.
+
+        Returns:
+            finished (bool): Always `True`.
+        &#34;&#34;&#34;
+        self.send_data(None)
+        if self._scheduler == &#39;thread&#39;:
+            self._broadcasting_runner.join()
+        elif self._scheduler == &#39;process&#39;:
+            self._broadcasting_runner.get()
+        return True
+
     def _get_thread_for_broadcasting(self, kwargs):
+        self._queue = queue.Queue()
         return threading.Thread(
             target=self.broadcast_, name=self.name, kwargs=kwargs)
 
+    def _get_process_for_broadcasting(self, kwargs):
+        pool = ProcessPool(nodes=1)
+        self._queue = pathos_mp.Manager().Queue()
+        kwargs[&#39;queue&#39;] = self._queue
+        return pool.apipe(self.broadcast_, **kwargs)
+
     def broadcast_(self, **kwargs):
+        &#34;&#34;&#34;The broadcast function that outputs the received data to an external receiver
+
+        For thread mode, use self._get_iterator() to get the data to be broadcasted.
+
+        For process mode, the data queue can be accessed with name `queue` in the `kwargs` arguments. One can use static method `Broadcaster.make_iterator_from_queue` to create an iterator for this queue.
+
+        Raises:
+            NotImplementedError: raised when calling with an instance of the base class.
+        &#34;&#34;&#34;
         raise NotImplementedError(&#39;Subclass must implement this method&#39;)
 
-    def _get_iterator(self):
-        &#34;&#34;&#34;Get a python iterator for the broadcasting data queue.
+    @staticmethod
+    def make_iterator_from_queue(q):
+        &#34;&#34;&#34;Static utility method to turn any queue object into an iterator.
+
+        The stop sign for the iterator is always `None`.
+
+        Args:
+            q (object): A queue object (could be any object implements Python&#39;s `queue` interface).
 
         Returns:
-            data_queue (iterator): the iterator that can be looped to process data to be broacasted.
+            iterator (iterator): An iterator wrapping around the queue object
         &#34;&#34;&#34;
-        q = self._queue
-
         class _data_iter:
             def __iter__(self):
                 return self
@@ -87,19 +190,96 @@ class Broadcaster:
             def __next__(self):
                 data = q.get()
                 if data is None:
+                    logging.info(&#39;stop getting data from queue&#39;)
                     # end of the stream, stop
                     raise StopIteration
                 return data
-
         return _data_iter()
+
+    def _get_iterator(self):
+        &#34;&#34;&#34;Get a python iterator for the broadcasting data queue. This only works for thread mode.
+
+        Returns:
+            data_queue (iterator): the iterator that can be looped to process data to be broacasted.
+        &#34;&#34;&#34;
+        q = self._queue
+        return Broadcaster.make_iterator_from_queue(q)
 
 
 class MhealthFileBroadcaster(Broadcaster):
-    def broadcast_(self, *, output_folder=&#39;./default-mhealth-dataset&#39;, **kwargs):
+    &#34;&#34;&#34;A broadcaster that saves received data to files in mhealth format. See `arus.libs.mhealth_format.io.write_data_csv` for acceptable `kwargs` when starting the broadcaster.
+
+    Examples:
+        * Saving a list of sensor dataframes to mhealth sensor files in thread mode one by one.
+
+        ```python
+        list_of_data = [df1, df2, ..., dfn]
+        broadcaster = MhealthFileBroadcaster(name=&#39;mhealth-sensor-saver&#39;)
+        broadcaster.start(scheduler=&#39;thread&#39;, output_folder=&#39;./outputs/&#39;, pid=&#39;Participant_0&#39;, file_type=&#39;sensor&#39;,
+                        sensor_or_annotation_type=&#39;ASpecialSensor&#39;,
+                        data_type=&#39;AccelerationCalibrated&#39;,
+                        version_code=&#39;NA&#39;,
+                        sensor_or_annotator_id=&#39;SIDXXXXXX&#39;,
+                        split_hours=True,
+                        flat=True)
+        for data in list_of_data:
+            broadcaster.send_data(data)
+        broadcaster.wait_to_finish()
+        logging.info(&#39;finished&#39;)
+        ```
+
+        * Saving a list of sensor dataframes to mhealth sensor files in process mode one by one.
+        ```python
+        list_of_data = [df1, df2, ..., dfn]
+        broadcaster = MhealthFileBroadcaster(name=&#39;mhealth-sensor-saver&#39;)
+        broadcaster.start(scheduler=&#39;process&#39;, output_folder=&#39;./outputs/&#39;, pid=&#39;Participant_0&#39;, file_type=&#39;sensor&#39;,
+                        sensor_or_annotation_type=&#39;ASpecialSensor&#39;,
+                        data_type=&#39;AccelerationCalibrated&#39;,
+                        version_code=&#39;NA&#39;,
+                        sensor_or_annotator_id=&#39;SIDXXXXXX&#39;,
+                        split_hours=True,
+                        flat=True)
+        for data in list_of_data:
+            broadcaster.send_data(data)
+        broadcaster.wait_to_finish()
+        logging.info(&#39;finished&#39;)
+        ```
+        &#34;&#34;&#34;
+
+    def _write_to_file(self, data_obj, output_folder, **kwargs):
+        logging.info(&#39;Writing {}&#39;.format(
+            display_start_and_stop_time(data_obj, file_type=&#39;sensor&#39;)))
+        write_data_csv(data_obj, output_folder, append=True, **kwargs)
+        logging.info(&#39;Wrote {}&#39;.format(
+            display_start_and_stop_time(data_obj, file_type=&#39;sensor&#39;)))
+
+    def _broadcast_in_thread(self, *, output_folder=&#39;./default-mhealth-dataset&#39;, **kwargs):
         for data_obj in self._get_iterator():
-            write_data_csv(data_obj, output_folder, append=True, **kwargs)
-            logging.info(&#39;Wrote {}&#39;.format(
-                display_start_and_stop_time(data_obj, file_type=&#39;sensor&#39;)))</code></pre>
+            self._write_to_file(data_obj, output_folder, **kwargs)
+        return &#39;Finished&#39;
+
+    def _broadcast_in_process(self, *, output_folder=&#39;./default-mhealth-dataset&#39;, **kwargs):
+        q = kwargs[&#39;queue&#39;]
+        del kwargs[&#39;queue&#39;]
+        iterator = Broadcaster.make_iterator_from_queue(q)
+        for data_obj in iterator:
+            self._write_to_file(data_obj, output_folder, **kwargs)
+        return &#39;Finished&#39;
+
+    def broadcast_(self, *, output_folder=&#39;./default-mhealth-dataset&#39;, **kwargs):
+        &#34;&#34;&#34;Implementation of the broadcasting mechanism for the class.
+
+        Do not call this method directly!
+
+        Args:
+            output_folder (str, optional): The output folder to save the data to be broadcasted. Defaults to &#39;./default-mhealth-dataset&#39;.
+            kwargs (dict): See `arus.libs.mhealth_format.io.write_data_csv` for all required and acceptable arguments.
+        &#34;&#34;&#34;
+        if &#39;queue&#39; in kwargs:
+            # broadcast with process mode
+            return self._broadcast_in_process(output_folder=output_folder, **kwargs)
+        else:
+            return self._broadcast_in_thread(output_folder=output_folder, **kwargs)</code></pre>
 </details>
 </section>
 <section>
@@ -116,16 +296,45 @@ class MhealthFileBroadcaster(Broadcaster):
 <span>(</span><span>*, name='default-broadcaster')</span>
 </code></dt>
 <dd>
-<section class="desc"></section>
+<section class="desc"><p>Base class to define a broadcaster that can accept data and broadcast it to external pipes on a separate thread or process via a FIFO queue.</p>
+<p>One may use this base class to implement broadcasters to do various external tasks, such as file saving, sending to server, sending to socket.</p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><strong><code>broadcaster</code></strong> :&ensp;<a title="arus.core.broadcaster.Broadcaster" href="#arus.core.broadcaster.Broadcaster"><code>Broadcaster</code></a></dt>
+<dd>An instance of Broadcaster class</dd>
+</dl>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>name</code></strong> :&ensp;<code>str</code>, optional</dt>
+<dd>The name of the broadcaster. If using broadcaster in thread mode, this will be the name of the thread. Defaults to 'default-broadcaster'.</dd>
+</dl></section>
 <details class="source">
 <summary>Source code</summary>
 <pre><code class="python">class Broadcaster:
+    &#34;&#34;&#34;Base class to define a broadcaster that can accept data and broadcast it to external pipes on a separate thread or process via a FIFO queue.
+
+    One may use this base class to implement broadcasters to do various external tasks, such as file saving, sending to server, sending to socket.
+
+    Returns:
+        broadcaster (Broadcaster): An instance of Broadcaster class
+    &#34;&#34;&#34;
+
     def __init__(self, *, name=&#39;default-broadcaster&#39;):
+        &#34;&#34;&#34;
+
+        Args:
+            name (str, optional): The name of the broadcaster. If using broadcaster in thread mode, this will be the name of the thread. Defaults to &#39;default-broadcaster&#39;.
+        &#34;&#34;&#34;
         self.name = name
-        self._queue = queue.Queue()
+        self._queue = None
 
     @property
     def name(self):
+        &#34;&#34;&#34;Name of the broadcaster
+
+        Returns:
+            name (str): name of the broadcaster.
+        &#34;&#34;&#34;
         return self._name
 
     @name.setter
@@ -133,37 +342,81 @@ class MhealthFileBroadcaster(Broadcaster):
         self._name = value
 
     def send_data(self, data_obj):
+        &#34;&#34;&#34;Call this function to pass any data object to the broadcaster AFTER it starts.
+
+        Args:
+            data_obj (object): Can be any type of data. Subclass may restrict the type by overriding it.
+        &#34;&#34;&#34;
         self._queue.put(data_obj)
 
     def start(self, scheduler=&#39;thread&#39;, **kwargs):
         &#34;&#34;&#34;Method to start broadcasting data from the queue.
 
+        This method must be called before `Broadcaster.send_data` method.
+
         Args:
             scheduler (str, optional): Scheduler to run the broadcasting function in, could be &#39;thread&#39; or &#39;process&#39;. Defaults to &#39;thread&#39;.
             kwargs (dict): keyword arguments that will be passed to the underlying broadcast function
         &#34;&#34;&#34;
+        self._scheduler = scheduler
         if scheduler == &#39;thread&#39;:
             self._broadcasting_runner = self._get_thread_for_broadcasting(
                 kwargs)
             self._broadcasting_runner.start()
         elif scheduler == &#39;process&#39;:
+            self._broadcasting_runner = self._get_process_for_broadcasting(
+                kwargs)
+        else:
             raise NotImplementedError(&#34;This scheduler is not implemented&#34;)
 
+    def wait_to_finish(self):
+        &#34;&#34;&#34;Function to be called after sending all data to the broadcaster and wait for their completion.
+
+        Returns:
+            finished (bool): Always `True`.
+        &#34;&#34;&#34;
+        self.send_data(None)
+        if self._scheduler == &#39;thread&#39;:
+            self._broadcasting_runner.join()
+        elif self._scheduler == &#39;process&#39;:
+            self._broadcasting_runner.get()
+        return True
+
     def _get_thread_for_broadcasting(self, kwargs):
+        self._queue = queue.Queue()
         return threading.Thread(
             target=self.broadcast_, name=self.name, kwargs=kwargs)
 
+    def _get_process_for_broadcasting(self, kwargs):
+        pool = ProcessPool(nodes=1)
+        self._queue = pathos_mp.Manager().Queue()
+        kwargs[&#39;queue&#39;] = self._queue
+        return pool.apipe(self.broadcast_, **kwargs)
+
     def broadcast_(self, **kwargs):
+        &#34;&#34;&#34;The broadcast function that outputs the received data to an external receiver
+
+        For thread mode, use self._get_iterator() to get the data to be broadcasted.
+
+        For process mode, the data queue can be accessed with name `queue` in the `kwargs` arguments. One can use static method `Broadcaster.make_iterator_from_queue` to create an iterator for this queue.
+
+        Raises:
+            NotImplementedError: raised when calling with an instance of the base class.
+        &#34;&#34;&#34;
         raise NotImplementedError(&#39;Subclass must implement this method&#39;)
 
-    def _get_iterator(self):
-        &#34;&#34;&#34;Get a python iterator for the broadcasting data queue.
+    @staticmethod
+    def make_iterator_from_queue(q):
+        &#34;&#34;&#34;Static utility method to turn any queue object into an iterator.
+
+        The stop sign for the iterator is always `None`.
+
+        Args:
+            q (object): A queue object (could be any object implements Python&#39;s `queue` interface).
 
         Returns:
-            data_queue (iterator): the iterator that can be looped to process data to be broacasted.
+            iterator (iterator): An iterator wrapping around the queue object
         &#34;&#34;&#34;
-        q = self._queue
-
         class _data_iter:
             def __iter__(self):
                 return self
@@ -171,25 +424,91 @@ class MhealthFileBroadcaster(Broadcaster):
             def __next__(self):
                 data = q.get()
                 if data is None:
+                    logging.info(&#39;stop getting data from queue&#39;)
                     # end of the stream, stop
                     raise StopIteration
                 return data
+        return _data_iter()
 
-        return _data_iter()</code></pre>
+    def _get_iterator(self):
+        &#34;&#34;&#34;Get a python iterator for the broadcasting data queue. This only works for thread mode.
+
+        Returns:
+            data_queue (iterator): the iterator that can be looped to process data to be broacasted.
+        &#34;&#34;&#34;
+        q = self._queue
+        return Broadcaster.make_iterator_from_queue(q)</code></pre>
 </details>
 <h3>Subclasses</h3>
 <ul class="hlist">
 <li><a title="arus.core.broadcaster.MhealthFileBroadcaster" href="#arus.core.broadcaster.MhealthFileBroadcaster">MhealthFileBroadcaster</a></li>
 </ul>
+<h3>Static methods</h3>
+<dl>
+<dt id="arus.core.broadcaster.Broadcaster.make_iterator_from_queue"><code class="name flex">
+<span>def <span class="ident">make_iterator_from_queue</span></span>(<span>q)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Static utility method to turn any queue object into an iterator.</p>
+<p>The stop sign for the iterator is always <code>None</code>.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>q</code></strong> :&ensp;<code>object</code></dt>
+<dd>A queue object (could be any object implements Python's <code>queue</code> interface).</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><strong><code>iterator</code></strong> :&ensp;<code>iterator</code></dt>
+<dd>An iterator wrapping around the queue object</dd>
+</dl></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">@staticmethod
+def make_iterator_from_queue(q):
+    &#34;&#34;&#34;Static utility method to turn any queue object into an iterator.
+
+    The stop sign for the iterator is always `None`.
+
+    Args:
+        q (object): A queue object (could be any object implements Python&#39;s `queue` interface).
+
+    Returns:
+        iterator (iterator): An iterator wrapping around the queue object
+    &#34;&#34;&#34;
+    class _data_iter:
+        def __iter__(self):
+            return self
+
+        def __next__(self):
+            data = q.get()
+            if data is None:
+                logging.info(&#39;stop getting data from queue&#39;)
+                # end of the stream, stop
+                raise StopIteration
+            return data
+    return _data_iter()</code></pre>
+</details>
+</dd>
+</dl>
 <h3>Instance variables</h3>
 <dl>
 <dt id="arus.core.broadcaster.Broadcaster.name"><code class="name">var <span class="ident">name</span></code></dt>
 <dd>
-<section class="desc"></section>
+<section class="desc"><p>Name of the broadcaster</p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><strong><code>name</code></strong> :&ensp;<code>str</code></dt>
+<dd>name of the broadcaster.</dd>
+</dl></section>
 <details class="source">
 <summary>Source code</summary>
 <pre><code class="python">@property
 def name(self):
+    &#34;&#34;&#34;Name of the broadcaster
+
+    Returns:
+        name (str): name of the broadcaster.
+    &#34;&#34;&#34;
     return self._name</code></pre>
 </details>
 </dd>
@@ -200,10 +519,26 @@ def name(self):
 <span>def <span class="ident">broadcast_</span></span>(<span>self, **kwargs)</span>
 </code></dt>
 <dd>
-<section class="desc"></section>
+<section class="desc"><p>The broadcast function that outputs the received data to an external receiver</p>
+<p>For thread mode, use self._get_iterator() to get the data to be broadcasted.</p>
+<p>For process mode, the data queue can be accessed with name <code>queue</code> in the <code>kwargs</code> arguments. One can use static method <a title="arus.core.broadcaster.Broadcaster.make_iterator_from_queue" href="#arus.core.broadcaster.Broadcaster.make_iterator_from_queue"><code>Broadcaster.make_iterator_from_queue()</code></a> to create an iterator for this queue.</p>
+<h2 id="raises">Raises</h2>
+<dl>
+<dt><strong><code>NotImplementedError</code></strong></dt>
+<dd>raised when calling with an instance of the base class.</dd>
+</dl></section>
 <details class="source">
 <summary>Source code</summary>
 <pre><code class="python">def broadcast_(self, **kwargs):
+    &#34;&#34;&#34;The broadcast function that outputs the received data to an external receiver
+
+    For thread mode, use self._get_iterator() to get the data to be broadcasted.
+
+    For process mode, the data queue can be accessed with name `queue` in the `kwargs` arguments. One can use static method `Broadcaster.make_iterator_from_queue` to create an iterator for this queue.
+
+    Raises:
+        NotImplementedError: raised when calling with an instance of the base class.
+    &#34;&#34;&#34;
     raise NotImplementedError(&#39;Subclass must implement this method&#39;)</code></pre>
 </details>
 </dd>
@@ -211,10 +546,20 @@ def name(self):
 <span>def <span class="ident">send_data</span></span>(<span>self, data_obj)</span>
 </code></dt>
 <dd>
-<section class="desc"></section>
+<section class="desc"><p>Call this function to pass any data object to the broadcaster AFTER it starts.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>data_obj</code></strong> :&ensp;<code>object</code></dt>
+<dd>Can be any type of data. Subclass may restrict the type by overriding it.</dd>
+</dl></section>
 <details class="source">
 <summary>Source code</summary>
 <pre><code class="python">def send_data(self, data_obj):
+    &#34;&#34;&#34;Call this function to pass any data object to the broadcaster AFTER it starts.
+
+    Args:
+        data_obj (object): Can be any type of data. Subclass may restrict the type by overriding it.
+    &#34;&#34;&#34;
     self._queue.put(data_obj)</code></pre>
 </details>
 </dd>
@@ -223,6 +568,7 @@ def name(self):
 </code></dt>
 <dd>
 <section class="desc"><p>Method to start broadcasting data from the queue.</p>
+<p>This method must be called before <a title="arus.core.broadcaster.Broadcaster.send_data" href="#arus.core.broadcaster.Broadcaster.send_data"><code>Broadcaster.send_data()</code></a> method.</p>
 <h2 id="args">Args</h2>
 <dl>
 <dt><strong><code>scheduler</code></strong> :&ensp;<code>str</code>, optional</dt>
@@ -235,16 +581,48 @@ def name(self):
 <pre><code class="python">def start(self, scheduler=&#39;thread&#39;, **kwargs):
     &#34;&#34;&#34;Method to start broadcasting data from the queue.
 
+    This method must be called before `Broadcaster.send_data` method.
+
     Args:
         scheduler (str, optional): Scheduler to run the broadcasting function in, could be &#39;thread&#39; or &#39;process&#39;. Defaults to &#39;thread&#39;.
         kwargs (dict): keyword arguments that will be passed to the underlying broadcast function
     &#34;&#34;&#34;
+    self._scheduler = scheduler
     if scheduler == &#39;thread&#39;:
         self._broadcasting_runner = self._get_thread_for_broadcasting(
             kwargs)
         self._broadcasting_runner.start()
     elif scheduler == &#39;process&#39;:
+        self._broadcasting_runner = self._get_process_for_broadcasting(
+            kwargs)
+    else:
         raise NotImplementedError(&#34;This scheduler is not implemented&#34;)</code></pre>
+</details>
+</dd>
+<dt id="arus.core.broadcaster.Broadcaster.wait_to_finish"><code class="name flex">
+<span>def <span class="ident">wait_to_finish</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Function to be called after sending all data to the broadcaster and wait for their completion.</p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><strong><code>finished</code></strong> :&ensp;<code>bool</code></dt>
+<dd>Always <code>True</code>.</dd>
+</dl></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def wait_to_finish(self):
+    &#34;&#34;&#34;Function to be called after sending all data to the broadcaster and wait for their completion.
+
+    Returns:
+        finished (bool): Always `True`.
+    &#34;&#34;&#34;
+    self.send_data(None)
+    if self._scheduler == &#39;thread&#39;:
+        self._broadcasting_runner.join()
+    elif self._scheduler == &#39;process&#39;:
+        self._broadcasting_runner.get()
+    return True</code></pre>
 </details>
 </dd>
 </dl>
@@ -254,15 +632,123 @@ def name(self):
 <span>(</span><span>*, name='default-broadcaster')</span>
 </code></dt>
 <dd>
-<section class="desc"></section>
+<section class="desc"><p>A broadcaster that saves received data to files in mhealth format. See <a title="arus.libs.mhealth_format.io.write_data_csv" href="../libs/mhealth_format/io.html#arus.libs.mhealth_format.io.write_data_csv"><code>write_data_csv()</code></a> for acceptable <code>kwargs</code> when starting the broadcaster.</p>
+<h2 id="examples">Examples</h2>
+<ul>
+<li>Saving a list of sensor dataframes to mhealth sensor files in thread mode one by one.</li>
+</ul>
+<pre><code class="python">list_of_data = [df1, df2, ..., dfn]
+broadcaster = MhealthFileBroadcaster(name='mhealth-sensor-saver')
+broadcaster.start(scheduler='thread', output_folder='./outputs/', pid='Participant_0', file_type='sensor',
+                sensor_or_annotation_type='ASpecialSensor',
+                data_type='AccelerationCalibrated',
+                version_code='NA',
+                sensor_or_annotator_id='SIDXXXXXX',
+                split_hours=True,
+                flat=True)
+for data in list_of_data:
+    broadcaster.send_data(data)
+broadcaster.wait_to_finish()
+logging.info('finished')
+</code></pre>
+<ul>
+<li>Saving a list of sensor dataframes to mhealth sensor files in process mode one by one.</li>
+</ul>
+<pre><code class="python">list_of_data = [df1, df2, ..., dfn]
+broadcaster = MhealthFileBroadcaster(name='mhealth-sensor-saver')
+broadcaster.start(scheduler='process', output_folder='./outputs/', pid='Participant_0', file_type='sensor',
+                sensor_or_annotation_type='ASpecialSensor',
+                data_type='AccelerationCalibrated',
+                version_code='NA',
+                sensor_or_annotator_id='SIDXXXXXX',
+                split_hours=True,
+                flat=True)
+for data in list_of_data:
+    broadcaster.send_data(data)
+broadcaster.wait_to_finish()
+logging.info('finished')
+</code></pre>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>name</code></strong> :&ensp;<code>str</code>, optional</dt>
+<dd>The name of the broadcaster. If using broadcaster in thread mode, this will be the name of the thread. Defaults to 'default-broadcaster'.</dd>
+</dl></section>
 <details class="source">
 <summary>Source code</summary>
 <pre><code class="python">class MhealthFileBroadcaster(Broadcaster):
-    def broadcast_(self, *, output_folder=&#39;./default-mhealth-dataset&#39;, **kwargs):
+    &#34;&#34;&#34;A broadcaster that saves received data to files in mhealth format. See `arus.libs.mhealth_format.io.write_data_csv` for acceptable `kwargs` when starting the broadcaster.
+
+    Examples:
+        * Saving a list of sensor dataframes to mhealth sensor files in thread mode one by one.
+
+        ```python
+        list_of_data = [df1, df2, ..., dfn]
+        broadcaster = MhealthFileBroadcaster(name=&#39;mhealth-sensor-saver&#39;)
+        broadcaster.start(scheduler=&#39;thread&#39;, output_folder=&#39;./outputs/&#39;, pid=&#39;Participant_0&#39;, file_type=&#39;sensor&#39;,
+                        sensor_or_annotation_type=&#39;ASpecialSensor&#39;,
+                        data_type=&#39;AccelerationCalibrated&#39;,
+                        version_code=&#39;NA&#39;,
+                        sensor_or_annotator_id=&#39;SIDXXXXXX&#39;,
+                        split_hours=True,
+                        flat=True)
+        for data in list_of_data:
+            broadcaster.send_data(data)
+        broadcaster.wait_to_finish()
+        logging.info(&#39;finished&#39;)
+        ```
+
+        * Saving a list of sensor dataframes to mhealth sensor files in process mode one by one.
+        ```python
+        list_of_data = [df1, df2, ..., dfn]
+        broadcaster = MhealthFileBroadcaster(name=&#39;mhealth-sensor-saver&#39;)
+        broadcaster.start(scheduler=&#39;process&#39;, output_folder=&#39;./outputs/&#39;, pid=&#39;Participant_0&#39;, file_type=&#39;sensor&#39;,
+                        sensor_or_annotation_type=&#39;ASpecialSensor&#39;,
+                        data_type=&#39;AccelerationCalibrated&#39;,
+                        version_code=&#39;NA&#39;,
+                        sensor_or_annotator_id=&#39;SIDXXXXXX&#39;,
+                        split_hours=True,
+                        flat=True)
+        for data in list_of_data:
+            broadcaster.send_data(data)
+        broadcaster.wait_to_finish()
+        logging.info(&#39;finished&#39;)
+        ```
+        &#34;&#34;&#34;
+
+    def _write_to_file(self, data_obj, output_folder, **kwargs):
+        logging.info(&#39;Writing {}&#39;.format(
+            display_start_and_stop_time(data_obj, file_type=&#39;sensor&#39;)))
+        write_data_csv(data_obj, output_folder, append=True, **kwargs)
+        logging.info(&#39;Wrote {}&#39;.format(
+            display_start_and_stop_time(data_obj, file_type=&#39;sensor&#39;)))
+
+    def _broadcast_in_thread(self, *, output_folder=&#39;./default-mhealth-dataset&#39;, **kwargs):
         for data_obj in self._get_iterator():
-            write_data_csv(data_obj, output_folder, append=True, **kwargs)
-            logging.info(&#39;Wrote {}&#39;.format(
-                display_start_and_stop_time(data_obj, file_type=&#39;sensor&#39;)))</code></pre>
+            self._write_to_file(data_obj, output_folder, **kwargs)
+        return &#39;Finished&#39;
+
+    def _broadcast_in_process(self, *, output_folder=&#39;./default-mhealth-dataset&#39;, **kwargs):
+        q = kwargs[&#39;queue&#39;]
+        del kwargs[&#39;queue&#39;]
+        iterator = Broadcaster.make_iterator_from_queue(q)
+        for data_obj in iterator:
+            self._write_to_file(data_obj, output_folder, **kwargs)
+        return &#39;Finished&#39;
+
+    def broadcast_(self, *, output_folder=&#39;./default-mhealth-dataset&#39;, **kwargs):
+        &#34;&#34;&#34;Implementation of the broadcasting mechanism for the class.
+
+        Do not call this method directly!
+
+        Args:
+            output_folder (str, optional): The output folder to save the data to be broadcasted. Defaults to &#39;./default-mhealth-dataset&#39;.
+            kwargs (dict): See `arus.libs.mhealth_format.io.write_data_csv` for all required and acceptable arguments.
+        &#34;&#34;&#34;
+        if &#39;queue&#39; in kwargs:
+            # broadcast with process mode
+            return self._broadcast_in_process(output_folder=output_folder, **kwargs)
+        else:
+            return self._broadcast_in_thread(output_folder=output_folder, **kwargs)</code></pre>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
@@ -274,14 +760,31 @@ def name(self):
 <span>def <span class="ident">broadcast_</span></span>(<span>self, *, output_folder='./default-mhealth-dataset', **kwargs)</span>
 </code></dt>
 <dd>
-<section class="desc"></section>
+<section class="desc"><p>Implementation of the broadcasting mechanism for the class.</p>
+<p>Do not call this method directly!</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>output_folder</code></strong> :&ensp;<code>str</code>, optional</dt>
+<dd>The output folder to save the data to be broadcasted. Defaults to './default-mhealth-dataset'.</dd>
+<dt><strong><code>kwargs</code></strong> :&ensp;<code>dict</code></dt>
+<dd>See <a title="arus.libs.mhealth_format.io.write_data_csv" href="../libs/mhealth_format/io.html#arus.libs.mhealth_format.io.write_data_csv"><code>write_data_csv()</code></a> for all required and acceptable arguments.</dd>
+</dl></section>
 <details class="source">
 <summary>Source code</summary>
 <pre><code class="python">def broadcast_(self, *, output_folder=&#39;./default-mhealth-dataset&#39;, **kwargs):
-    for data_obj in self._get_iterator():
-        write_data_csv(data_obj, output_folder, append=True, **kwargs)
-        logging.info(&#39;Wrote {}&#39;.format(
-            display_start_and_stop_time(data_obj, file_type=&#39;sensor&#39;)))</code></pre>
+    &#34;&#34;&#34;Implementation of the broadcasting mechanism for the class.
+
+    Do not call this method directly!
+
+    Args:
+        output_folder (str, optional): The output folder to save the data to be broadcasted. Defaults to &#39;./default-mhealth-dataset&#39;.
+        kwargs (dict): See `arus.libs.mhealth_format.io.write_data_csv` for all required and acceptable arguments.
+    &#34;&#34;&#34;
+    if &#39;queue&#39; in kwargs:
+        # broadcast with process mode
+        return self._broadcast_in_process(output_folder=output_folder, **kwargs)
+    else:
+        return self._broadcast_in_thread(output_folder=output_folder, **kwargs)</code></pre>
 </details>
 </dd>
 </dl>
@@ -289,7 +792,11 @@ def name(self):
 <ul class="hlist">
 <li><code><b><a title="arus.core.broadcaster.Broadcaster" href="#arus.core.broadcaster.Broadcaster">Broadcaster</a></b></code>:
 <ul class="hlist">
+<li><code><a title="arus.core.broadcaster.Broadcaster.make_iterator_from_queue" href="#arus.core.broadcaster.Broadcaster.make_iterator_from_queue">make_iterator_from_queue</a></code></li>
+<li><code><a title="arus.core.broadcaster.Broadcaster.name" href="#arus.core.broadcaster.Broadcaster.name">name</a></code></li>
+<li><code><a title="arus.core.broadcaster.Broadcaster.send_data" href="#arus.core.broadcaster.Broadcaster.send_data">send_data</a></code></li>
 <li><code><a title="arus.core.broadcaster.Broadcaster.start" href="#arus.core.broadcaster.Broadcaster.start">start</a></code></li>
+<li><code><a title="arus.core.broadcaster.Broadcaster.wait_to_finish" href="#arus.core.broadcaster.Broadcaster.wait_to_finish">wait_to_finish</a></code></li>
 </ul>
 </li>
 </ul>
@@ -314,9 +821,11 @@ def name(self):
 <h4><code><a title="arus.core.broadcaster.Broadcaster" href="#arus.core.broadcaster.Broadcaster">Broadcaster</a></code></h4>
 <ul class="">
 <li><code><a title="arus.core.broadcaster.Broadcaster.broadcast_" href="#arus.core.broadcaster.Broadcaster.broadcast_">broadcast_</a></code></li>
+<li><code><a title="arus.core.broadcaster.Broadcaster.make_iterator_from_queue" href="#arus.core.broadcaster.Broadcaster.make_iterator_from_queue">make_iterator_from_queue</a></code></li>
 <li><code><a title="arus.core.broadcaster.Broadcaster.name" href="#arus.core.broadcaster.Broadcaster.name">name</a></code></li>
 <li><code><a title="arus.core.broadcaster.Broadcaster.send_data" href="#arus.core.broadcaster.Broadcaster.send_data">send_data</a></code></li>
 <li><code><a title="arus.core.broadcaster.Broadcaster.start" href="#arus.core.broadcaster.Broadcaster.start">start</a></code></li>
+<li><code><a title="arus.core.broadcaster.Broadcaster.wait_to_finish" href="#arus.core.broadcaster.Broadcaster.wait_to_finish">wait_to_finish</a></code></li>
 </ul>
 </li>
 <li>

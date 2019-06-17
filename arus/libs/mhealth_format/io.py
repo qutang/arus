@@ -17,6 +17,8 @@ from .data import convert_string_columns_to_datetime64ms
 from functools import partial
 import os
 from glob import glob
+import logging
+import numpy as np
 
 
 def _is_large_file(filepath):
@@ -46,6 +48,25 @@ def read_data_csv(filepath, chunksize=None, iterator=False):
 def read_meta_csv(filepath):
     result = None if filepath is None else pd.read_csv(filepath)
     return result
+
+
+def write_data_csv_no_pandas_(df, output_filepath, append=False, file_type='sensor'):
+    os.makedirs(os.path.dirname(output_filepath), exist_ok=True)
+    text = df.values
+    header = ','.join(df.columns.values)
+    if file_type == 'sensor':
+        fmt = ['%s'] + ['%f'] * (len(df.columns) - 1)
+    elif file_type == 'annotation':
+        fmt = '%s'
+    if append == False:
+        logging.debug('saving {} with no appending'.format(output_filepath))
+        np.savetxt(output_filepath, text, delimiter=",",
+                   fmt=fmt, header=header, comments='')
+    else:
+        logging.debug('saving {} with appending'.format(output_filepath))
+        with open(output_filepath, 'ab') as f:
+            np.savetxt(f, text, delimiter=",",
+                       fmt=fmt)
 
 
 def write_data_csv_(df, output_filepath, append=False):
@@ -85,11 +106,14 @@ def write_data_csv(df, output_folder, pid, file_type, *,
                 output_filepath = _get_existing_or_new_hourly_file(
                     output_filepath)
                 if os.path.exists(output_filepath):
-                    write_data_csv_(d, output_filepath, append=True)
+                    write_data_csv_no_pandas_(
+                        d, output_filepath, append=True, file_type=file_type)
                 else:
-                    write_data_csv_(d, output_filepath)
+                    write_data_csv_no_pandas_(
+                        d, output_filepath, file_type=file_type)
             else:
-                write_data_csv_(d, output_filepath)
+                write_data_csv_no_pandas_(
+                    d, output_filepath, file_type=file_type)
         return _saver
 
     build_filename_with_ts = partial(build_mhealth_filename, file_type=file_type, sensor_or_annotation_type=sensor_or_annotation_type,
@@ -105,7 +129,10 @@ def write_data_csv(df, output_folder, pid, file_type, *,
             group_key = 'HEADER_TIME_STAMP'
         elif file_type == 'annotation':
             group_key = 'START_TIME'
-        df.groupby(pd.Grouper(key=group_key, freq='H')).apply(saver)
+        groups = df.groupby(pd.Grouper(key=group_key, freq='H'))
+        for name, group in groups:
+            logging.info('saving {} with {}'.format(name, str(group.shape)))
+            saver(group)
     else:
         saver(df)
 

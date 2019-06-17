@@ -5,7 +5,7 @@ import logging
 
 if __name__ == "__main__":
     logging.basicConfig(
-        level=logging.DEBUG, format='%(relativeCreated)6d %(threadName)s %(message)s')
+        level=logging.DEBUG, format='[%(levelname)s]%(asctime)s <P%(process)d-%(threadName)s> %(message)s')
     streamer = ActigraphFileStream(
         data_source='/mnt/d/data/spades-2day/SPADES_12/OriginalRaw/Spades_12_dominant_ankle (2015-12-11)RAW.csv', sr=80, name='SPADES_12_DA')
     broadcaster = MhealthFileBroadcaster(name='SPADES_12_DA_writer')
@@ -22,3 +22,6 @@ if __name__ == "__main__":
             display_start_and_stop_time(data, file_type='sensor')))
         broadcaster.send_data(data)
     broadcaster.send_data(None)
+    streamer.stop()
+    broadcaster.wait_to_finish()
+    logging.info('finished')

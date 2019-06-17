@@ -1,3 +1,3 @@
-## ARUS (Activity Recognition Using Sensors)
+### Overview
 
-## Contribution
+### Contribution

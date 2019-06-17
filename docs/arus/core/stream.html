@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
 <meta name="generator" content="pdoc 0.6.2" />
 <title>arus.core.stream API documentation</title>
-<meta name="description" content="" />
+<meta name="description" content="Module that loads external data sources (e.g., file, network port, socket and etc.) into a data queue using separate thread or not …" />
 <link href='https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.0/normalize.min.css' rel='stylesheet'>
 <link href='https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/8.0.0/sanitize.min.css' rel='stylesheet'>
 <link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github.min.css" rel="stylesheet">
@@ -20,9 +20,55 @@
 <h1 class="title">Module <code>arus.core.stream</code></h1>
 </header>
 <section id="section-intro">
+<p>Module that loads external data sources (e.g., file, network port, socket and etc.) into a data queue using separate thread or not.</p>
+<p>Examples:</p>
+<ul>
+<li>Usage of <a title="arus.core.stream.MhealthFileStream" href="#arus.core.stream.MhealthFileStream"><code>MhealthFileStream</code></a></li>
+</ul>
+<pre><code class="python">from arus.core.stream import MhealthFileStream
+from glob import glob
+
+if __name__ == &quot;__main__&quot;:
+    files = glob(
+        '/mnt/d/data/MDCAS/DINESH_00/MasterSynced/**/*.sensor.csv*', recursive=True)
+    stream = MhealthFileStream(data_source=files, sr=80, name='dinesh_00')
+    stream.start(scheduler='thread')
+    for data in stream.get_iterator():
+        print(data.iloc[:, 1].mean())
+</code></pre>
+<ul>
+<li>Usage of <code>arus.core.stream.ActigraphFileStream</code></li>
+</ul>
+<pre><code class="python">from arus.core.stream import ActigraphFileStream
+
+
+if __name__ == &quot;__main__&quot;:
+    stream = ActigraphFileStream(
+        data_source='/mnt/d/data/spades-2day/SPADES_12/OriginalRaw/Spades_12_dominant_ankle (2015-12-11)RAW.csv', sr=80, name='SPADES_12_DA')
+    stream.start()
+    for chunk in stream.get_iterator():
+        print(chunk.iloc[:, 1].mean())
+</code></pre>
 <details class="source">
 <summary>Source code</summary>
-<pre><code class="python">import queue
+<pre><code class="python">&#34;&#34;&#34;Module that loads external data sources (e.g., file, network port, socket and etc.) into a data queue using separate thread or not.
+
+Examples:
+
+* Usage of `arus.core.stream.MhealthFileStream`
+
+```python
+.. include:: ../../examples/mhealth_stream.py
+```
+
+* Usage of `arus.core.stream.ActigraphFileStream`
+
+```python
+.. include:: ../../examples/actigraph_stream.py
+```
+&#34;&#34;&#34;
+
+import queue
 import threading
 from ..libs.mhealth_format.io import read_data_csv
 from ..libs.mhealth_format.io import read_actigraph_csv
