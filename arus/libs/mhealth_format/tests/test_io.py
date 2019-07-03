@@ -11,7 +11,7 @@ from glob import glob
 @pytest.fixture
 def large_sensor_data():
     sr = 30.0
-    st = np.datetime64('now').astype('datetime64[ms]')
+    st = np.datetime64('2011-06-15T08:00:00.000').astype('datetime64[ms]')
     et = st + np.timedelta64(150, 'm')
     ts = np.arange(st, et, step=int(1000 / sr))
     values = np.random.random((ts.shape[0], 3))
