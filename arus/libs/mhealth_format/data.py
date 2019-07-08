@@ -70,7 +70,7 @@ def convert_datetime_columns_to_string(df, file_type):
         file_type (str): mhealth file type. Now only support `sensor` and `annotation`.
 
     Returns:
-        result {pandas.DataFrame}: Dataframe with timestamp columns converted.
+        result (pandas.DataFrame): Dataframe with timestamp columns converted.
     """
     def _to_timestamp_string(arr):
         result = np.core.defchararray.replace(

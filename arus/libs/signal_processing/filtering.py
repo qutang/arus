@@ -11,18 +11,17 @@ def _get_wn(cut_offs, sr):
 def butterworth(X, sr, cut_offs, order=-1, filter_type='low'):
     """Apply butterworth IIR filter to a 2D array
 
-    Parameters
-    ----------
-        X {ndarray} -- A 1D or 2D numpy array
-        sr {float} -- sampling rate in Hz
-        cut_offs {float or list} -- cut off frequencies in Hz
-        order {float} -- order of the filter
+    Args:
+        X (numpy.ndarray): A 1D or 2D numpy array
+        sr (float): sampling rate in Hz
+        cut_offs (float or list): cut off frequencies in Hz
+        order (float): order of the filter
 
     Keyword Arguments:
-        filter_type {str} -- type of the filter. Could be 'low', 'high', 'pass' or 'stop' (default: {'low'})
+        filter_type (str): type of the filter. Could be 'low', 'high', 'pass' or 'stop'
 
     Returns:
-        [ndarray] -- A numpy array with the same shape as X
+        filtered_X (numpy.ndarray): A numpy array with the same shape as X
     """
     Wn = _get_wn(cut_offs, sr)
     B, A = butter(order, Wn, btype=filter_type, output='ba')
@@ -33,14 +32,13 @@ def butterworth(X, sr, cut_offs, order=-1, filter_type='low'):
 def resample(X, sr, new_sr):
     """Apply resampling IIR filter to a 2D array
 
-    Parameters
-    ----------
-        X {ndarray} -- A 1D or 2D numpy array
-        sr {float} -- sampling rate in Hz
-        new_sr {float} -- resampled sampling rate in Hz
+    Args:
+        X (numpy.ndarray): A 1D or 2D numpy array
+        sr (float): sampling rate in Hz
+        new_sr (float): resampled sampling rate in Hz
 
     Returns:
-        [ndarray] -- A numpy array with the new sampling rate
+        resampled_X (numpy.ndarray): A numpy array with the new sampling rate
     """
     lcm = np.lcm(sr, new_sr)
     up = lcm / sr
