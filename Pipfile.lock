@@ -297,10 +297,10 @@
         },
         "pdoc3": {
             "hashes": [
-                "sha256:b144f61eb1f790e998dbbbe32785cd48eba587ebae00cfcf1a2408c8f4ffaca2"
+                "sha256:f4a27fa0cc8cf6fb8772129a9d7e9ecb3bab72a6ffd2475c5ad861484f6aae3d"
             ],
             "index": "pypi",
-            "version": "==0.6.3"
+            "version": "==0.7.0"
         },
         "pkginfo": {
             "hashes": [
