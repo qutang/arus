@@ -163,7 +163,7 @@ def read_actigraph_meta(filepath):
             filter(lambda token: token.startswith('v'), first_line.split(" ")))[1]
         sr = int(
             list(filter(lambda token: token.isnumeric(), first_line.split(" ")))[0])
-        sid = second_line.split(" ")[-1]
+        sid = second_line.split(" ")[-1].strip()
     return {
         'VERSION_CODE': firmware,
         'SAMPLING_RATE': sr,
