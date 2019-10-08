@@ -48,7 +48,7 @@ def resample_test_signals():
     test_cases = []
     signals = []
     for sr in list_sr:
-        t = np.linspace(0, 1, sr, False)
+        t = np.linspace([0, 0], [1, 1], sr, False, axis=0)
         mix_2_5_sig = np.sin(2*np.pi*2*t) + np.sin(2*np.pi*5*t)
         signals.append(mix_2_5_sig)
     sr_signal_pairs = zip(list_sr, signals)

@@ -46,3 +46,24 @@ def resample(X, sr, new_sr):
     # TODO: use prime factorization to generate a cascade of downsampling filter
     new_X = resample_poly(X, up=up, down=down, axis=0)
     return new_X
+
+
+def resample_timestamps(ts, new_n):
+    """Resample timestamps to new sampling rate
+
+    This function should be used together with `arus.libs.signal_processing.filtering.resample`.
+
+    Args:
+        ts (numpy.ndarray): A 1D numpy array storing timestamps in `np.datetime64` format
+        new_n (int): number of samples in the resampled sequence
+
+    Returns:
+        resampled_ts (numpy.ndarray): A 1D numpy array with the resampled timestamps
+    """
+    assert type(ts[0]) == np.datetime64
+    st = ts[0].astype('datetime64[ms]').astype('float64')
+    et = ts[-1].astype('datetime64[ms]').astype('float64')
+    new_ts = np.linspace(st, et, num=new_n)
+    vf = np.vectorize(lambda x: np.datetime64(int(x), 'ms'))
+    new_ts = vf(new_ts)
+    return new_ts
