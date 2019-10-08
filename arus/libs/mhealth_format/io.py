@@ -153,3 +153,19 @@ def read_actigraph_csv(filepath, chunksize=None, iterator=False):
         format_as_mhealth = format_actigraph_csv
         result = reader, format_as_mhealth
     return result
+
+
+def read_actigraph_meta(filepath):
+    with open(filepath, 'r') as f:
+        first_line = f.readline()
+        second_line = f.readline()
+        firmware = list(
+            filter(lambda token: token.startsWith('v'), first_line.split(" ")))[1]
+        sr = int(
+            list(filter(lambda token: token.isnumeric(), first_line.split(" ")))[0])
+        sid = second_line.split(" ")[-1]
+    return {
+        'VERSION_CODE': firmware,
+        'SAMPLING_RATE': sr,
+        'SENSOR_ID': sid
+    }
