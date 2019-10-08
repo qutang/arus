@@ -160,7 +160,7 @@ def read_actigraph_meta(filepath):
         first_line = f.readline()
         second_line = f.readline()
         firmware = list(
-            filter(lambda token: token.startsWith('v'), first_line.split(" ")))[1]
+            filter(lambda token: token.startswith('v'), first_line.split(" ")))[1]
         sr = int(
             list(filter(lambda token: token.isnumeric(), first_line.split(" ")))[0])
         sid = second_line.split(" ")[-1]
