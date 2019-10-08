@@ -55,7 +55,7 @@ def write_data_csv_no_pandas_(df, output_filepath, append=False, file_type='sens
     text = df.values
     header = ','.join(df.columns.values)
     if file_type == 'sensor':
-        fmt = ['%s'] + ['%f'] * (len(df.columns) - 1)
+        fmt = ['%s'] + ['%.3f'] * (len(df.columns) - 1)
     elif file_type == 'annotation':
         fmt = '%s'
     if append == False:
@@ -72,9 +72,10 @@ def write_data_csv_no_pandas_(df, output_filepath, append=False, file_type='sens
 def write_data_csv_(df, output_filepath, append=False):
     os.makedirs(os.path.dirname(output_filepath), exist_ok=True)
     if append == False:
-        df.to_csv(output_filepath, index=False)
+        df.to_csv(output_filepath, index=False, float_format='%.3f')
     else:
-        df.to_csv(output_filepath, index=False, header=False, mode='a')
+        df.to_csv(output_filepath, index=False, header=False,
+                  float_format='%.3f', mode='a')
 
 
 def write_data_csv(df, output_folder, pid, file_type, *,
