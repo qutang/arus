@@ -11,7 +11,7 @@ with open('requirements.txt', 'r') as fh:
 setuptools.setup(
     name="arus",
     license="GNU",
-    version="0.0.1.dev14",
+    version="0.0.1.dev15",
     author="Qu Tang",
     author_email="tang.q@husky.neu.edu",
     description="Activity Recognition with Ubiquitous Sensing",
