@@ -1,0 +1,43 @@
+[tool.poetry]
+name = "arus"
+version = "0.0.2"
+description = "Activity Recognition with Ubiquitous Sensing"
+authors = ["qutang <tqshelly@gmail.com>"]
+license = "GNU"
+readme = "README.md"
+repository = "https://github.com/qutang/arus"
+keywords = [
+    "ubiquitous computing", "activity recognition", "sensing", "data processing", "machine learning"
+]
+classifiers = [
+    "Topic :: Scientific/Engineering :: Human Machine Interfaces",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Scientific/Engineering :: Information Analysis",
+    "Topic :: Software Development :: Libraries :: Python Modules"
+]
+packages = [
+    { include = "arus" }
+]
+include = [
+    "examples/*",
+]
+
+
+[tool.poetry.dependencies]
+python = "^3.6"
+numpy = "^1.17"
+pandas = "^0.25.1"
+scipy = "^1.3"
+pathos = "^0.2.5"
+matplotlib = "^3.1"
+
+[tool.poetry.dev-dependencies]
+pylint = "^2.4"
+pytest = "^5.2"
+autopep8 = "^1.4"
+pdoc3 = "^0.7.1"
+twine = "^2.0"
+
+[build-system]
+requires = ["poetry>=0.12"]
+build-backend = "poetry.masonry.api"
