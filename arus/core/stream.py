@@ -17,10 +17,10 @@ Examples:
 
 import queue
 import threading
-from ..libs.mhealth_format.io import read_data_csv
-from ..libs.mhealth_format.io import read_actigraph_csv
-from ..libs.mhealth_format.data import rename_columns
-from ..libs.mhealth_format.path import extract_file_type
+from .libs.mhealth_format.io import read_data_csv
+from .libs.mhealth_format.io import read_actigraph_csv
+from .libs.mhealth_format.data import rename_columns
+from .libs.mhealth_format.path import extract_file_type
 import logging
 
 

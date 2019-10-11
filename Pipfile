@@ -4,7 +4,6 @@ url = "https://pypi.org/simple"
 verify_ssl = true
 
 [dev-packages]
-sphinx = "*"
 pylint = "*"
 pytest = "*"
 autopep8 = "*"
@@ -16,8 +15,8 @@ twine = "*"
 python_version = "3"
 
 [scripts]
-dev-doc="pdoc . --http localhost:1234 --template-dir templates"
-build-doc="pdoc --html --html-dir docs ."
+dev-doc="pdoc arus --http localhost:1234 --template-dir templates"
+build-doc="python build.py"
 build="python setup.py sdist bdist_wheel"
 publish="python -m twine upload --repository-url https://test.pypi.org/legacy/ dist/*"
 

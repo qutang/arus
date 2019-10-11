@@ -11,8 +11,8 @@ Examples:
 
 import queue
 import threading
-from ..libs.mhealth_format.io import write_data_csv
-from ..libs.mhealth_format.logging import display_start_and_stop_time
+from .libs.mhealth_format.io import write_data_csv
+from .libs.mhealth_format.logging import display_start_and_stop_time
 import logging
 from pathos.multiprocessing import ProcessPool
 from pathos.helpers import cpu_count

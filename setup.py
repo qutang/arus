@@ -1,14 +1,15 @@
-import setuptools
-import os
 
-with open("README.md", "r") as fh:
+import os
+from setuptools import setup, find_namespace_packages, find_packages
+
+with open(os.path.join(os.path.dirname(__file__), "README.md"), "r") as fh:
     long_description = fh.read()
 
-with open('requirements.txt', 'r') as fh:
+with open(os.path.join(os.path.dirname(__file__), "requirements.txt"), 'r') as fh:
     dependencies = fh.readlines()
     dependencies = [d.strip() for d in dependencies]
 
-setuptools.setup(
+setup(
     name="arus",
     license="GNU",
     version="0.0.1.dev16",
@@ -18,7 +19,7 @@ setuptools.setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/qutang/arus",
-    packages=setuptools.find_packages(),
+    packages=find_packages(),
     project_urls={
         'Documentation': 'https://github.com/qutang/arus',
         'Source': 'https://github.com/qutang/arus',
