@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
 <meta name="generator" content="pdoc 0.7.1" />
-<title>arus.core.libs.signal_processing.filtering API documentation</title>
+<title>arus.core.libs.dsp.filtering API documentation</title>
 <meta name="description" content="" />
 <link href='https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.0/normalize.min.css' rel='stylesheet'>
 <link href='https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/8.0.0/sanitize.min.css' rel='stylesheet'>
@@ -17,7 +17,7 @@
 <main>
 <article id="content">
 <header>
-<h1 class="title">Module <code>arus.core.libs.signal_processing.filtering</code></h1>
+<h1 class="title">Module <code>arus.core.libs.dsp.filtering</code></h1>
 </header>
 <section id="section-intro">
 <details class="source">
@@ -75,7 +75,7 @@ def resample(X, sr, new_sr):
 def resample_timestamps(ts, new_n):
     &#34;&#34;&#34;Resample timestamps to new sampling rate
 
-    This function should be used together with `arus.libs.signal_processing.filtering.resample`.
+    This function should be used together with `arus.libs.dsp.filtering.resample`.
 
     Args:
         ts (numpy.ndarray): A 1D numpy array storing timestamps in `np.datetime64` format
@@ -100,7 +100,7 @@ def resample_timestamps(ts, new_n):
 <section>
 <h2 class="section-title" id="header-functions">Functions</h2>
 <dl>
-<dt id="arus.core.libs.signal_processing.filtering.butterworth"><code class="name flex">
+<dt id="arus.core.libs.dsp.filtering.butterworth"><code class="name flex">
 <span>def <span class="ident">butterworth</span></span>(<span>X, sr, cut_offs, order=-1, filter_type='low')</span>
 </code></dt>
 <dd>
@@ -146,7 +146,7 @@ filter_type (str): type of the filter. Could be 'low', 'high', 'pass' or 'stop'<
     return result</code></pre>
 </details>
 </dd>
-<dt id="arus.core.libs.signal_processing.filtering.resample"><code class="name flex">
+<dt id="arus.core.libs.dsp.filtering.resample"><code class="name flex">
 <span>def <span class="ident">resample</span></span>(<span>X, sr, new_sr)</span>
 </code></dt>
 <dd>
@@ -186,12 +186,12 @@ filter_type (str): type of the filter. Could be 'low', 'high', 'pass' or 'stop'<
     return new_X</code></pre>
 </details>
 </dd>
-<dt id="arus.core.libs.signal_processing.filtering.resample_timestamps"><code class="name flex">
+<dt id="arus.core.libs.dsp.filtering.resample_timestamps"><code class="name flex">
 <span>def <span class="ident">resample_timestamps</span></span>(<span>ts, new_n)</span>
 </code></dt>
 <dd>
 <section class="desc"><p>Resample timestamps to new sampling rate</p>
-<p>This function should be used together with <code>arus.libs.signal_processing.filtering.resample</code>.</p>
+<p>This function should be used together with <code>arus.libs.dsp.filtering.resample</code>.</p>
 <h2 id="args">Args</h2>
 <dl>
 <dt><strong><code>ts</code></strong> :&ensp;<code>numpy.ndarray</code></dt>
@@ -209,7 +209,7 @@ filter_type (str): type of the filter. Could be 'low', 'high', 'pass' or 'stop'<
 <pre><code class="python">def resample_timestamps(ts, new_n):
     &#34;&#34;&#34;Resample timestamps to new sampling rate
 
-    This function should be used together with `arus.libs.signal_processing.filtering.resample`.
+    This function should be used together with `arus.libs.dsp.filtering.resample`.
 
     Args:
         ts (numpy.ndarray): A 1D numpy array storing timestamps in `np.datetime64` format
@@ -240,14 +240,14 @@ filter_type (str): type of the filter. Could be 'low', 'high', 'pass' or 'stop'<
 <ul id="index">
 <li><h3>Super-module</h3>
 <ul>
-<li><code><a title="arus.core.libs.signal_processing" href="index.html">arus.core.libs.signal_processing</a></code></li>
+<li><code><a title="arus.core.libs.dsp" href="index.html">arus.core.libs.dsp</a></code></li>
 </ul>
 </li>
 <li><h3><a href="#header-functions">Functions</a></h3>
 <ul class="">
-<li><code><a title="arus.core.libs.signal_processing.filtering.butterworth" href="#arus.core.libs.signal_processing.filtering.butterworth">butterworth</a></code></li>
-<li><code><a title="arus.core.libs.signal_processing.filtering.resample" href="#arus.core.libs.signal_processing.filtering.resample">resample</a></code></li>
-<li><code><a title="arus.core.libs.signal_processing.filtering.resample_timestamps" href="#arus.core.libs.signal_processing.filtering.resample_timestamps">resample_timestamps</a></code></li>
+<li><code><a title="arus.core.libs.dsp.filtering.butterworth" href="#arus.core.libs.dsp.filtering.butterworth">butterworth</a></code></li>
+<li><code><a title="arus.core.libs.dsp.filtering.resample" href="#arus.core.libs.dsp.filtering.resample">resample</a></code></li>
+<li><code><a title="arus.core.libs.dsp.filtering.resample_timestamps" href="#arus.core.libs.dsp.filtering.resample_timestamps">resample_timestamps</a></code></li>
 </ul>
 </li>
 </ul>

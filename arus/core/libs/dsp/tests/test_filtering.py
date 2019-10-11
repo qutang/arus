@@ -1,6 +1,6 @@
 import pytest
 import numpy as np
-import arus.core.libs.signal_processing.filtering as filtering
+import arus.core.libs.dsp.filtering as filtering
 import itertools
 import matplotlib.pyplot as plt
 
