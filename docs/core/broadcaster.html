@@ -8,9 +8,9 @@
 <meta name="description" content="Module that sends results or intermediate results to external pipe (e.g., file, network port, socket and etc.) using separate thread or process …" />
 <link href='https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.0/normalize.min.css' rel='stylesheet'>
 <link href='https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/8.0.0/sanitize.min.css' rel='stylesheet'>
-<link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github.min.css" rel="stylesheet">
-<style>.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}a{color:#058;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#e82}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{font-weight:bold}#index h4 + ul{margin-bottom:.6em}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}.admonition{padding:.1em .5em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
-<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github-gist.min.css" rel="stylesheet">
+<style>.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}a{color:#058;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#e82}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{font-weight:bold}#index h4 + ul{margin-bottom:.6em}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase;cursor:pointer}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}.admonition{padding:.1em .5em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:0.9em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
 <style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
 </head>
 <body>
@@ -54,9 +54,7 @@ if __name__ == &quot;__main__&quot;:
     logging.info('finished')
 </code></pre>
 <details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
+<summary>Source code</summary>
 <pre><code class="python">&#34;&#34;&#34; Module that sends results or intermediate results to external pipe (e.g., file, network port, socket and etc.) using separate thread or process.
 
 Examples:
@@ -311,9 +309,7 @@ class MhealthFileBroadcaster(Broadcaster):
 <dd>The name of the broadcaster. If using broadcaster in thread mode, this will be the name of the thread. Defaults to 'default-broadcaster'.</dd>
 </dl></section>
 <details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
+<summary>Source code</summary>
 <pre><code class="python">class Broadcaster:
     &#34;&#34;&#34;Base class to define a broadcaster that can accept data and broadcast it to external pipes on a separate thread or process via a FIFO queue.
 
@@ -466,9 +462,7 @@ class MhealthFileBroadcaster(Broadcaster):
 <dd>An iterator wrapping around the queue object</dd>
 </dl></section>
 <details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
+<summary>Source code</summary>
 <pre><code class="python">@staticmethod
 def make_iterator_from_queue(q):
     &#34;&#34;&#34;Static utility method to turn any queue object into an iterator.
@@ -507,9 +501,7 @@ def make_iterator_from_queue(q):
 <dd>name of the broadcaster.</dd>
 </dl></section>
 <details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
+<summary>Source code</summary>
 <pre><code class="python">@property
 def name(self):
     &#34;&#34;&#34;Name of the broadcaster
@@ -523,35 +515,6 @@ def name(self):
 </dl>
 <h3>Methods</h3>
 <dl>
-<dt id="arus.core.broadcaster.Broadcaster.broadcast_"><code class="name flex">
-<span>def <span class="ident">broadcast_</span></span>(<span>self, **kwargs)</span>
-</code></dt>
-<dd>
-<section class="desc"><p>The broadcast function that outputs the received data to an external receiver</p>
-<p>For thread mode, use self._get_iterator() to get the data to be broadcasted.</p>
-<p>For process mode, the data queue can be accessed with name <code>queue</code> in the <code>kwargs</code> arguments. One can use static method <a title="arus.core.broadcaster.Broadcaster.make_iterator_from_queue" href="#arus.core.broadcaster.Broadcaster.make_iterator_from_queue"><code>Broadcaster.make_iterator_from_queue()</code></a> to create an iterator for this queue.</p>
-<h2 id="raises">Raises</h2>
-<dl>
-<dt><strong><code>NotImplementedError</code></strong></dt>
-<dd>raised when calling with an instance of the base class.</dd>
-</dl></section>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def broadcast_(self, **kwargs):
-    &#34;&#34;&#34;The broadcast function that outputs the received data to an external receiver
-
-    For thread mode, use self._get_iterator() to get the data to be broadcasted.
-
-    For process mode, the data queue can be accessed with name `queue` in the `kwargs` arguments. One can use static method `Broadcaster.make_iterator_from_queue` to create an iterator for this queue.
-
-    Raises:
-        NotImplementedError: raised when calling with an instance of the base class.
-    &#34;&#34;&#34;
-    raise NotImplementedError(&#39;Subclass must implement this method&#39;)</code></pre>
-</details>
-</dd>
 <dt id="arus.core.broadcaster.Broadcaster.send_data"><code class="name flex">
 <span>def <span class="ident">send_data</span></span>(<span>self, data_obj)</span>
 </code></dt>
@@ -563,9 +526,7 @@ def name(self):
 <dd>Can be any type of data. Subclass may restrict the type by overriding it.</dd>
 </dl></section>
 <details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
+<summary>Source code</summary>
 <pre><code class="python">def send_data(self, data_obj):
     &#34;&#34;&#34;Call this function to pass any data object to the broadcaster AFTER it starts.
 
@@ -589,9 +550,7 @@ def name(self):
 <dd>keyword arguments that will be passed to the underlying broadcast function</dd>
 </dl></section>
 <details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
+<summary>Source code</summary>
 <pre><code class="python">def start(self, scheduler=&#39;thread&#39;, **kwargs):
     &#34;&#34;&#34;Method to start broadcasting data from the queue.
 
@@ -624,9 +583,7 @@ def name(self):
 <dd>Always <code>True</code>.</dd>
 </dl></section>
 <details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
+<summary>Source code</summary>
 <pre><code class="python">def wait_to_finish(self):
     &#34;&#34;&#34;Function to be called after sending all data to the broadcaster and wait for their completion.
 
@@ -639,6 +596,33 @@ def name(self):
     elif self._scheduler == &#39;process&#39;:
         self._broadcasting_runner.get()
     return True</code></pre>
+</details>
+</dd>
+<dt id="arus.core.broadcaster.Broadcaster.broadcast_"><code class="name flex">
+<span>def <span class="ident">broadcast_</span></span>(<span>self, **kwargs)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>The broadcast function that outputs the received data to an external receiver</p>
+<p>For thread mode, use self._get_iterator() to get the data to be broadcasted.</p>
+<p>For process mode, the data queue can be accessed with name <code>queue</code> in the <code>kwargs</code> arguments. One can use static method <a title="arus.core.broadcaster.Broadcaster.make_iterator_from_queue" href="#arus.core.broadcaster.Broadcaster.make_iterator_from_queue"><code>Broadcaster.make_iterator_from_queue()</code></a> to create an iterator for this queue.</p>
+<h2 id="raises">Raises</h2>
+<dl>
+<dt><strong><code>NotImplementedError</code></strong></dt>
+<dd>raised when calling with an instance of the base class.</dd>
+</dl></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def broadcast_(self, **kwargs):
+    &#34;&#34;&#34;The broadcast function that outputs the received data to an external receiver
+
+    For thread mode, use self._get_iterator() to get the data to be broadcasted.
+
+    For process mode, the data queue can be accessed with name `queue` in the `kwargs` arguments. One can use static method `Broadcaster.make_iterator_from_queue` to create an iterator for this queue.
+
+    Raises:
+        NotImplementedError: raised when calling with an instance of the base class.
+    &#34;&#34;&#34;
+    raise NotImplementedError(&#39;Subclass must implement this method&#39;)</code></pre>
 </details>
 </dd>
 </dl>
@@ -690,9 +674,7 @@ logging.info('finished')
 <dd>The name of the broadcaster. If using broadcaster in thread mode, this will be the name of the thread. Defaults to 'default-broadcaster'.</dd>
 </dl></section>
 <details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
+<summary>Source code</summary>
 <pre><code class="python">class MhealthFileBroadcaster(Broadcaster):
     &#34;&#34;&#34;A broadcaster that saves received data to files in mhealth format. See `arus.libs.mhealth_format.io.write_data_csv` for acceptable `kwargs` when starting the broadcaster.
 
@@ -772,6 +754,30 @@ logging.info('finished')
 <ul class="hlist">
 <li><a title="arus.core.broadcaster.Broadcaster" href="#arus.core.broadcaster.Broadcaster">Broadcaster</a></li>
 </ul>
+<h3>Static methods</h3>
+<dl>
+<dt id="arus.core.broadcaster.MhealthFileBroadcaster.make_iterator_from_queue"><code class="name flex">
+<span>def <span class="ident">make_iterator_from_queue</span></span>(<span>q)</span>
+</code></dt>
+<dd>
+<p class="inheritance">
+<em>Inherited from:</em>
+<code><a title="arus.core.broadcaster.Broadcaster" href="#arus.core.broadcaster.Broadcaster">Broadcaster</a></code>.<code><a title="arus.core.broadcaster.Broadcaster.make_iterator_from_queue" href="#arus.core.broadcaster.Broadcaster.make_iterator_from_queue">make_iterator_from_queue</a></code>
+</p>
+<section class="desc inherited"><p>Static utility method to turn any queue object into an iterator …</p></section>
+</dd>
+</dl>
+<h3>Instance variables</h3>
+<dl>
+<dt id="arus.core.broadcaster.MhealthFileBroadcaster.name"><code class="name">var <span class="ident">name</span></code></dt>
+<dd>
+<p class="inheritance">
+<em>Inherited from:</em>
+<code><a title="arus.core.broadcaster.Broadcaster" href="#arus.core.broadcaster.Broadcaster">Broadcaster</a></code>.<code><a title="arus.core.broadcaster.Broadcaster.name" href="#arus.core.broadcaster.Broadcaster.name">name</a></code>
+</p>
+<section class="desc inherited"><p>Name of the broadcaster …</p></section>
+</dd>
+</dl>
 <h3>Methods</h3>
 <dl>
 <dt id="arus.core.broadcaster.MhealthFileBroadcaster.broadcast_"><code class="name flex">
@@ -788,9 +794,7 @@ logging.info('finished')
 <dd>See <code>arus.libs.mhealth_format.io.write_data_csv</code> for all required and acceptable arguments.</dd>
 </dl></section>
 <details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
+<summary>Source code</summary>
 <pre><code class="python">def broadcast_(self, *, output_folder=&#39;./default-mhealth-dataset&#39;, **kwargs):
     &#34;&#34;&#34;Implementation of the broadcasting mechanism for the class.
 
@@ -807,19 +811,37 @@ logging.info('finished')
         return self._broadcast_in_thread(output_folder=output_folder, **kwargs)</code></pre>
 </details>
 </dd>
+<dt id="arus.core.broadcaster.MhealthFileBroadcaster.send_data"><code class="name flex">
+<span>def <span class="ident">send_data</span></span>(<span>self, data_obj)</span>
+</code></dt>
+<dd>
+<p class="inheritance">
+<em>Inherited from:</em>
+<code><a title="arus.core.broadcaster.Broadcaster" href="#arus.core.broadcaster.Broadcaster">Broadcaster</a></code>.<code><a title="arus.core.broadcaster.Broadcaster.send_data" href="#arus.core.broadcaster.Broadcaster.send_data">send_data</a></code>
+</p>
+<section class="desc inherited"><p>Call this function to pass any data object to the broadcaster AFTER it starts …</p></section>
+</dd>
+<dt id="arus.core.broadcaster.MhealthFileBroadcaster.start"><code class="name flex">
+<span>def <span class="ident">start</span></span>(<span>self, scheduler='thread', **kwargs)</span>
+</code></dt>
+<dd>
+<p class="inheritance">
+<em>Inherited from:</em>
+<code><a title="arus.core.broadcaster.Broadcaster" href="#arus.core.broadcaster.Broadcaster">Broadcaster</a></code>.<code><a title="arus.core.broadcaster.Broadcaster.start" href="#arus.core.broadcaster.Broadcaster.start">start</a></code>
+</p>
+<section class="desc inherited"><p>Method to start broadcasting data from the queue …</p></section>
+</dd>
+<dt id="arus.core.broadcaster.MhealthFileBroadcaster.wait_to_finish"><code class="name flex">
+<span>def <span class="ident">wait_to_finish</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<p class="inheritance">
+<em>Inherited from:</em>
+<code><a title="arus.core.broadcaster.Broadcaster" href="#arus.core.broadcaster.Broadcaster">Broadcaster</a></code>.<code><a title="arus.core.broadcaster.Broadcaster.wait_to_finish" href="#arus.core.broadcaster.Broadcaster.wait_to_finish">wait_to_finish</a></code>
+</p>
+<section class="desc inherited"><p>Function to be called after sending all data to the broadcaster and wait for their completion …</p></section>
+</dd>
 </dl>
-<h3>Inherited members</h3>
-<ul class="hlist">
-<li><code><b><a title="arus.core.broadcaster.Broadcaster" href="#arus.core.broadcaster.Broadcaster">Broadcaster</a></b></code>:
-<ul class="hlist">
-<li><code><a title="arus.core.broadcaster.Broadcaster.make_iterator_from_queue" href="#arus.core.broadcaster.Broadcaster.make_iterator_from_queue">make_iterator_from_queue</a></code></li>
-<li><code><a title="arus.core.broadcaster.Broadcaster.name" href="#arus.core.broadcaster.Broadcaster.name">name</a></code></li>
-<li><code><a title="arus.core.broadcaster.Broadcaster.send_data" href="#arus.core.broadcaster.Broadcaster.send_data">send_data</a></code></li>
-<li><code><a title="arus.core.broadcaster.Broadcaster.start" href="#arus.core.broadcaster.Broadcaster.start">start</a></code></li>
-<li><code><a title="arus.core.broadcaster.Broadcaster.wait_to_finish" href="#arus.core.broadcaster.Broadcaster.wait_to_finish">wait_to_finish</a></code></li>
-</ul>
-</li>
-</ul>
 </dd>
 </dl>
 </section>
@@ -840,18 +862,21 @@ logging.info('finished')
 <li>
 <h4><code><a title="arus.core.broadcaster.Broadcaster" href="#arus.core.broadcaster.Broadcaster">Broadcaster</a></code></h4>
 <ul class="">
-<li><code><a title="arus.core.broadcaster.Broadcaster.broadcast_" href="#arus.core.broadcaster.Broadcaster.broadcast_">broadcast_</a></code></li>
 <li><code><a title="arus.core.broadcaster.Broadcaster.make_iterator_from_queue" href="#arus.core.broadcaster.Broadcaster.make_iterator_from_queue">make_iterator_from_queue</a></code></li>
-<li><code><a title="arus.core.broadcaster.Broadcaster.name" href="#arus.core.broadcaster.Broadcaster.name">name</a></code></li>
 <li><code><a title="arus.core.broadcaster.Broadcaster.send_data" href="#arus.core.broadcaster.Broadcaster.send_data">send_data</a></code></li>
 <li><code><a title="arus.core.broadcaster.Broadcaster.start" href="#arus.core.broadcaster.Broadcaster.start">start</a></code></li>
 <li><code><a title="arus.core.broadcaster.Broadcaster.wait_to_finish" href="#arus.core.broadcaster.Broadcaster.wait_to_finish">wait_to_finish</a></code></li>
+<li><code><a title="arus.core.broadcaster.Broadcaster.broadcast_" href="#arus.core.broadcaster.Broadcaster.broadcast_">broadcast_</a></code></li>
 </ul>
 </li>
 <li>
 <h4><code><a title="arus.core.broadcaster.MhealthFileBroadcaster" href="#arus.core.broadcaster.MhealthFileBroadcaster">MhealthFileBroadcaster</a></code></h4>
 <ul class="">
+<li><code><a title="arus.core.broadcaster.MhealthFileBroadcaster.make_iterator_from_queue" href="#arus.core.broadcaster.MhealthFileBroadcaster.make_iterator_from_queue">make_iterator_from_queue</a></code></li>
 <li><code><a title="arus.core.broadcaster.MhealthFileBroadcaster.broadcast_" href="#arus.core.broadcaster.MhealthFileBroadcaster.broadcast_">broadcast_</a></code></li>
+<li><code><a title="arus.core.broadcaster.MhealthFileBroadcaster.send_data" href="#arus.core.broadcaster.MhealthFileBroadcaster.send_data">send_data</a></code></li>
+<li><code><a title="arus.core.broadcaster.MhealthFileBroadcaster.start" href="#arus.core.broadcaster.MhealthFileBroadcaster.start">start</a></code></li>
+<li><code><a title="arus.core.broadcaster.MhealthFileBroadcaster.wait_to_finish" href="#arus.core.broadcaster.MhealthFileBroadcaster.wait_to_finish">wait_to_finish</a></code></li>
 </ul>
 </li>
 </ul>
@@ -860,6 +885,7 @@ logging.info('finished')
 </nav>
 </main>
 <footer id="footer">
+<a href='https://qutang.github.io'>Qu Tang © 2019</a>
 <p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.7.1</a>.</p>
 </footer>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
