@@ -12,7 +12,7 @@ with open(os.path.join(os.path.dirname(__file__), "requirements.txt"), 'r') as f
 setup(
     name="arus",
     license="GNU",
-    version="0.0.1.dev16",
+    version="0.0.2",
     author="Qu Tang",
     author_email="tang.q@husky.neu.edu",
     description="Activity Recognition with Ubiquitous Sensing",
