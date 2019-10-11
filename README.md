@@ -10,7 +10,6 @@ ARUS python package provides a set of functional APIs and classes to manage and 
 
 ```bash
 python >= 3.6
-poetry >= 0.12.17
 ```
 
 ### Installation
