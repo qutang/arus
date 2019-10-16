@@ -21,6 +21,10 @@ jobs:
       after_success:
         - codecov
     - stage: deploy
+      install:
+        - pip install --upgrade pip
+        - pip install poetry
+        - poetry install -v
       before_deploy:
         - poetry build
       deploy:
