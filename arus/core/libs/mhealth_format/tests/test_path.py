@@ -1,4 +1,5 @@
 from .. import path
+from ... import date
 
 
 def test_is_mhealth_filepath():
@@ -221,12 +222,14 @@ def test_get_file_timestamp():
     ]
 
     for test_case in sensor_test_cases:
-        assert path.extract_file_timestamp(
-            test_case).timestamp() == 1447966800.0
+        ts = path.extract_file_timestamp(test_case, ignore_tz=True)
+        ts_unix = date.datetime2unix(ts)
+        assert ts_unix == 1447948800.0
 
     for test_case in annotation_test_cases:
-        assert path.extract_file_timestamp(
-            test_case).timestamp() == 1447966800.0
+        ts = path.extract_file_timestamp(test_case, ignore_tz=True)
+        ts_unix = date.datetime2unix(ts)
+        assert ts_unix == 1447948800.0
 
 
 def test_get_timezone_name():

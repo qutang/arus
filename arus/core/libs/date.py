@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-from datetime import datetime
+from datetime import datetime, timedelta
 
 
 def parse_timestamp(ts):
@@ -13,3 +13,7 @@ def parse_timestamp(ts):
     elif type(ts) == int or type(ts) == float:
         result = pd.Timestamp.fromtimestamp(ts)
     return result
+
+
+def datetime2unix(ts):
+    return (ts - datetime(1970, 1, 1)) / timedelta(seconds=1)
