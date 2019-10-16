@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "arus"
-version = "0.0.8"
+version = "0.1.0"
 description = "Activity Recognition with Ubiquitous Sensing"
 authors = ["qutang <tqshelly@gmail.com>"]
 license = "GNU"
