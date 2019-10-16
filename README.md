@@ -3,6 +3,8 @@
 __arus__ python package provides a computation framework to manage and process ubiquitous sensory data for activity recognition.
 
 [![PyPI version](https://badge.fury.io/py/arus.svg)](https://badge.fury.io/py/arus)
+[![Build Status](https://travis-ci.org/qutang/arus.svg?branch=master)](https://travis-ci.org/qutang/arus)
+[![codecov](https://codecov.io/gh/qutang/arus/branch/master/graph/badge.svg)](https://codecov.io/gh/qutang/arus)
 
 ## Get started
 
