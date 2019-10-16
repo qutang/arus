@@ -30,7 +30,13 @@ def atleast_scalar(arg):
         result = np.float64(arg)
     else:
         result = np.array(arg, dtype=&#39;float64&#39;)
-    return result</code></pre>
+    return result
+
+
+def format_arr(arr):
+    arr = np.atleast_2d(arr)
+    arr = np.float64(arr)
+    return arr</code></pre>
 </details>
 </section>
 <section>
@@ -55,6 +61,19 @@ def atleast_scalar(arg):
     return result</code></pre>
 </details>
 </dd>
+<dt id="arus.core.libs.num.format_arr"><code class="name flex">
+<span>def <span class="ident">format_arr</span></span>(<span>arr)</span>
+</code></dt>
+<dd>
+<section class="desc"></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def format_arr(arr):
+    arr = np.atleast_2d(arr)
+    arr = np.float64(arr)
+    return arr</code></pre>
+</details>
+</dd>
 </dl>
 </section>
 <section>
@@ -74,6 +93,7 @@ def atleast_scalar(arg):
 <li><h3><a href="#header-functions">Functions</a></h3>
 <ul class="">
 <li><code><a title="arus.core.libs.num.atleast_scalar" href="#arus.core.libs.num.atleast_scalar">atleast_scalar</a></code></li>
+<li><code><a title="arus.core.libs.num.format_arr" href="#arus.core.libs.num.format_arr">format_arr</a></code></li>
 </ul>
 </li>
 </ul>

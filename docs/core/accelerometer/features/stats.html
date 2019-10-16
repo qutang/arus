@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
 <meta name="generator" content="pdoc 0.7.1" />
-<title>arus.core.accelerometer.tests.test_transformation API documentation</title>
-<meta name="description" content="" />
+<title>arus.core.accelerometer.features.stats API documentation</title>
+<meta name="description" content="Computing features of descriptive statistics for accelerometer data …" />
 <link href='https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.0/normalize.min.css' rel='stylesheet'>
 <link href='https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/8.0.0/sanitize.min.css' rel='stylesheet'>
 <link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github-gist.min.css" rel="stylesheet">
@@ -17,50 +17,67 @@
 <main>
 <article id="content">
 <header>
-<h1 class="title">Module <code>arus.core.accelerometer.tests.test_transformation</code></h1>
+<h1 class="title">Module <code>arus.core.accelerometer.features.stats</code></h1>
 </header>
 <section id="section-intro">
+<p>Computing features of descriptive statistics for accelerometer data</p>
+<p>Author: Qu Tang</p>
+<p>Date: Oct 16, 2019</p>
 <details class="source">
 <summary>Source code</summary>
-<pre><code class="python">import numpy as np
-from ..transformation import vector_magnitude, flip_and_swap
+<pre><code class="python">&#34;&#34;&#34;
+
+Computing features of descriptive statistics for accelerometer data
+
+Author: Qu Tang
+
+Date: Oct 16, 2019
+
+&#34;&#34;&#34;
+import numpy as np
+from ...libs.num import format_arr
 
 
-def test_vector_magnitude():
-    # test with a single row of data
-    X = np.array([[1., 1., 1.]])
-    result = vector_magnitude(X)
-    assert np.allclose(result, np.sqrt(3), atol=0.001)
-    # test with an array
-    X = np.array([[1., 1., 1.], [1., 1., 1.]])
-    result = vector_magnitude(X)
-    assert np.allclose(result, np.array(
-        [[np.sqrt(3)], [np.sqrt(3)]]), atol=0.001)
-    # test with NaN data
-    X = np.array([[1., np.nan, 1.]])
-    result = vector_magnitude(X)
-    assert np.isnan(result)
+def mean(X):
+    X = format_arr(X)
+    result = np.nanmean(X, axis=0, keepdims=True)
+    return result, &#39;MEAN&#39;
 
 
-def test_flip_and_swap():
-    # test on 1d data
-    # test with flip
-    X = np.array([[1., 1., 1.]])
-    result = flip_and_swap(X, x_flip=&#39;x&#39;, y_flip=&#39;y&#39;, z_flip=&#39;-z&#39;)
-    assert np.allclose(result, np.array([[1., 1., -1.]]), atol=0.001)
-    # test with swap
-    X = np.array([[1., 2., 3.]])
-    result = flip_and_swap(X, x_flip=&#39;y&#39;, y_flip=&#39;x&#39;, z_flip=&#39;z&#39;)
-    assert np.allclose(result, np.array([[2., 1., 3.]]), atol=0.001)
-    # test with flip and swap
-    X = np.array([[1., 2., 3.]])
-    result = flip_and_swap(X, x_flip=&#39;y&#39;, y_flip=&#39;-x&#39;, z_flip=&#39;z&#39;)
-    assert np.allclose(result, np.array([[2., -1., 3.]]), atol=0.001)
-    # test on 2d data
-    X = np.array([[1., 1., 1.], [1, 2, 3]])
-    result = flip_and_swap(X, x_flip=&#39;y&#39;, y_flip=&#39;-x&#39;, z_flip=&#39;z&#39;)
-    assert np.allclose(result, np.array(
-        [[1., -1., 1.], [2., -1., 3.]]), atol=0.001)</code></pre>
+def std(X):
+    X = format_arr(X)
+    result = np.nanstd(X, axis=0, ddof=1, keepdims=True)
+    return result, &#39;STD&#39;
+
+
+def max_value(X):
+    X = format_arr(X)
+    result = np.nanmax(X, axis=0, keepdims=True)
+    return result, &#34;MAX&#34;
+
+
+def min_value(X):
+    X = format_arr(X)
+    result = np.nanmin(X, axis=0, keepdims=True)
+    return result, &#34;MIN&#34;
+
+
+def range(X):
+    X = format_arr(X)
+    result = max_value(X)[0] - min_value(X)[0]
+    return result, &#34;RANGE&#34;
+
+
+def abs_max_value(X):
+    X = format_arr(X)
+    result = np.nanmax(np.abs(X), axis=0, keepdims=True)
+    return result, &#34;ABS_MAX&#34;
+
+
+def abs_min_value(X):
+    X = format_arr(X)
+    result = np.nanmin(np.abs(X), axis=0, keepdims=True)
+    return result, &#34;ABS_MIN&#34;</code></pre>
 </details>
 </section>
 <section>
@@ -70,55 +87,95 @@ def test_flip_and_swap():
 <section>
 <h2 class="section-title" id="header-functions">Functions</h2>
 <dl>
-<dt id="arus.core.accelerometer.tests.test_transformation.test_vector_magnitude"><code class="name flex">
-<span>def <span class="ident">test_vector_magnitude</span></span>(<span>)</span>
+<dt id="arus.core.accelerometer.features.stats.mean"><code class="name flex">
+<span>def <span class="ident">mean</span></span>(<span>X)</span>
 </code></dt>
 <dd>
 <section class="desc"></section>
 <details class="source">
 <summary>Source code</summary>
-<pre><code class="python">def test_vector_magnitude():
-    # test with a single row of data
-    X = np.array([[1., 1., 1.]])
-    result = vector_magnitude(X)
-    assert np.allclose(result, np.sqrt(3), atol=0.001)
-    # test with an array
-    X = np.array([[1., 1., 1.], [1., 1., 1.]])
-    result = vector_magnitude(X)
-    assert np.allclose(result, np.array(
-        [[np.sqrt(3)], [np.sqrt(3)]]), atol=0.001)
-    # test with NaN data
-    X = np.array([[1., np.nan, 1.]])
-    result = vector_magnitude(X)
-    assert np.isnan(result)</code></pre>
+<pre><code class="python">def mean(X):
+    X = format_arr(X)
+    result = np.nanmean(X, axis=0, keepdims=True)
+    return result, &#39;MEAN&#39;</code></pre>
 </details>
 </dd>
-<dt id="arus.core.accelerometer.tests.test_transformation.test_flip_and_swap"><code class="name flex">
-<span>def <span class="ident">test_flip_and_swap</span></span>(<span>)</span>
+<dt id="arus.core.accelerometer.features.stats.std"><code class="name flex">
+<span>def <span class="ident">std</span></span>(<span>X)</span>
 </code></dt>
 <dd>
 <section class="desc"></section>
 <details class="source">
 <summary>Source code</summary>
-<pre><code class="python">def test_flip_and_swap():
-    # test on 1d data
-    # test with flip
-    X = np.array([[1., 1., 1.]])
-    result = flip_and_swap(X, x_flip=&#39;x&#39;, y_flip=&#39;y&#39;, z_flip=&#39;-z&#39;)
-    assert np.allclose(result, np.array([[1., 1., -1.]]), atol=0.001)
-    # test with swap
-    X = np.array([[1., 2., 3.]])
-    result = flip_and_swap(X, x_flip=&#39;y&#39;, y_flip=&#39;x&#39;, z_flip=&#39;z&#39;)
-    assert np.allclose(result, np.array([[2., 1., 3.]]), atol=0.001)
-    # test with flip and swap
-    X = np.array([[1., 2., 3.]])
-    result = flip_and_swap(X, x_flip=&#39;y&#39;, y_flip=&#39;-x&#39;, z_flip=&#39;z&#39;)
-    assert np.allclose(result, np.array([[2., -1., 3.]]), atol=0.001)
-    # test on 2d data
-    X = np.array([[1., 1., 1.], [1, 2, 3]])
-    result = flip_and_swap(X, x_flip=&#39;y&#39;, y_flip=&#39;-x&#39;, z_flip=&#39;z&#39;)
-    assert np.allclose(result, np.array(
-        [[1., -1., 1.], [2., -1., 3.]]), atol=0.001)</code></pre>
+<pre><code class="python">def std(X):
+    X = format_arr(X)
+    result = np.nanstd(X, axis=0, ddof=1, keepdims=True)
+    return result, &#39;STD&#39;</code></pre>
+</details>
+</dd>
+<dt id="arus.core.accelerometer.features.stats.max_value"><code class="name flex">
+<span>def <span class="ident">max_value</span></span>(<span>X)</span>
+</code></dt>
+<dd>
+<section class="desc"></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def max_value(X):
+    X = format_arr(X)
+    result = np.nanmax(X, axis=0, keepdims=True)
+    return result, &#34;MAX&#34;</code></pre>
+</details>
+</dd>
+<dt id="arus.core.accelerometer.features.stats.min_value"><code class="name flex">
+<span>def <span class="ident">min_value</span></span>(<span>X)</span>
+</code></dt>
+<dd>
+<section class="desc"></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def min_value(X):
+    X = format_arr(X)
+    result = np.nanmin(X, axis=0, keepdims=True)
+    return result, &#34;MIN&#34;</code></pre>
+</details>
+</dd>
+<dt id="arus.core.accelerometer.features.stats.range"><code class="name flex">
+<span>def <span class="ident">range</span></span>(<span>X)</span>
+</code></dt>
+<dd>
+<section class="desc"></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def range(X):
+    X = format_arr(X)
+    result = max_value(X)[0] - min_value(X)[0]
+    return result, &#34;RANGE&#34;</code></pre>
+</details>
+</dd>
+<dt id="arus.core.accelerometer.features.stats.abs_max_value"><code class="name flex">
+<span>def <span class="ident">abs_max_value</span></span>(<span>X)</span>
+</code></dt>
+<dd>
+<section class="desc"></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def abs_max_value(X):
+    X = format_arr(X)
+    result = np.nanmax(np.abs(X), axis=0, keepdims=True)
+    return result, &#34;ABS_MAX&#34;</code></pre>
+</details>
+</dd>
+<dt id="arus.core.accelerometer.features.stats.abs_min_value"><code class="name flex">
+<span>def <span class="ident">abs_min_value</span></span>(<span>X)</span>
+</code></dt>
+<dd>
+<section class="desc"></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def abs_min_value(X):
+    X = format_arr(X)
+    result = np.nanmin(np.abs(X), axis=0, keepdims=True)
+    return result, &#34;ABS_MIN&#34;</code></pre>
 </details>
 </dd>
 </dl>
@@ -134,13 +191,18 @@ def test_flip_and_swap():
 <ul id="index">
 <li><h3>Super-module</h3>
 <ul>
-<li><code><a title="arus.core.accelerometer.tests" href="index.html">arus.core.accelerometer.tests</a></code></li>
+<li><code><a title="arus.core.accelerometer.features" href="index.html">arus.core.accelerometer.features</a></code></li>
 </ul>
 </li>
 <li><h3><a href="#header-functions">Functions</a></h3>
-<ul class="">
-<li><code><a title="arus.core.accelerometer.tests.test_transformation.test_vector_magnitude" href="#arus.core.accelerometer.tests.test_transformation.test_vector_magnitude">test_vector_magnitude</a></code></li>
-<li><code><a title="arus.core.accelerometer.tests.test_transformation.test_flip_and_swap" href="#arus.core.accelerometer.tests.test_transformation.test_flip_and_swap">test_flip_and_swap</a></code></li>
+<ul class="two-column">
+<li><code><a title="arus.core.accelerometer.features.stats.mean" href="#arus.core.accelerometer.features.stats.mean">mean</a></code></li>
+<li><code><a title="arus.core.accelerometer.features.stats.std" href="#arus.core.accelerometer.features.stats.std">std</a></code></li>
+<li><code><a title="arus.core.accelerometer.features.stats.max_value" href="#arus.core.accelerometer.features.stats.max_value">max_value</a></code></li>
+<li><code><a title="arus.core.accelerometer.features.stats.min_value" href="#arus.core.accelerometer.features.stats.min_value">min_value</a></code></li>
+<li><code><a title="arus.core.accelerometer.features.stats.range" href="#arus.core.accelerometer.features.stats.range">range</a></code></li>
+<li><code><a title="arus.core.accelerometer.features.stats.abs_max_value" href="#arus.core.accelerometer.features.stats.abs_max_value">abs_max_value</a></code></li>
+<li><code><a title="arus.core.accelerometer.features.stats.abs_min_value" href="#arus.core.accelerometer.features.stats.abs_min_value">abs_min_value</a></code></li>
 </ul>
 </li>
 </ul>
