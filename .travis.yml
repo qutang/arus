@@ -12,10 +12,10 @@ jobs:
       language: shell       # 'language: python' is an error on Travis CI Windows
       before_install:
         - choco install python --version 3.6.5
-        - python -m pip install --upgrade pip
+        - python3 -m pip3 install --upgrade pip3
       env: PATH=/c/Python37:/c/Python37/Scripts:$PATH
 install:
-  - pip3 install --upgrade pip
+  - pip3 install --upgrade pip3
   - pip3 install poetry
   - poetry install -v
 script:
