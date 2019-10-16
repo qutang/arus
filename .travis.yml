@@ -1,35 +1,32 @@
 language: python
-python: "3.6"
-dist: xenial
-
-stages:
-  - test
-  - deploy
-
-cache:
-  pip: true
-
 jobs:
   include:
-    - stage: test
-      install:
-        - pip install --upgrade pip
-        - pip install poetry
-        - poetry install -v
-      script:
-        - pytest --cov arus
-      after_success:
-        - codecov
-    - stage: deploy
-      install:
-        - pip install --upgrade pip
-        - pip install poetry
-        - poetry install -v
-      before_deploy:
-        - poetry build
-      deploy:
-        provider: pypi
-        user: $PYPI_USER
-        password: $PYPI_PASS
-        skip_existing: true
-        skip_cleanup: true
+    - name: "Python 3.6 on Xenial Linux"
+      python: 3.6           # this works for Linux but is ignored on macOS or Windows
+    - name: "Python 3.6.5 on macOS"
+      os: osx
+      osx_image: xcode11    # Python 3.7.4 running on macOS 10.14.4
+      language: shell       # 'language: python' is an error on Travis CI macOS
+    - name: "Python 3.6.5 on Windows"
+      os: windows           # Windows 10.0.17134 N/A Build 17134
+      language: shell       # 'language: python' is an error on Travis CI Windows
+      before_install:
+        - choco install python --version 3.6.5
+        - python -m pip install --upgrade pip
+      env: PATH=/c/Python37:/c/Python37/Scripts:$PATH
+install:
+  - pip3 install --upgrade pip
+  - pip3 install poetry
+  - poetry install -v
+script:
+  - pytest --cov arus
+after_success:
+  - codecov
+before_deploy:
+  - poetry build
+deploy:
+  provider: pypi
+  user: $PYPI_USER
+  password: $PYPI_PASS
+  skip_existing: true
+  skip_cleanup: true
