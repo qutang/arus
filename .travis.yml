@@ -4,7 +4,7 @@ dist: xenial
 
 stages:
   - test
-  - name: deploy
+  - deploy
 
 cache:
   pip: true
@@ -18,19 +18,14 @@ jobs:
         - poetry install -v
       script:
         - pytest --cov arus
+      after_success:
+        - codecov
     - stage: deploy
-      script:
-        - echo Deploying to PyPI...
-
-before_deploy:
-  # User and password environment variables are set as hidden variables through
-  # the web interface in the project settings.
-  - pip install --upgrade pip
-  - pip install poetry
-  - poetry config http-basic.pypi $PYPI_USER $PYPI_PASS
-  - poetry build
-
-deploy:
-  provider: script
-  script: poetry publish
-  skip_cleanup: true
+      before_deploy:
+        - poetry build
+      deploy:
+        provider: pypi
+        user: $PYPI_USER
+        password: $PYPI_PASS
+        skip_existing: true
+        skip_cleanup: true
