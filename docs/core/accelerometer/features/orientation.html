@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
 <meta name="generator" content="pdoc 0.7.1" />
-<title>arus.core.libs.dsp API documentation</title>
-<meta name="description" content="" />
+<title>arus.core.accelerometer.features.orientation API documentation</title>
+<meta name="description" content="Computing features about accelerometer orientations …" />
 <link href='https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.0/normalize.min.css' rel='stylesheet'>
 <link href='https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/8.0.0/sanitize.min.css' rel='stylesheet'>
 <link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github-gist.min.css" rel="stylesheet">
@@ -17,36 +17,113 @@
 <main>
 <article id="content">
 <header>
-<h1 class="title">Module <code>arus.core.libs.dsp</code></h1>
+<h1 class="title">Module <code>arus.core.accelerometer.features.orientation</code></h1>
 </header>
 <section id="section-intro">
+<p>Computing features about accelerometer orientations</p>
+<p>Author: Qu Tang</p>
+<p>Date: Jul 10, 2018</p>
 <details class="source">
 <summary>Source code</summary>
-<pre><code class="python">__pdoc__ = {}
+<pre><code class="python">&#34;&#34;&#34;
 
-__pdoc__[&#39;tests&#39;] = False</code></pre>
+Computing features about accelerometer orientations
+
+Author: Qu Tang
+
+Date: Jul 10, 2018
+&#34;&#34;&#34;
+import logging
+from functools import reduce
+
+import numpy as np
+
+
+from ...libs.dsp.apply_over_subwins import apply_over_subwins
+from ...libs.num import format_arr
+from . import stats
+from ..transformation import vector_magnitude
+
+
+def _gravity_angles(X, unit=&#39;rad&#39;):
+    X = format_arr(X)
+    gravity = stats.mean(X)[0]
+    gravity_vm = vector_magnitude(gravity)
+    gravity_angles = np.arccos(
+        gravity / gravity_vm) if gravity_vm != 0 else np.zeros_like(gravity)
+    if unit == &#39;deg&#39;:
+        gravity_angles = np.rad2deg(gravity_angles)
+    return gravity_angles
+
+
+def gravity_angles(X, subwins=None, subwin_samples=None, unit=&#39;rad&#39;):
+    result = apply_over_subwins(
+        X, _gravity_angles, subwins=subwins, subwin_samples=subwin_samples, unit=unit)
+    final_result = np.atleast_2d(result.flatten())
+    names = []
+    for i in range(0, result.shape[0]):
+        names = names + [&#39;G_ANGLE_X_&#39; + str(i), &#39;G_ANGLE_Y_&#39; +
+                         str(i), &#39;G_ANGLE_Z_&#39; + str(i)]
+    return final_result, names
+
+
+def gravity_angle_stats(X, subwins=None, subwin_samples=None, unit=&#39;rad&#39;):
+    result = apply_over_subwins(
+        X, _gravity_angles, subwins=subwins, subwin_samples=subwin_samples, unit=unit)
+    median_angles = np.nanmedian(result, axis=0, keepdims=True)
+    range_angles = np.nanmax(
+        result, axis=0, keepdims=True) - np.nanmin(result, axis=0, keepdims=True)
+    std_angles = np.nanstd(result, axis=0, keepdims=True, ddof=1)
+    final_result = np.concatenate(
+        (median_angles, range_angles, std_angles), axis=1)
+    return final_result, [&#34;MEDIAN_G_ANGLE_X&#34;, &#34;MEDIAN_G_ANGLE_Y&#34;, &#34;MEDIAN_G_ANGLE_Z&#34;, &#34;RANGE_G_ANGLE_X&#34;, &#34;RANGE_G_ANGLE_Y&#34;, &#34;RANGE_G_ANGLE_Z&#34;, &#34;STD_G_ANGLE_X&#34;, &#34;STD_G_ANGLE_Y&#34;, &#34;STD_G_ANGLE_Z&#34;]</code></pre>
 </details>
 </section>
 <section>
-<h2 class="section-title" id="header-submodules">Sub-modules</h2>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
 <dl>
-<dt><code class="name"><a title="arus.core.libs.dsp.apply_over_subwins" href="apply_over_subwins.html">arus.core.libs.dsp.apply_over_subwins</a></code></dt>
+<dt id="arus.core.accelerometer.features.orientation.gravity_angles"><code class="name flex">
+<span>def <span class="ident">gravity_angles</span></span>(<span>X, subwins=None, subwin_samples=None, unit='rad')</span>
+</code></dt>
 <dd>
 <section class="desc"></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def gravity_angles(X, subwins=None, subwin_samples=None, unit=&#39;rad&#39;):
+    result = apply_over_subwins(
+        X, _gravity_angles, subwins=subwins, subwin_samples=subwin_samples, unit=unit)
+    final_result = np.atleast_2d(result.flatten())
+    names = []
+    for i in range(0, result.shape[0]):
+        names = names + [&#39;G_ANGLE_X_&#39; + str(i), &#39;G_ANGLE_Y_&#39; +
+                         str(i), &#39;G_ANGLE_Z_&#39; + str(i)]
+    return final_result, names</code></pre>
+</details>
 </dd>
-<dt><code class="name"><a title="arus.core.libs.dsp.detect_peaks" href="detect_peaks.html">arus.core.libs.dsp.detect_peaks</a></code></dt>
-<dd>
-<section class="desc"><p>Detect peaks in data based on their amplitude and other features.</p></section>
-</dd>
-<dt><code class="name"><a title="arus.core.libs.dsp.filtering" href="filtering.html">arus.core.libs.dsp.filtering</a></code></dt>
+<dt id="arus.core.accelerometer.features.orientation.gravity_angle_stats"><code class="name flex">
+<span>def <span class="ident">gravity_angle_stats</span></span>(<span>X, subwins=None, subwin_samples=None, unit='rad')</span>
+</code></dt>
 <dd>
 <section class="desc"></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def gravity_angle_stats(X, subwins=None, subwin_samples=None, unit=&#39;rad&#39;):
+    result = apply_over_subwins(
+        X, _gravity_angles, subwins=subwins, subwin_samples=subwin_samples, unit=unit)
+    median_angles = np.nanmedian(result, axis=0, keepdims=True)
+    range_angles = np.nanmax(
+        result, axis=0, keepdims=True) - np.nanmin(result, axis=0, keepdims=True)
+    std_angles = np.nanstd(result, axis=0, keepdims=True, ddof=1)
+    final_result = np.concatenate(
+        (median_angles, range_angles, std_angles), axis=1)
+    return final_result, [&#34;MEDIAN_G_ANGLE_X&#34;, &#34;MEDIAN_G_ANGLE_Y&#34;, &#34;MEDIAN_G_ANGLE_Z&#34;, &#34;RANGE_G_ANGLE_X&#34;, &#34;RANGE_G_ANGLE_Y&#34;, &#34;RANGE_G_ANGLE_Z&#34;, &#34;STD_G_ANGLE_X&#34;, &#34;STD_G_ANGLE_Y&#34;, &#34;STD_G_ANGLE_Z&#34;]</code></pre>
+</details>
 </dd>
 </dl>
-</section>
-<section>
-</section>
-<section>
 </section>
 <section>
 </section>
@@ -59,14 +136,13 @@ __pdoc__[&#39;tests&#39;] = False</code></pre>
 <ul id="index">
 <li><h3>Super-module</h3>
 <ul>
-<li><code><a title="arus.core.libs" href="../index.html">arus.core.libs</a></code></li>
+<li><code><a title="arus.core.accelerometer.features" href="index.html">arus.core.accelerometer.features</a></code></li>
 </ul>
 </li>
-<li><h3><a href="#header-submodules">Sub-modules</a></h3>
-<ul>
-<li><code><a title="arus.core.libs.dsp.apply_over_subwins" href="apply_over_subwins.html">arus.core.libs.dsp.apply_over_subwins</a></code></li>
-<li><code><a title="arus.core.libs.dsp.detect_peaks" href="detect_peaks.html">arus.core.libs.dsp.detect_peaks</a></code></li>
-<li><code><a title="arus.core.libs.dsp.filtering" href="filtering.html">arus.core.libs.dsp.filtering</a></code></li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="arus.core.accelerometer.features.orientation.gravity_angles" href="#arus.core.accelerometer.features.orientation.gravity_angles">gravity_angles</a></code></li>
+<li><code><a title="arus.core.accelerometer.features.orientation.gravity_angle_stats" href="#arus.core.accelerometer.features.orientation.gravity_angle_stats">gravity_angle_stats</a></code></li>
 </ul>
 </li>
 </ul>
