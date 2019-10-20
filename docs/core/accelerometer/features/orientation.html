@@ -61,7 +61,7 @@ def gravity_angles(X, subwins=None, subwin_samples=None, unit=&#39;rad&#39;):
         X, _gravity_angles, subwins=subwins, subwin_samples=subwin_samples, unit=unit)
     final_result = np.atleast_2d(result.flatten())
     names = []
-    for i in range(0, result.shape[0]):
+    for i in range(result.shape[0]):
         names = names + [&#39;G_ANGLE_X_&#39; + str(i), &#39;G_ANGLE_Y_&#39; +
                          str(i), &#39;G_ANGLE_Z_&#39; + str(i)]
     return final_result, names
@@ -98,7 +98,7 @@ def gravity_angle_stats(X, subwins=None, subwin_samples=None, unit=&#39;rad&#39;
         X, _gravity_angles, subwins=subwins, subwin_samples=subwin_samples, unit=unit)
     final_result = np.atleast_2d(result.flatten())
     names = []
-    for i in range(0, result.shape[0]):
+    for i in range(result.shape[0]):
         names = names + [&#39;G_ANGLE_X_&#39; + str(i), &#39;G_ANGLE_Y_&#39; +
                          str(i), &#39;G_ANGLE_Z_&#39; + str(i)]
     return final_result, names</code></pre>

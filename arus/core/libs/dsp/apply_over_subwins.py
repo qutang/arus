@@ -37,7 +37,7 @@ def apply_over_subwins(X, func, subwins=None, subwin_samples=None, **kwargs):
     start_index = np.ceil((X.shape[0] - subwins * win_length) / 2)
 
     result = []
-    for i in range(0, subwins):
+    for i in range(subwins):
         indices = int(start_index) + np.array(range(
             i * win_length,
             (i + 1) * win_length

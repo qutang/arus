@@ -18,12 +18,12 @@ def test_enmo():
     # test on an array
     X = np.array([[1., 1., 1., ], [1., 1., 1.]])
     result = counts.enmo(X)
-    assert np.allclose(result[0], np.array(
-        [[np.sqrt(3) - 1]]), atol=0.001)
+    np.testing.assert_array_equal(result[0], np.array(
+        [[np.sqrt(3) - 1]]))
     assert result[1] == 'ENMO'
 
     # test on an array with nan
     X = np.array([[1., 1., 1., ], [2., np.nan, 2.]])
     result = counts.enmo(X)
-    assert np.allclose(result[0], np.array([[np.sqrt(3) - 1]]), atol=0.001)
+    np.testing.assert_array_equal(result[0], np.array([[np.sqrt(3) - 1]]))
     assert result[1] == 'ENMO'

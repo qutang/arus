@@ -41,43 +41,43 @@ from ...libs.num import format_arr
 def mean(X):
     X = format_arr(X)
     result = np.nanmean(X, axis=0, keepdims=True)
-    return result, &#39;MEAN&#39;
+    return result, [&#39;MEAN_&#39; + str(i) for i in range(X.shape[1])]
 
 
 def std(X):
     X = format_arr(X)
     result = np.nanstd(X, axis=0, ddof=1, keepdims=True)
-    return result, &#39;STD&#39;
+    return result, [&#39;STD_&#39; + str(i) for i in range(X.shape[1])]
 
 
 def max_value(X):
     X = format_arr(X)
     result = np.nanmax(X, axis=0, keepdims=True)
-    return result, &#34;MAX&#34;
+    return result, [&#39;MAX_&#39; + str(i) for i in range(X.shape[1])]
 
 
 def min_value(X):
     X = format_arr(X)
     result = np.nanmin(X, axis=0, keepdims=True)
-    return result, &#34;MIN&#34;
+    return result, [&#39;MIN_&#39; + str(i) for i in range(X.shape[1])]
 
 
-def range(X):
+def max_minus_min(X):
     X = format_arr(X)
     result = max_value(X)[0] - min_value(X)[0]
-    return result, &#34;RANGE&#34;
+    return result, [&#39;RANGE_&#39; + str(i) for i in range(X.shape[1])]
 
 
 def abs_max_value(X):
     X = format_arr(X)
     result = np.nanmax(np.abs(X), axis=0, keepdims=True)
-    return result, &#34;ABS_MAX&#34;
+    return result, [&#39;ABS_MAX_&#39; + str(i) for i in range(X.shape[1])]
 
 
 def abs_min_value(X):
     X = format_arr(X)
     result = np.nanmin(np.abs(X), axis=0, keepdims=True)
-    return result, &#34;ABS_MIN&#34;</code></pre>
+    return result, [&#39;ABS_MIN_&#39; + str(i) for i in range(X.shape[1])]</code></pre>
 </details>
 </section>
 <section>
@@ -97,7 +97,7 @@ def abs_min_value(X):
 <pre><code class="python">def mean(X):
     X = format_arr(X)
     result = np.nanmean(X, axis=0, keepdims=True)
-    return result, &#39;MEAN&#39;</code></pre>
+    return result, [&#39;MEAN_&#39; + str(i) for i in range(X.shape[1])]</code></pre>
 </details>
 </dd>
 <dt id="arus.core.accelerometer.features.stats.std"><code class="name flex">
@@ -110,7 +110,7 @@ def abs_min_value(X):
 <pre><code class="python">def std(X):
     X = format_arr(X)
     result = np.nanstd(X, axis=0, ddof=1, keepdims=True)
-    return result, &#39;STD&#39;</code></pre>
+    return result, [&#39;STD_&#39; + str(i) for i in range(X.shape[1])]</code></pre>
 </details>
 </dd>
 <dt id="arus.core.accelerometer.features.stats.max_value"><code class="name flex">
@@ -123,7 +123,7 @@ def abs_min_value(X):
 <pre><code class="python">def max_value(X):
     X = format_arr(X)
     result = np.nanmax(X, axis=0, keepdims=True)
-    return result, &#34;MAX&#34;</code></pre>
+    return result, [&#39;MAX_&#39; + str(i) for i in range(X.shape[1])]</code></pre>
 </details>
 </dd>
 <dt id="arus.core.accelerometer.features.stats.min_value"><code class="name flex">
@@ -136,20 +136,20 @@ def abs_min_value(X):
 <pre><code class="python">def min_value(X):
     X = format_arr(X)
     result = np.nanmin(X, axis=0, keepdims=True)
-    return result, &#34;MIN&#34;</code></pre>
+    return result, [&#39;MIN_&#39; + str(i) for i in range(X.shape[1])]</code></pre>
 </details>
 </dd>
-<dt id="arus.core.accelerometer.features.stats.range"><code class="name flex">
-<span>def <span class="ident">range</span></span>(<span>X)</span>
+<dt id="arus.core.accelerometer.features.stats.max_minus_min"><code class="name flex">
+<span>def <span class="ident">max_minus_min</span></span>(<span>X)</span>
 </code></dt>
 <dd>
 <section class="desc"></section>
 <details class="source">
 <summary>Source code</summary>
-<pre><code class="python">def range(X):
+<pre><code class="python">def max_minus_min(X):
     X = format_arr(X)
     result = max_value(X)[0] - min_value(X)[0]
-    return result, &#34;RANGE&#34;</code></pre>
+    return result, [&#39;RANGE_&#39; + str(i) for i in range(X.shape[1])]</code></pre>
 </details>
 </dd>
 <dt id="arus.core.accelerometer.features.stats.abs_max_value"><code class="name flex">
@@ -162,7 +162,7 @@ def abs_min_value(X):
 <pre><code class="python">def abs_max_value(X):
     X = format_arr(X)
     result = np.nanmax(np.abs(X), axis=0, keepdims=True)
-    return result, &#34;ABS_MAX&#34;</code></pre>
+    return result, [&#39;ABS_MAX_&#39; + str(i) for i in range(X.shape[1])]</code></pre>
 </details>
 </dd>
 <dt id="arus.core.accelerometer.features.stats.abs_min_value"><code class="name flex">
@@ -175,7 +175,7 @@ def abs_min_value(X):
 <pre><code class="python">def abs_min_value(X):
     X = format_arr(X)
     result = np.nanmin(np.abs(X), axis=0, keepdims=True)
-    return result, &#34;ABS_MIN&#34;</code></pre>
+    return result, [&#39;ABS_MIN_&#39; + str(i) for i in range(X.shape[1])]</code></pre>
 </details>
 </dd>
 </dl>
@@ -200,7 +200,7 @@ def abs_min_value(X):
 <li><code><a title="arus.core.accelerometer.features.stats.std" href="#arus.core.accelerometer.features.stats.std">std</a></code></li>
 <li><code><a title="arus.core.accelerometer.features.stats.max_value" href="#arus.core.accelerometer.features.stats.max_value">max_value</a></code></li>
 <li><code><a title="arus.core.accelerometer.features.stats.min_value" href="#arus.core.accelerometer.features.stats.min_value">min_value</a></code></li>
-<li><code><a title="arus.core.accelerometer.features.stats.range" href="#arus.core.accelerometer.features.stats.range">range</a></code></li>
+<li><code><a title="arus.core.accelerometer.features.stats.max_minus_min" href="#arus.core.accelerometer.features.stats.max_minus_min">max_minus_min</a></code></li>
 <li><code><a title="arus.core.accelerometer.features.stats.abs_max_value" href="#arus.core.accelerometer.features.stats.abs_max_value">abs_max_value</a></code></li>
 <li><code><a title="arus.core.accelerometer.features.stats.abs_min_value" href="#arus.core.accelerometer.features.stats.abs_min_value">abs_min_value</a></code></li>
 </ul>

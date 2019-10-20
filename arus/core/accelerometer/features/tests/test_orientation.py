@@ -69,8 +69,8 @@ def test_gravity_angles():
     result = gravity_angles(X, subwins=3, unit='deg')
     np.testing.assert_array_almost_equal(result[0], np.array(
         [[90, 180, 90, 0, 90, 90, 90, 90, 0]]))
-    assert np.array_equal(result[1], ["G_ANGLE_X_0", "G_ANGLE_Y_0", "G_ANGLE_Z_0", "G_ANGLE_X_1",
-                                      "G_ANGLE_Y_1", "G_ANGLE_Z_1", "G_ANGLE_X_2", "G_ANGLE_Y_2", "G_ANGLE_Z_2"])
+    np.testing.assert_array_equal(result[1], ["G_ANGLE_X_0", "G_ANGLE_Y_0", "G_ANGLE_Z_0", "G_ANGLE_X_1",
+                                              "G_ANGLE_Y_1", "G_ANGLE_Z_1", "G_ANGLE_X_2", "G_ANGLE_Y_2", "G_ANGLE_Z_2"])
 
 
 def test_gravity_angle_stats():
@@ -85,9 +85,9 @@ def test_gravity_angle_stats():
     # test on a single row with nan
     X = np.array([[1., np.nan, 0., ]])
     result = gravity_angle_stats(X, unit='deg')
-    assert np.all(np.isnan(result[0]))
-    assert np.array_equal(result[1], ["MEDIAN_G_ANGLE_X", "MEDIAN_G_ANGLE_Y", "MEDIAN_G_ANGLE_Z", "RANGE_G_ANGLE_X",
-                                      "RANGE_G_ANGLE_Y", "RANGE_G_ANGLE_Z", "STD_G_ANGLE_X", "STD_G_ANGLE_Y", "STD_G_ANGLE_Z"])
+    np.testing.assert_array_equal(result[0], np.full((1, 9), np.nan))
+    np.testing.assert_array_equal(result[1], ["MEDIAN_G_ANGLE_X", "MEDIAN_G_ANGLE_Y", "MEDIAN_G_ANGLE_Z", "RANGE_G_ANGLE_X",
+                                              "RANGE_G_ANGLE_Y", "RANGE_G_ANGLE_Z", "STD_G_ANGLE_X", "STD_G_ANGLE_Y", "STD_G_ANGLE_Z"])
 
     # test on a 2d array with subwins
     X = np.concatenate([np.tile([[0., -1., 0., ]], (5, 1)),
@@ -96,5 +96,5 @@ def test_gravity_angle_stats():
     result = gravity_angle_stats(X, subwins=3, unit='deg')
     np.testing.assert_array_almost_equal(result[0], np.array(
         [[90, 90, 90, 90, 90, 90, 51.961524, 51.961524, 51.961524]]))
-    assert np.array_equal(result[1], ["MEDIAN_G_ANGLE_X", "MEDIAN_G_ANGLE_Y", "MEDIAN_G_ANGLE_Z", "RANGE_G_ANGLE_X",
-                                      "RANGE_G_ANGLE_Y", "RANGE_G_ANGLE_Z", "STD_G_ANGLE_X", "STD_G_ANGLE_Y", "STD_G_ANGLE_Z"])
+    np.testing.assert_array_equal(result[1], ["MEDIAN_G_ANGLE_X", "MEDIAN_G_ANGLE_Y", "MEDIAN_G_ANGLE_Z", "RANGE_G_ANGLE_X",
+                                              "RANGE_G_ANGLE_Y", "RANGE_G_ANGLE_Z", "STD_G_ANGLE_X", "STD_G_ANGLE_Y", "STD_G_ANGLE_Z"])

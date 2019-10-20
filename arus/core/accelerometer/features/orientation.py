@@ -34,7 +34,7 @@ def gravity_angles(X, subwins=None, subwin_samples=None, unit='rad'):
         X, _gravity_angles, subwins=subwins, subwin_samples=subwin_samples, unit=unit)
     final_result = np.atleast_2d(result.flatten())
     names = []
-    for i in range(0, result.shape[0]):
+    for i in range(result.shape[0]):
         names = names + ['G_ANGLE_X_' + str(i), 'G_ANGLE_Y_' +
                          str(i), 'G_ANGLE_Z_' + str(i)]
     return final_result, names
