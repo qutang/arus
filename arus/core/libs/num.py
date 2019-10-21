@@ -10,6 +10,6 @@ def atleast_scalar(arg):
 
 
 def format_arr(arr):
-    arr = np.atleast_2d(arr)
     arr = np.float64(arr)
+    arr = np.atleast_2d(arr)
     return arr
