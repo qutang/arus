@@ -7,6 +7,7 @@ Frequency features
 from scipy import signal
 import numpy as np
 from ...libs.dsp.detect_peaks import detect_peaks
+from ...libs.dsp.fill_nan import fill_nan
 import logging
 from ...libs.num import format_arr
 
@@ -15,6 +16,8 @@ logger = logging.getLogger()
 
 def spectrum_features(X, sr, n=1, freq_range=None, prev_spectrum_features=None, preset='muss'):
     X = format_arr(X)
+    # fill nan at first, nan will be filled by spline interpolation
+    X = fill_nan(X)
     freq, Sxx = _fft(X, sr, freq_range=freq_range)
     freq_peaks, Sxx_peaks = _fft_peaks(freq, Sxx)
 
@@ -100,8 +103,8 @@ def _fft_peaks(freq, Sxx):
     n_axis = Sxx.shape[1]
     m_freq = Sxx.shape[0]
     if m_freq == 1:
-        freq_peaks = freq
-        Sxx_peaks = Sxx
+        freq_peaks = [freq] * n_axis
+        Sxx_peaks = [Sxx[:, i] for i in range(Sxx.shape[1])]
     else:
         # at least 0.1 Hz different when looking for peak
         mpd = int(np.ceil(1.0 / (freq[1] - freq[0]) * 0.1))
@@ -118,8 +121,6 @@ def _fft_peaks(freq, Sxx):
             freq_peak, Sxx_peak = _sort_fft_peaks(freq, Sxx, i, j)
             freq_peaks.append(freq_peak)
             Sxx_peaks.append(Sxx_peak)
-        freq_peaks = freq_peaks
-        Sxx_peaks = Sxx_peaks
         # note that freq_peaks and Sxx_peaks will have structure
         # [freq_peaks_for_x_axis, freq_peaks_for_y_axis, ...]
         #  And each item would be a 1d array
@@ -128,9 +129,12 @@ def _fft_peaks(freq, Sxx):
 
 def _dom_freq(freq_peaks, Sxx_peaks, n=1):
     result = []
-    for i in range(Sxx_peaks.shape[1]):
-        if len(freq_peaks) >= n:
-            result.append(freq_peaks[n-1])
+    for i in range(len(freq_peaks)):
+        if len(freq_peaks[i]) >= n:
+            if not np.isnan(Sxx_peaks[i][n-1]):
+                result.append(freq_peaks[i][n-1])
+            else:
+                result.append(np.nan)
         else:
             result.append(np.nan)
     result = np.atleast_2d(np.array(result))
@@ -139,9 +143,9 @@ def _dom_freq(freq_peaks, Sxx_peaks, n=1):
 
 def _dom_freq_power(freq_peaks, Sxx_peaks, n=1):
     result = []
-    for i in range(Sxx_peaks.shape[1]):
-        if len(Sxx_peaks[:, i]) >= n:
-            result.append(Sxx_peaks[n-1, i])
+    for i in range(len(Sxx_peaks)):
+        if len(Sxx_peaks[i]) >= n:
+            result.append(Sxx_peaks[i][n-1])
         else:
             result.append(np.nan)
     result = np.atleast_2d(np.array(result))
@@ -155,8 +159,8 @@ def _total_freq_power(Sxx):
 
 def _dom_freq_in_band(freq_peaks, Sxx_peaks, low=0, high=np.inf, n=1):
     result = []
-    for i in range(Sxx_peaks.shape[1]):
-        freq = freq_peaks
+    for i in range(len(Sxx_peaks)):
+        freq = freq_peaks[i]
         indices = (freq >= low) & (freq <= high)
         limited_freq = freq[indices]
         if len(limited_freq) < n:
@@ -169,15 +173,15 @@ def _dom_freq_in_band(freq_peaks, Sxx_peaks, low=0, high=np.inf, n=1):
 
 def _dom_freq_power_in_band(freq_peaks, Sxx_peaks, low=0, high=np.inf, n=1):
     result = []
-    for i in range(Sxx_peaks.shape[1]):
-        freq = freq_peaks
-        Sxx = Sxx_peaks
+    for i in range(len(Sxx_peaks)):
+        freq = freq_peaks[i]
+        Sxx = Sxx_peaks[i]
         indices = (freq >= low) & (freq <= high)
-        limited_Sxx = Sxx[indices, :]
-        if limited_Sxx.shape[0] < n:
+        limited_Sxx = Sxx[indices]
+        if len(limited_Sxx) < n:
             result.append(np.nan)
         else:
-            result.append(limited_Sxx[n-1, i])
+            result.append(limited_Sxx[n-1])
     result = np.atleast_2d(np.array(result))
     return result
 
@@ -223,7 +227,7 @@ def _dom_freq_power_between_point_6_and_2_point_6(freq_peaks, Sxx_peaks):
 
 def _dom_freq_ratio_previous_bout(freq_peaks, Sxx_peaks, prev_dom_freq=None, n=1):
     if prev_dom_freq is None:
-        result = np.full((1, Sxx_peaks.shape[1]), np.nan)
+        result = np.full((1, len(Sxx_peaks)), np.nan)
     else:
         current_dom_freq = _dom_freq(freq_peaks, Sxx_peaks, n=1)
         result = np.divide(current_dom_freq, np.atleast_2d(prev_dom_freq), out=np.zeros_like(
