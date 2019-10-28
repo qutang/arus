@@ -184,7 +184,7 @@ def segment(df, start_time=None, stop_time=None, start_time_col=0,
 
     if start_time_col == stop_time_col:
         mask = (df.iloc[:, start_time_col] >= start_time) & (
-            df.iloc[:, stop_time_col] < stop_time)
+            df.iloc[:, stop_time_col] <= stop_time)
         return df[mask].copy(deep=True)
     else:
         mask = (df.iloc[:, start_time_col] <= stop_time) & (
