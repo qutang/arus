@@ -193,7 +193,7 @@ class MhealthFileStream(Stream):
         transition_chunk = None
         for filepath in filepaths:
             reader = read_data_csv(
-                filepath, chunksize=self._sr * 3600, iterator=True)
+                filepath, chunksize=self._sr * 1800, iterator=True)
             for data in reader:
                 if self.started:
                     legacy_chunk, chunks, leftover_chunk = self._extract_chunks_from_loaded_data(
