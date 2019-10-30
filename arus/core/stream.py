@@ -1,17 +1,23 @@
 """Module that loads external data sources (e.g., file, network port, socket and etc.) into a data queue using separate thread or not.
 
-Examples:
+## Usage of `arus.core.stream.SensorFileStream` 
 
-* Usage of `arus.core.stream.MhealthFileStream`
+### On mhealth sensor files
 
 ```python
 .. include:: ../../examples/mhealth_stream.py
 ```
 
-* Usage of `arus.core.stream.ActigraphFileStream`
+### On an Actigraph sensor file
 
 ```python
 .. include:: ../../examples/actigraph_stream.py
+```
+
+### On mhealth sensor files with real-time delay
+
+```python
+.. include:: ../../examples/sensor_stream_simulated_reality.py
 ```
 """
 
@@ -19,9 +25,13 @@ import queue
 import threading
 from .libs.mhealth_format.io import read_data_csv
 from .libs.mhealth_format.io import read_actigraph_csv
-from .libs.mhealth_format.data import rename_columns
+from .libs.mhealth_format import data as mh_data
 from .libs.mhealth_format.path import extract_file_type
+from .libs.date import parse_timestamp
+import pandas as pd
+import numpy as np
 import logging
+import time
 
 
 class Stream:
@@ -35,16 +45,20 @@ class Stream:
         stream (Stream): an instance object of type `Stream`.
     """
 
-    def __init__(self, data_source, name='default-stream', scheduler='thread'):
+    def __init__(self, data_source, window_size, start_time=None, name='default-stream', scheduler='thread'):
         """
 
         Args:
             data_source (object): An object that may be loaded into memory. The type of the object is decided by the implementation of subclass.
+            window_size (float): Number of seconds. Each data in the queue would be a short chunk of data lasting `window_size` seconds loaded from the `data_source`.
+            start_time (str or datetime or datetime64 or pandas.Timestamp, optional): The start time of data source. This is used to sync between multiple streams. If it is `None`, the default value would be extracted from the first sample of the loaded data.
             name (str, optional): The name of the data stream will also be used as the name of the sub-thread that is used to load data. Defaults to 'default-stream'.
             scheduler (str, optional): The scheduler used to load the data source. It can be either 'thread' or 'sync'. Defaults to 'thread'.
         """
         self._queue = queue.Queue()
         self._data_source = data_source
+        self._window_size = window_size
+        self._start_time = start_time
         self.started = False
         self.name = name
         self._scheduler = scheduler
@@ -67,7 +81,7 @@ class Stream:
         """The name of the data stream
 
         Returns:
-            name (str): the name of the data stream 
+            name (str): the name of the data stream
         """
         return self._name
 
@@ -153,115 +167,116 @@ class Stream:
         raise NotImplementedError('Sub class must implement this method')
 
 
-class MhealthFileStream(Stream):
-    """Data stream to syncly or asyncly load mhealth sensor file or files.
+class SensorFileStream(Stream):
+    """Data stream to syncly or asyncly load sensor file or files with different storage formats.
 
-    This class inherits `Stream` class to load mhealth data files.
+    This class inherits `Stream` class to load data files.
 
-    If a single mhealth data filepath is given, the stream will load it into mhealth dataframe as a whole. Therefore, you may only get one data from the data queue.
-
-    If a list of mhealth data filepaths are given, the stream will load them one by one either syncly or on a separate thread. Therefore, you may get a series of data from the data queue, each representing a single file.
+    The stream will load a file or files in the `data_source` and separate them into chunks specified by `window_size` to be loaded in the data queue.
 
     Examples:
-        1. Loading a list of files as dataframe asynchronously and print out the head of each one.
+        1. Loading a list of files as 12.8s chunks asynchronously.
 
         ```python
-        stream = MhealthFileStream(data_source=files, sr=80, name='mhealth-stream')
-        stream.start(scheduler='thread')
-        for data in stream.get_iterator():
-            print(data.head())
+        .. include:: ../../examples/mhealth_stream.py
         ```
     """
 
-    def __init__(self, data_source, sr, name='mhealth-stream'):
+    def __init__(self, data_source, window_size, sr, start_time=None, buffer_size=1800, storage_format='mhealth', simulate_reality=False, name='mhealth-stream'):
         """
         Args:
             data_source (str or list): filepath or list of filepaths of mhealth sensor data
             sr (int): the sampling rate (Hz) for the given data
+            buffer_size (float, optional): the buffer size for file reader in seconds
+            storage_format (str, optional): the storage format of the files in `data_source`. It now supports `mhealth` and `actigraph`.
+            simulate_reality (bool, optional): simulate real world time delay if `True`.
             name (str, optional): see `Stream.name`.
         """
-        super().__init__(data_source=data_source, name=name)
-        self._sr = sr  # if it is a large file, load one hour data each time
+        super().__init__(data_source=data_source,
+                         window_size=window_size, start_time=start_time, name=name)
+        self._sr = sr
+        self._buffer_size = buffer_size
+        self._storage_format = storage_format
+        self._simulate_reality = simulate_reality
 
-    def _load_large_file(self, filepath):
-        reader = read_data_csv(
-            filepath, chunksize=self._sr * 3600, iterator=True)
-        for data in reader:
-            if self.started:
-                data = rename_columns(
-                    data, file_type=extract_file_type(filepath))
-                self._put_data_in_queue(data)
+    def _load_files_into_chunks(self, filepaths):
+        current_window = []
+        current_window_st = None
+        current_window_et = None
+        current_clock = time.time()
+        previous_window_st = None
+        for filepath in filepaths:
+            for data in self._load_file(filepath):
+                if self.started:
+                    chunks = self._extract_chunks_from_loaded_data(
+                        data)
+                    for chunk, window_st, window_et in chunks:
+                        current_window_st = window_st if current_window_st is None else current_window_st
+                        current_window_et = window_et if current_window_et is None else current_window_et
+                        previous_window_st = window_st if previous_window_st is None else previous_window_st
+                        if current_window_st == window_st and current_window_et == window_et:
+                            current_window.append(chunk)
+                        else:
+                            current_window = pd.concat(current_window, axis=0)
+                            current_clock = self._send_data(
+                                current_window, current_clock, current_window_st, previous_window_st)
+                            current_window = [chunk]
+                            previous_window_st = current_window_st
+                            current_window_st = window_st
+                            current_window_et = window_et
+
+    def _send_data(self, current_window, current_clock, current_window_st, previous_window_st):
+        if self._simulate_reality:
+            delay = (current_window_st - previous_window_st) / \
+                np.timedelta64(1, 's')
+            logging.debug('Delay for ' + str(delay) +
+                          ' seconds to simulate reality')
+            time.sleep(max(current_clock + delay - time.time(), 0))
+            self._put_data_in_queue(current_window)
+            return time.time()
+        else:
+            self._put_data_in_queue(current_window)
+            return current_clock
+
+    def _load_file(self, filepath):
+        chunksize = self._sr * self._buffer_size
+        if self._storage_format == 'mhealth':
+            reader = read_data_csv(
+                filepath, chunksize=chunksize, iterator=True)
+            for data in reader:
+                yield data
+        elif self._storage_format == 'actigraph':
+            reader, format_as_mhealth = read_actigraph_csv(
+                filepath, chunksize=chunksize, iterator=True)
+            for data in reader:
+                data = format_as_mhealth(data)
+                yield data
+        else:
+            raise NotImplementedError(
+                'The given storage format argument is not supported')
+
+    def _extract_chunks_from_loaded_data(self, data):
+        data_et = mh_data.get_end_time(data, 0)
+        data_st = mh_data.get_start_time(data, 0)
+        if self._start_time is None:
+            self._start_time = data_st
+        window_ts_marks = pd.date_range(start=self._start_time, end=data_et,
+                                        freq=str(self._window_size * 1000) + 'ms')
+        self._start_time = window_ts_marks[-1]
+        chunks = []
+        for window_st in window_ts_marks:
+            window_et = window_st + \
+                pd.Timedelta(self._window_size * 1000, unit='ms')
+            chunk = mh_data.segment_sensor(
+                data, start_time=window_st, stop_time=window_et)
+            if chunk.empty:
+                continue
             else:
-                break
-        self._put_data_in_queue(None)
-
-    def _load_whole_file(self, filepath):
-        data = read_data_csv(filepath)
-        self._put_data_in_queue(data)
+                chunks.append((chunk, window_st, window_et))
+        return chunks
 
     def load_(self, obj_toload):
         if isinstance(obj_toload, str):
-            self._load_large_file(obj_toload)
-        elif isinstance(obj_toload, list):
-            for filepath in obj_toload:
-                if self.started:
-                    if isinstance(filepath, str):
-                        self._load_whole_file(filepath)
-                    else:
-                        raise NotImplementedError(
-                            'Can not load object with type ' + type(filepath))
-                else:
-                    break
-            self._put_data_in_queue(None)
-
-
-class ActigraphFileStream(Stream):
-    """Data stream to syncly or asyncly load actigraph csv file.
-
-    This class inherits `Stream` class to load actigraph csv file.
-
-    The stream will load the actigraph csv file by chunks (each chunk is about an hour long) into mhealth dataframe. Therefore, you may get a series of one-hour long data from the data queue.
-
-    Examples:
-        1. Loading a large actigraph csv file as dataframes asynchronously and print out the head of each one.
-
-        ```python
-        stream = ActigraphFileStream(data_source=filepath, sr=80, name='actigraph-stream')
-        stream.start(scheduler='thread')
-        for data in stream.get_iterator():
-            print(data.head())
-        ```
-    """
-
-    def __init__(self, data_source, sr, name='actigraph-stream'):
-        """
-        Args:
-            data_source (str): filepath of an actigraph csv file
-            sr (int): the sampling rate (Hz) for the given data
-            name (str, optional): see `Stream.name`.
-        """
-        super().__init__(data_source=data_source, name=name)
-        self._sr = sr  # if it is a large file, load one hour data each time
-
-    def _load_large_file(self, filepath):
-        reader, format_to_mhealth = read_actigraph_csv(
-            filepath, chunksize=self._sr * 3600, iterator=True)
-        for data in reader:
-            if self.started:
-                try:
-                    data = format_to_mhealth(data)
-                except FileNotFoundError as e:
-                    logging.error(e)
-                    logging.debug(data)
-                    raise FileNotFoundError
-                self._put_data_in_queue(data)
-            else:
-                break
-        self._put_data_in_queue(None)
-
-    def load_(self, data_source):
-        if isinstance(data_source, str):
-            self._load_large_file(data_source)
-        else:
-            raise NotImplementedError('The data source type is unknown')
+            obj_toload = [obj_toload]
+        self._load_files_into_chunks(obj_toload)
         self._put_data_in_queue(None)

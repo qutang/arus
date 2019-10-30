@@ -1,10 +1,25 @@
-from arus.core.stream import MhealthFileStream
+from arus.core.stream import SensorFileStream
+from arus.testing import load_test_data
 from glob import glob
+import os
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
 
 if __name__ == "__main__":
-    files = glob(
-        '/mnt/d/data/MDCAS/DINESH_00/MasterSynced/**/*.sensor.csv*', recursive=True)
-    stream = MhealthFileStream(data_source=files, sr=80, name='dinesh_00')
+    window_size = 12.8
+    files, sr = load_test_data(file_type='mhealth',
+                               file_num='multiple', sr_type='inconsistent')
+    stream = SensorFileStream(
+        data_source=files, window_size=window_size, start_time=None, sr=sr, buffer_size=900, storage_format='mhealth', name='spades_2')
     stream.start(scheduler='thread')
+    chunk_sizes = []
     for data in stream.get_iterator():
-        print(data.iloc[:, 1].mean())
+        print("{},{},{}".format(
+            data.iloc[0, 0], data.iloc[-1, 0], data.shape[0]))
+        chunk_sizes.append(data.shape[0])
+    pd.Series(chunk_sizes).plot(
+        title='chunk sizes of the given stream with \nwindow size of ' + str(window_size) + ' seconds, sampling rate at ' + str(sr) + ' Hz')
+    plt.hlines(y=sr * window_size, xmin=0,
+               xmax=len(chunk_sizes), linestyles='dashed')
+    plt.show()
