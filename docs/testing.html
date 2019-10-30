@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
 <meta name="generator" content="pdoc 0.7.1" />
-<title>arus API documentation</title>
-<meta name="description" content="__arus__ python package provides a computation framework to manage and process ubiquitous sensory data for activity recognition …" />
+<title>arus.testing API documentation</title>
+<meta name="description" content="" />
 <link href='https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.0/normalize.min.css' rel='stylesheet'>
 <link href='https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/8.0.0/sanitize.min.css' rel='stylesheet'>
 <link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github-gist.min.css" rel="stylesheet">
@@ -17,71 +17,62 @@
 <main>
 <article id="content">
 <header>
-<h1 class="title">Module <code>arus</code></h1>
+<h1 class="title">Module <code>arus.testing</code></h1>
 </header>
 <section id="section-intro">
-<p><strong>arus</strong> python package provides a computation framework to manage and process ubiquitous sensory data for activity recognition.</p>
-<h2 id="overview">Overview</h2>
-<p><strong>arus</strong> python package provides a computation framework to manage and process ubiquitous sensory data for activity recognition.</p>
-<p><a href="https://badge.fury.io/py/arus"><img alt="PyPI version" src="https://badge.fury.io/py/arus.svg"></a>
-<a href="https://pepy.tech/project/arus"><img alt="Downloads" src="https://pepy.tech/badge/arus"></a>
-<a href="https://travis-ci.org/qutang/arus"><img alt="Build Status" src="https://travis-ci.org/qutang/arus.svg?branch=master"></a>
-<a href="https://codecov.io/gh/qutang/arus"><img alt="codecov" src="https://codecov.io/gh/qutang/arus/branch/master/graph/badge.svg"></a></p>
-<h2 id="get-started">Get started</h2>
-<h4 id="prerequists">Prerequists</h4>
-<pre><code class="bash">python &gt;= 3.6
-</code></pre>
-<h4 id="installation">Installation</h4>
-<pre><code class="bash">&gt; pip install arus
-</code></pre>
-<p>or with <code>pipenv</code></p>
-<pre><code class="bash">&gt; pipenv install arus
-</code></pre>
-<p>or with <code>poetry</code></p>
-<pre><code class="bash">&gt; poetry add arus
-</code></pre>
-<h3 id="plugins">Plugins</h3>
-<p><code>arus</code> packages can be extended to involve more file types, Bluetooth devices or network protocols. The following list includes official plugins that extend <code>arus</code>.</p>
-<h4 id="official-plugins">Official plugins</h4>
-<ol>
-<li><a href="https://qutang.github.io/arus-stream-metawear/"><code>arus-stream-metawear</code></a>: a <code>Stream</code> class that can be used to stream data acquired from a Metawear device (A wireless Bluetooth sensor) in real-time.</li>
-</ol>
-<h3 id="development">Development</h3>
-<h4 id="prerequists_1">Prerequists</h4>
-<pre><code class="bash">python &gt;= 3.6
-poetry &gt;= 0.12.17
-</code></pre>
-<h4 id="set-up-development-environment">Set up development environment</h4>
-<pre><code class="bash">&gt; git clone &lt;https://github.com/qutang/arus.git&gt;
-&gt; cd arus
-&gt; poetry install
-</code></pre>
 <details class="source">
 <summary>Source code</summary>
-<pre><code class="python">&#34;&#34;&#34;
-__arus__ python package provides a computation framework to manage and process ubiquitous sensory data for activity recognition.
+<pre><code class="python">import os
+from glob import glob
 
-.. include:: ../README.md
 
-&#34;&#34;&#34;</code></pre>
+def load_test_data(file_type=&#39;mhealth&#39;, file_num=&#39;multiple&#39;, sr_type=&#39;consistent&#39;):
+    cwd = os.path.dirname(os.path.realpath(__file__))
+    data_folder = os.path.join(cwd, &#39;..&#39;, &#39;data&#39;, file_num,
+                               file_type, sr_type + &#39;_sr&#39;)
+    meta_file = os.path.join(data_folder, &#39;meta.csv&#39;)
+    if file_num == &#39;multiple&#39;:
+        data = list(filter(lambda f: &#39;meta&#39; not in f, glob(
+            os.path.join(data_folder, &#39;*.csv&#39;))))
+    else:
+        data = list(filter(lambda f: &#39;meta&#39; not in f, glob(
+            os.path.join(data_folder, &#39;*.csv&#39;))))[0]
+    with open(meta_file, &#39;r&#39;) as meta:
+        sr = int(meta.readline().split(&#39;,&#39;)[1])
+    return data, sr</code></pre>
 </details>
 </section>
 <section>
-<h2 class="section-title" id="header-submodules">Sub-modules</h2>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
 <dl>
-<dt><code class="name"><a title="arus.core" href="core/index.html">arus.core</a></code></dt>
-<dd>
-<section class="desc"><p>Module that defines top-level APIs</p></section>
-</dd>
-<dt><code class="name"><a title="arus.testing" href="testing.html">arus.testing</a></code></dt>
+<dt id="arus.testing.load_test_data"><code class="name flex">
+<span>def <span class="ident">load_test_data</span></span>(<span>file_type='mhealth', file_num='multiple', sr_type='consistent')</span>
+</code></dt>
 <dd>
 <section class="desc"></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def load_test_data(file_type=&#39;mhealth&#39;, file_num=&#39;multiple&#39;, sr_type=&#39;consistent&#39;):
+    cwd = os.path.dirname(os.path.realpath(__file__))
+    data_folder = os.path.join(cwd, &#39;..&#39;, &#39;data&#39;, file_num,
+                               file_type, sr_type + &#39;_sr&#39;)
+    meta_file = os.path.join(data_folder, &#39;meta.csv&#39;)
+    if file_num == &#39;multiple&#39;:
+        data = list(filter(lambda f: &#39;meta&#39; not in f, glob(
+            os.path.join(data_folder, &#39;*.csv&#39;))))
+    else:
+        data = list(filter(lambda f: &#39;meta&#39; not in f, glob(
+            os.path.join(data_folder, &#39;*.csv&#39;))))[0]
+    with open(meta_file, &#39;r&#39;) as meta:
+        sr = int(meta.readline().split(&#39;,&#39;)[1])
+    return data, sr</code></pre>
+</details>
 </dd>
 </dl>
-</section>
-<section>
-</section>
-<section>
 </section>
 <section>
 </section>
@@ -89,29 +80,17 @@ __arus__ python package provides a computation framework to manage and process u
 <nav id="sidebar">
 <h1>Index</h1>
 <div class="toc">
-<ul>
-<li><a href="#overview">Overview</a></li>
-<li><a href="#get-started">Get started</a><ul>
-<li><a href="#prerequists">Prerequists</a></li>
-<li><a href="#installation">Installation</a></li>
-<li><a href="#plugins">Plugins</a><ul>
-<li><a href="#official-plugins">Official plugins</a></li>
-</ul>
-</li>
-<li><a href="#development">Development</a><ul>
-<li><a href="#prerequists_1">Prerequists</a></li>
-<li><a href="#set-up-development-environment">Set up development environment</a></li>
-</ul>
-</li>
-</ul>
-</li>
-</ul>
+<ul></ul>
 </div>
 <ul id="index">
-<li><h3><a href="#header-submodules">Sub-modules</a></h3>
+<li><h3>Super-module</h3>
 <ul>
-<li><code><a title="arus.core" href="core/index.html">arus.core</a></code></li>
-<li><code><a title="arus.testing" href="testing.html">arus.testing</a></code></li>
+<li><code><a title="arus" href="index.html">arus</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="arus.testing.load_test_data" href="#arus.testing.load_test_data">load_test_data</a></code></li>
 </ul>
 </li>
 </ul>
