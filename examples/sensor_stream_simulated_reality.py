@@ -9,9 +9,9 @@ import matplotlib.pyplot as plt
 if __name__ == "__main__":
     window_size = 12.8
     files, sr = load_test_data(file_type='mhealth',
-                               file_num='multiple', sr_type='inconsistent')
+                               file_num='multiple', sr_type='consistent')
     stream = SensorFileStream(
-        data_source=files, window_size=window_size, start_time=None, sr=sr, buffer_size=900, storage_format='mhealth', name='spades_2')
+        data_source=files, window_size=window_size, start_time=None, sr=sr, buffer_size=900, storage_format='mhealth', simulate_reality=True, name='spades_2')
     stream.start(scheduler='thread')
     chunk_sizes = []
     for data in stream.get_iterator():
