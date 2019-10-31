@@ -38,7 +38,10 @@ jobs:
         name: codecov-umbrella
 
     - name: Bump version and tagging and publish
-      run: poetry run semantic-release publish
+      run: |
+        git config --global user.email "tqshelly@gmail.com"
+        git config --global user.name "github actions"
+        poetry run semantic-release publish
       env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
