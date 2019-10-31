@@ -43,7 +43,7 @@ jobs:
         git config --global user.name "github actions"
         poetry run semantic-release publish
       env:
-          GH_TOKEN: ${{ secrets.PERSONAL_TOKEN }}
+        GH_TOKEN: ${{ secrets.PERSONAL_TOKEN }}
 
     - name: Build pypi package
       run: poetry build
