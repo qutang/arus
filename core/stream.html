@@ -1,0 +1,1062 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+<meta name="generator" content="pdoc 0.7.1" />
+<title>arus.core.stream API documentation</title>
+<meta name="description" content="Module that loads external data sources (e.g., file, network port, socket and etc.) into a data queue using separate thread or not …" />
+<link href='https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.0/normalize.min.css' rel='stylesheet'>
+<link href='https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/8.0.0/sanitize.min.css' rel='stylesheet'>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github-gist.min.css" rel="stylesheet">
+<style>.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}a{color:#058;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#e82}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{font-weight:bold}#index h4 + ul{margin-bottom:.6em}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase;cursor:pointer}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}.admonition{padding:.1em .5em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:0.9em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>arus.core.stream</code></h1>
+</header>
+<section id="section-intro">
+<p>Module that loads external data sources (e.g., file, network port, socket and etc.) into a data queue using separate thread or not.</p>
+<h2 id="usage-of-sensorfilestream">Usage of <a title="arus.core.stream.SensorFileStream" href="#arus.core.stream.SensorFileStream"><code>SensorFileStream</code></a></h2>
+<h3 id="on-mhealth-sensor-files">On mhealth sensor files</h3>
+<pre><code class="python">from arus.core.stream import SensorFileStream
+from arus.testing import load_test_data
+from glob import glob
+import os
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+
+if __name__ == &quot;__main__&quot;:
+    window_size = 12.8
+    files, sr = load_test_data(file_type='mhealth',
+                               file_num='multiple', sr_type='inconsistent')
+    stream = SensorFileStream(
+        data_source=files, window_size=window_size, start_time=None, sr=sr, buffer_size=900, storage_format='mhealth', name='spades_2')
+    stream.start(scheduler='thread')
+    chunk_sizes = []
+    for data in stream.get_iterator():
+        print(&quot;{},{},{}&quot;.format(
+            data.iloc[0, 0], data.iloc[-1, 0], data.shape[0]))
+        chunk_sizes.append(data.shape[0])
+    pd.Series(chunk_sizes).plot(
+        title='chunk sizes of the given stream with \nwindow size of ' + str(window_size) + ' seconds, sampling rate at ' + str(sr) + ' Hz')
+    plt.hlines(y=sr * window_size, xmin=0,
+               xmax=len(chunk_sizes), linestyles='dashed')
+    plt.show()
+</code></pre>
+<h3 id="on-an-actigraph-sensor-file">On an Actigraph sensor file</h3>
+<pre><code class="python">from arus.core.stream import SensorFileStream
+from arus.testing import load_test_data
+from glob import glob
+import os
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+
+if __name__ == &quot;__main__&quot;:
+    window_size = 12.8
+    files, sr = load_test_data(file_type='actigraph',
+                               file_num='single', sr_type='consistent')
+    stream = SensorFileStream(
+        data_source=files, window_size=window_size, start_time=None, sr=sr, buffer_size=1800, storage_format='actigraph', name='spades_2')
+    stream.start(scheduler='thread')
+    chunk_sizes = []
+    for data in stream.get_iterator():
+        print(&quot;{},{},{}&quot;.format(
+            data.iloc[0, 0], data.iloc[-1, 0], data.shape[0]))
+        chunk_sizes.append(data.shape[0])
+    pd.Series(chunk_sizes).plot(
+        title='chunk sizes of the given stream with \nwindow size of ' + str(window_size) + ' seconds, sampling rate at ' + str(sr) + ' Hz')
+    plt.hlines(y=sr * window_size, xmin=0,
+               xmax=len(chunk_sizes), linestyles='dashed')
+    plt.show()
+</code></pre>
+<h3 id="on-mhealth-sensor-files-with-real-time-delay">On mhealth sensor files with real-time delay</h3>
+<pre><code class="python">from arus.core.stream import SensorFileStream
+from arus.testing import load_test_data
+from glob import glob
+import os
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+
+if __name__ == &quot;__main__&quot;:
+    window_size = 12.8
+    files, sr = load_test_data(file_type='mhealth',
+                               file_num='multiple', sr_type='consistent')
+    stream = SensorFileStream(
+        data_source=files, window_size=window_size, start_time=None, sr=sr, buffer_size=900, storage_format='mhealth', simulate_reality=True, name='spades_2')
+    stream.start(scheduler='thread')
+    chunk_sizes = []
+    for data in stream.get_iterator():
+        print(&quot;{},{},{}&quot;.format(
+            data.iloc[0, 0], data.iloc[-1, 0], data.shape[0]))
+        chunk_sizes.append(data.shape[0])
+    pd.Series(chunk_sizes).plot(
+        title='chunk sizes of the given stream with \nwindow size of ' + str(window_size) + ' seconds, sampling rate at ' + str(sr) + ' Hz')
+    plt.hlines(y=sr * window_size, xmin=0,
+               xmax=len(chunk_sizes), linestyles='dashed')
+    plt.show()
+</code></pre>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">&#34;&#34;&#34;Module that loads external data sources (e.g., file, network port, socket and etc.) into a data queue using separate thread or not.
+
+## Usage of `arus.core.stream.SensorFileStream` 
+
+### On mhealth sensor files
+
+```python
+.. include:: ../../examples/mhealth_stream.py
+```
+
+### On an Actigraph sensor file
+
+```python
+.. include:: ../../examples/actigraph_stream.py
+```
+
+### On mhealth sensor files with real-time delay
+
+```python
+.. include:: ../../examples/sensor_stream_simulated_reality.py
+```
+&#34;&#34;&#34;
+
+import queue
+import threading
+from .libs.mhealth_format.io import read_data_csv
+from .libs.mhealth_format.io import read_actigraph_csv
+from .libs.mhealth_format import data as mh_data
+from .libs.mhealth_format.path import extract_file_type
+from .libs.date import parse_timestamp
+import pandas as pd
+import numpy as np
+import logging
+import time
+
+
+class Stream:
+    &#34;&#34;&#34;The base class for data stream
+
+    Stream class is an abstraction of any data source that can be loaded into memory in arbitrary chunk size either asynchronously (currently only support threading) or synchronously.
+
+    Subclass may implement loading mechanisms for different data sources. Such as files, large file, socket device, bluetooth device, remote server, and database.
+
+    Returns:
+        stream (Stream): an instance object of type `Stream`.
+    &#34;&#34;&#34;
+
+    def __init__(self, data_source, window_size, start_time=None, name=&#39;default-stream&#39;, scheduler=&#39;thread&#39;):
+        &#34;&#34;&#34;
+
+        Args:
+            data_source (object): An object that may be loaded into memory. The type of the object is decided by the implementation of subclass.
+            window_size (float): Number of seconds. Each data in the queue would be a short chunk of data lasting `window_size` seconds loaded from the `data_source`.
+            start_time (str or datetime or datetime64 or pandas.Timestamp, optional): The start time of data source. This is used to sync between multiple streams. If it is `None`, the default value would be extracted from the first sample of the loaded data.
+            name (str, optional): The name of the data stream will also be used as the name of the sub-thread that is used to load data. Defaults to &#39;default-stream&#39;.
+            scheduler (str, optional): The scheduler used to load the data source. It can be either &#39;thread&#39; or &#39;sync&#39;. Defaults to &#39;thread&#39;.
+        &#34;&#34;&#34;
+        self._queue = queue.Queue()
+        self._data_source = data_source
+        self._window_size = window_size
+        self._start_time = start_time
+        self.started = False
+        self.name = name
+        self._scheduler = scheduler
+
+    @property
+    def started(self):
+        &#34;&#34;&#34;Status of the stream
+
+        Returns:
+            started (bool): `True` if stream is running.
+        &#34;&#34;&#34;
+        return self._started
+
+    @started.setter
+    def started(self, value):
+        self._started = value
+
+    @property
+    def name(self):
+        &#34;&#34;&#34;The name of the data stream
+
+        Returns:
+            name (str): the name of the data stream
+        &#34;&#34;&#34;
+        return self._name
+
+    @name.setter
+    def name(self, value):
+        self._name = value
+
+    def get_iterator(self):
+        &#34;&#34;&#34;Get a python iterator for the loaded data queue.
+
+        Returns:
+            data_queue (iterator): the iterator that can be looped to read loaded data.
+        &#34;&#34;&#34;
+        stop_fun = self.stop
+        q = self._queue
+
+        class _data_iter:
+            def __iter__(self):
+                return self
+
+            def __next__(self):
+                data = q.get()
+                if data is None:
+                    # end of the stream, stop
+                    stop_fun()
+                    raise StopIteration
+                return data
+
+        return _data_iter()
+
+    def next(self):
+        &#34;&#34;&#34;Manually get the next loaded data in data queue. Rarely used. Recommend to use the `Stream.get_iterator` method.
+
+        Returns:
+            data (object): the loaded data.
+        &#34;&#34;&#34;
+        data = self._queue.get()
+        if data is None:
+            # end of the stream, stop
+            self.stop()
+        return data
+
+    def start(self, scheduler=None):
+        &#34;&#34;&#34;Method to start loading data from the provided data source.
+        Args:
+            scheduler (str, optional): The scheduler used to load data. This will override the scheduler set in the constructor if the value is not `None`, otherwise it will fall back to the setting in the constructor.
+
+        Raises:
+            NotImplementedError: raised if the scheduler is not supported.
+        &#34;&#34;&#34;
+        self.started = True
+        self._scheduler = self._scheduler if scheduler is None else scheduler
+        if self._scheduler == &#39;thread&#39;:
+            self._loading_thread = self._get_thread_for_loading(
+                self._data_source)
+            self._loading_thread.start()
+        elif self._scheduler == &#39;sync&#39;:
+            self.load_(self._data_source)
+        else:
+            raise NotImplementedError(
+                &#39;scheduler {} is not implemented&#39;.format(scheduler))
+
+    def _get_thread_for_loading(self, data_source):
+        return threading.Thread(
+            target=self.load_, name=self.name, args=(data_source,))
+
+    def _put_data_in_queue(self, data):
+        self._queue.put(data)
+
+    def stop(self):
+        &#34;&#34;&#34;Method to stop the loading process
+        &#34;&#34;&#34;
+        self.started = False
+
+    def load_(self, data_source):
+        &#34;&#34;&#34;Implement this in the sub class.
+
+        You may use `Stream._put_data_in_queue` method to put the loaded data into the queue. Must use `None` as stop signal for the data queue iterator.
+
+        Raises:
+            NotImplementedError: Must implement in subclass.
+        &#34;&#34;&#34;
+        raise NotImplementedError(&#39;Sub class must implement this method&#39;)
+
+
+class SensorFileStream(Stream):
+    &#34;&#34;&#34;Data stream to syncly or asyncly load sensor file or files with different storage formats.
+
+    This class inherits `Stream` class to load data files.
+
+    The stream will load a file or files in the `data_source` and separate them into chunks specified by `window_size` to be loaded in the data queue.
+
+    Examples:
+        1. Loading a list of files as 12.8s chunks asynchronously.
+
+        ```python
+        .. include:: ../../examples/mhealth_stream.py
+        ```
+    &#34;&#34;&#34;
+
+    def __init__(self, data_source, window_size, sr, start_time=None, buffer_size=1800, storage_format=&#39;mhealth&#39;, simulate_reality=False, name=&#39;mhealth-stream&#39;):
+        &#34;&#34;&#34;
+        Args:
+            data_source (str or list): filepath or list of filepaths of mhealth sensor data
+            sr (int): the sampling rate (Hz) for the given data
+            buffer_size (float, optional): the buffer size for file reader in seconds
+            storage_format (str, optional): the storage format of the files in `data_source`. It now supports `mhealth` and `actigraph`.
+            simulate_reality (bool, optional): simulate real world time delay if `True`.
+            name (str, optional): see `Stream.name`.
+        &#34;&#34;&#34;
+        super().__init__(data_source=data_source,
+                         window_size=window_size, start_time=start_time, name=name)
+        self._sr = sr
+        self._buffer_size = buffer_size
+        self._storage_format = storage_format
+        self._simulate_reality = simulate_reality
+
+    def _load_files_into_chunks(self, filepaths):
+        current_window = []
+        current_window_st = None
+        current_window_et = None
+        current_clock = time.time()
+        previous_window_st = None
+        for filepath in filepaths:
+            for data in self._load_file(filepath):
+                if self.started:
+                    chunks = self._extract_chunks_from_loaded_data(
+                        data)
+                    for chunk, window_st, window_et in chunks:
+                        current_window_st = window_st if current_window_st is None else current_window_st
+                        current_window_et = window_et if current_window_et is None else current_window_et
+                        previous_window_st = window_st if previous_window_st is None else previous_window_st
+                        if current_window_st == window_st and current_window_et == window_et:
+                            current_window.append(chunk)
+                        else:
+                            current_window = pd.concat(current_window, axis=0)
+                            current_clock = self._send_data(
+                                current_window, current_clock, current_window_st, previous_window_st)
+                            current_window = [chunk]
+                            previous_window_st = current_window_st
+                            current_window_st = window_st
+                            current_window_et = window_et
+
+    def _send_data(self, current_window, current_clock, current_window_st, previous_window_st):
+        if self._simulate_reality:
+            delay = (current_window_st - previous_window_st) / \
+                np.timedelta64(1, &#39;s&#39;)
+            logging.debug(&#39;Delay for &#39; + str(delay) +
+                          &#39; seconds to simulate reality&#39;)
+            time.sleep(max(current_clock + delay - time.time(), 0))
+            self._put_data_in_queue(current_window)
+            return time.time()
+        else:
+            self._put_data_in_queue(current_window)
+            return current_clock
+
+    def _load_file(self, filepath):
+        chunksize = self._sr * self._buffer_size
+        if self._storage_format == &#39;mhealth&#39;:
+            reader = read_data_csv(
+                filepath, chunksize=chunksize, iterator=True)
+            for data in reader:
+                yield data
+        elif self._storage_format == &#39;actigraph&#39;:
+            reader, format_as_mhealth = read_actigraph_csv(
+                filepath, chunksize=chunksize, iterator=True)
+            for data in reader:
+                data = format_as_mhealth(data)
+                yield data
+        else:
+            raise NotImplementedError(
+                &#39;The given storage format argument is not supported&#39;)
+
+    def _extract_chunks_from_loaded_data(self, data):
+        data_et = mh_data.get_end_time(data, 0)
+        data_st = mh_data.get_start_time(data, 0)
+        if self._start_time is None:
+            self._start_time = data_st
+        window_ts_marks = pd.date_range(start=self._start_time, end=data_et,
+                                        freq=str(self._window_size * 1000) + &#39;ms&#39;)
+        self._start_time = window_ts_marks[-1]
+        chunks = []
+        for window_st in window_ts_marks:
+            window_et = window_st + \
+                pd.Timedelta(self._window_size * 1000, unit=&#39;ms&#39;)
+            chunk = mh_data.segment_sensor(
+                data, start_time=window_st, stop_time=window_et)
+            if chunk.empty:
+                continue
+            else:
+                chunks.append((chunk, window_st, window_et))
+        return chunks
+
+    def load_(self, obj_toload):
+        if isinstance(obj_toload, str):
+            obj_toload = [obj_toload]
+        self._load_files_into_chunks(obj_toload)
+        self._put_data_in_queue(None)</code></pre>
+</details>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="arus.core.stream.Stream"><code class="flex name class">
+<span>class <span class="ident">Stream</span></span>
+<span>(</span><span>data_source, window_size, start_time=None, name='default-stream', scheduler='thread')</span>
+</code></dt>
+<dd>
+<section class="desc"><p>The base class for data stream</p>
+<p>Stream class is an abstraction of any data source that can be loaded into memory in arbitrary chunk size either asynchronously (currently only support threading) or synchronously.</p>
+<p>Subclass may implement loading mechanisms for different data sources. Such as files, large file, socket device, bluetooth device, remote server, and database.</p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><strong><code>stream</code></strong> :&ensp;<a title="arus.core.stream.Stream" href="#arus.core.stream.Stream"><code>Stream</code></a></dt>
+<dd>an instance object of type <a title="arus.core.stream.Stream" href="#arus.core.stream.Stream"><code>Stream</code></a>.</dd>
+</dl>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>data_source</code></strong> :&ensp;<code>object</code></dt>
+<dd>An object that may be loaded into memory. The type of the object is decided by the implementation of subclass.</dd>
+<dt><strong><code>window_size</code></strong> :&ensp;<code>float</code></dt>
+<dd>Number of seconds. Each data in the queue would be a short chunk of data lasting <code>window_size</code> seconds loaded from the <code>data_source</code>.</dd>
+<dt><strong><code>start_time</code></strong> :&ensp;<code>str</code> or <code>datetime</code> or <code>datetime64</code> or <code>pandas.Timestamp</code>, optional</dt>
+<dd>The start time of data source. This is used to sync between multiple streams. If it is <code>None</code>, the default value would be extracted from the first sample of the loaded data.</dd>
+<dt><strong><code>name</code></strong> :&ensp;<code>str</code>, optional</dt>
+<dd>The name of the data stream will also be used as the name of the sub-thread that is used to load data. Defaults to 'default-stream'.</dd>
+<dt><strong><code>scheduler</code></strong> :&ensp;<code>str</code>, optional</dt>
+<dd>The scheduler used to load the data source. It can be either 'thread' or 'sync'. Defaults to 'thread'.</dd>
+</dl></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">class Stream:
+    &#34;&#34;&#34;The base class for data stream
+
+    Stream class is an abstraction of any data source that can be loaded into memory in arbitrary chunk size either asynchronously (currently only support threading) or synchronously.
+
+    Subclass may implement loading mechanisms for different data sources. Such as files, large file, socket device, bluetooth device, remote server, and database.
+
+    Returns:
+        stream (Stream): an instance object of type `Stream`.
+    &#34;&#34;&#34;
+
+    def __init__(self, data_source, window_size, start_time=None, name=&#39;default-stream&#39;, scheduler=&#39;thread&#39;):
+        &#34;&#34;&#34;
+
+        Args:
+            data_source (object): An object that may be loaded into memory. The type of the object is decided by the implementation of subclass.
+            window_size (float): Number of seconds. Each data in the queue would be a short chunk of data lasting `window_size` seconds loaded from the `data_source`.
+            start_time (str or datetime or datetime64 or pandas.Timestamp, optional): The start time of data source. This is used to sync between multiple streams. If it is `None`, the default value would be extracted from the first sample of the loaded data.
+            name (str, optional): The name of the data stream will also be used as the name of the sub-thread that is used to load data. Defaults to &#39;default-stream&#39;.
+            scheduler (str, optional): The scheduler used to load the data source. It can be either &#39;thread&#39; or &#39;sync&#39;. Defaults to &#39;thread&#39;.
+        &#34;&#34;&#34;
+        self._queue = queue.Queue()
+        self._data_source = data_source
+        self._window_size = window_size
+        self._start_time = start_time
+        self.started = False
+        self.name = name
+        self._scheduler = scheduler
+
+    @property
+    def started(self):
+        &#34;&#34;&#34;Status of the stream
+
+        Returns:
+            started (bool): `True` if stream is running.
+        &#34;&#34;&#34;
+        return self._started
+
+    @started.setter
+    def started(self, value):
+        self._started = value
+
+    @property
+    def name(self):
+        &#34;&#34;&#34;The name of the data stream
+
+        Returns:
+            name (str): the name of the data stream
+        &#34;&#34;&#34;
+        return self._name
+
+    @name.setter
+    def name(self, value):
+        self._name = value
+
+    def get_iterator(self):
+        &#34;&#34;&#34;Get a python iterator for the loaded data queue.
+
+        Returns:
+            data_queue (iterator): the iterator that can be looped to read loaded data.
+        &#34;&#34;&#34;
+        stop_fun = self.stop
+        q = self._queue
+
+        class _data_iter:
+            def __iter__(self):
+                return self
+
+            def __next__(self):
+                data = q.get()
+                if data is None:
+                    # end of the stream, stop
+                    stop_fun()
+                    raise StopIteration
+                return data
+
+        return _data_iter()
+
+    def next(self):
+        &#34;&#34;&#34;Manually get the next loaded data in data queue. Rarely used. Recommend to use the `Stream.get_iterator` method.
+
+        Returns:
+            data (object): the loaded data.
+        &#34;&#34;&#34;
+        data = self._queue.get()
+        if data is None:
+            # end of the stream, stop
+            self.stop()
+        return data
+
+    def start(self, scheduler=None):
+        &#34;&#34;&#34;Method to start loading data from the provided data source.
+        Args:
+            scheduler (str, optional): The scheduler used to load data. This will override the scheduler set in the constructor if the value is not `None`, otherwise it will fall back to the setting in the constructor.
+
+        Raises:
+            NotImplementedError: raised if the scheduler is not supported.
+        &#34;&#34;&#34;
+        self.started = True
+        self._scheduler = self._scheduler if scheduler is None else scheduler
+        if self._scheduler == &#39;thread&#39;:
+            self._loading_thread = self._get_thread_for_loading(
+                self._data_source)
+            self._loading_thread.start()
+        elif self._scheduler == &#39;sync&#39;:
+            self.load_(self._data_source)
+        else:
+            raise NotImplementedError(
+                &#39;scheduler {} is not implemented&#39;.format(scheduler))
+
+    def _get_thread_for_loading(self, data_source):
+        return threading.Thread(
+            target=self.load_, name=self.name, args=(data_source,))
+
+    def _put_data_in_queue(self, data):
+        self._queue.put(data)
+
+    def stop(self):
+        &#34;&#34;&#34;Method to stop the loading process
+        &#34;&#34;&#34;
+        self.started = False
+
+    def load_(self, data_source):
+        &#34;&#34;&#34;Implement this in the sub class.
+
+        You may use `Stream._put_data_in_queue` method to put the loaded data into the queue. Must use `None` as stop signal for the data queue iterator.
+
+        Raises:
+            NotImplementedError: Must implement in subclass.
+        &#34;&#34;&#34;
+        raise NotImplementedError(&#39;Sub class must implement this method&#39;)</code></pre>
+</details>
+<h3>Subclasses</h3>
+<ul class="hlist">
+<li><a title="arus.core.stream.SensorFileStream" href="#arus.core.stream.SensorFileStream">SensorFileStream</a></li>
+</ul>
+<h3>Instance variables</h3>
+<dl>
+<dt id="arus.core.stream.Stream.started"><code class="name">var <span class="ident">started</span></code></dt>
+<dd>
+<section class="desc"><p>Status of the stream</p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><strong><code>started</code></strong> :&ensp;<code>bool</code></dt>
+<dd><code>True</code> if stream is running.</dd>
+</dl></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">@property
+def started(self):
+    &#34;&#34;&#34;Status of the stream
+
+    Returns:
+        started (bool): `True` if stream is running.
+    &#34;&#34;&#34;
+    return self._started</code></pre>
+</details>
+</dd>
+<dt id="arus.core.stream.Stream.name"><code class="name">var <span class="ident">name</span></code></dt>
+<dd>
+<section class="desc"><p>The name of the data stream</p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><strong><code>name</code></strong> :&ensp;<code>str</code></dt>
+<dd>the name of the data stream</dd>
+</dl></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">@property
+def name(self):
+    &#34;&#34;&#34;The name of the data stream
+
+    Returns:
+        name (str): the name of the data stream
+    &#34;&#34;&#34;
+    return self._name</code></pre>
+</details>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="arus.core.stream.Stream.get_iterator"><code class="name flex">
+<span>def <span class="ident">get_iterator</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Get a python iterator for the loaded data queue.</p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><strong><code>data_queue</code></strong> :&ensp;<code>iterator</code></dt>
+<dd>the iterator that can be looped to read loaded data.</dd>
+</dl></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def get_iterator(self):
+    &#34;&#34;&#34;Get a python iterator for the loaded data queue.
+
+    Returns:
+        data_queue (iterator): the iterator that can be looped to read loaded data.
+    &#34;&#34;&#34;
+    stop_fun = self.stop
+    q = self._queue
+
+    class _data_iter:
+        def __iter__(self):
+            return self
+
+        def __next__(self):
+            data = q.get()
+            if data is None:
+                # end of the stream, stop
+                stop_fun()
+                raise StopIteration
+            return data
+
+    return _data_iter()</code></pre>
+</details>
+</dd>
+<dt id="arus.core.stream.Stream.next"><code class="name flex">
+<span>def <span class="ident">next</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Manually get the next loaded data in data queue. Rarely used. Recommend to use the <a title="arus.core.stream.Stream.get_iterator" href="#arus.core.stream.Stream.get_iterator"><code>Stream.get_iterator()</code></a> method.</p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><strong><code>data</code></strong> :&ensp;<code>object</code></dt>
+<dd>the loaded data.</dd>
+</dl></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def next(self):
+    &#34;&#34;&#34;Manually get the next loaded data in data queue. Rarely used. Recommend to use the `Stream.get_iterator` method.
+
+    Returns:
+        data (object): the loaded data.
+    &#34;&#34;&#34;
+    data = self._queue.get()
+    if data is None:
+        # end of the stream, stop
+        self.stop()
+    return data</code></pre>
+</details>
+</dd>
+<dt id="arus.core.stream.Stream.start"><code class="name flex">
+<span>def <span class="ident">start</span></span>(<span>self, scheduler=None)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Method to start loading data from the provided data source.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>scheduler</code></strong> :&ensp;<code>str</code>, optional</dt>
+<dd>The scheduler used to load data. This will override the scheduler set in the constructor if the value is not <code>None</code>, otherwise it will fall back to the setting in the constructor.</dd>
+</dl>
+<h2 id="raises">Raises</h2>
+<dl>
+<dt><strong><code>NotImplementedError</code></strong></dt>
+<dd>raised if the scheduler is not supported.</dd>
+</dl></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def start(self, scheduler=None):
+    &#34;&#34;&#34;Method to start loading data from the provided data source.
+    Args:
+        scheduler (str, optional): The scheduler used to load data. This will override the scheduler set in the constructor if the value is not `None`, otherwise it will fall back to the setting in the constructor.
+
+    Raises:
+        NotImplementedError: raised if the scheduler is not supported.
+    &#34;&#34;&#34;
+    self.started = True
+    self._scheduler = self._scheduler if scheduler is None else scheduler
+    if self._scheduler == &#39;thread&#39;:
+        self._loading_thread = self._get_thread_for_loading(
+            self._data_source)
+        self._loading_thread.start()
+    elif self._scheduler == &#39;sync&#39;:
+        self.load_(self._data_source)
+    else:
+        raise NotImplementedError(
+            &#39;scheduler {} is not implemented&#39;.format(scheduler))</code></pre>
+</details>
+</dd>
+<dt id="arus.core.stream.Stream.stop"><code class="name flex">
+<span>def <span class="ident">stop</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Method to stop the loading process</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def stop(self):
+    &#34;&#34;&#34;Method to stop the loading process
+    &#34;&#34;&#34;
+    self.started = False</code></pre>
+</details>
+</dd>
+<dt id="arus.core.stream.Stream.load_"><code class="name flex">
+<span>def <span class="ident">load_</span></span>(<span>self, data_source)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Implement this in the sub class.</p>
+<p>You may use <code>Stream._put_data_in_queue</code> method to put the loaded data into the queue. Must use <code>None</code> as stop signal for the data queue iterator.</p>
+<h2 id="raises">Raises</h2>
+<dl>
+<dt><strong><code>NotImplementedError</code></strong></dt>
+<dd>Must implement in subclass.</dd>
+</dl></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def load_(self, data_source):
+    &#34;&#34;&#34;Implement this in the sub class.
+
+    You may use `Stream._put_data_in_queue` method to put the loaded data into the queue. Must use `None` as stop signal for the data queue iterator.
+
+    Raises:
+        NotImplementedError: Must implement in subclass.
+    &#34;&#34;&#34;
+    raise NotImplementedError(&#39;Sub class must implement this method&#39;)</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+<dt id="arus.core.stream.SensorFileStream"><code class="flex name class">
+<span>class <span class="ident">SensorFileStream</span></span>
+<span>(</span><span>data_source, window_size, sr, start_time=None, buffer_size=1800, storage_format='mhealth', simulate_reality=False, name='mhealth-stream')</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Data stream to syncly or asyncly load sensor file or files with different storage formats.</p>
+<p>This class inherits <a title="arus.core.stream.Stream" href="#arus.core.stream.Stream"><code>Stream</code></a> class to load data files.</p>
+<p>The stream will load a file or files in the <code>data_source</code> and separate them into chunks specified by <code>window_size</code> to be loaded in the data queue.</p>
+<h2 id="examples">Examples</h2>
+<ol>
+<li>Loading a list of files as 12.8s chunks asynchronously.</li>
+</ol>
+<pre><code class="python">from arus.core.stream import SensorFileStream
+from arus.testing import load_test_data
+from glob import glob
+import os
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+
+if __name__ == &quot;__main__&quot;:
+    window_size = 12.8
+    files, sr = load_test_data(file_type='mhealth',
+                               file_num='multiple', sr_type='inconsistent')
+    stream = SensorFileStream(
+        data_source=files, window_size=window_size, start_time=None, sr=sr, buffer_size=900, storage_format='mhealth', name='spades_2')
+    stream.start(scheduler='thread')
+    chunk_sizes = []
+    for data in stream.get_iterator():
+        print(&quot;{},{},{}&quot;.format(
+            data.iloc[0, 0], data.iloc[-1, 0], data.shape[0]))
+        chunk_sizes.append(data.shape[0])
+    pd.Series(chunk_sizes).plot(
+        title='chunk sizes of the given stream with \nwindow size of ' + str(window_size) + ' seconds, sampling rate at ' + str(sr) + ' Hz')
+    plt.hlines(y=sr * window_size, xmin=0,
+               xmax=len(chunk_sizes), linestyles='dashed')
+    plt.show()
+</code></pre>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>data_source</code></strong> :&ensp;<code>str</code> or <code>list</code></dt>
+<dd>filepath or list of filepaths of mhealth sensor data</dd>
+<dt><strong><code>sr</code></strong> :&ensp;<code>int</code></dt>
+<dd>the sampling rate (Hz) for the given data</dd>
+<dt><strong><code>buffer_size</code></strong> :&ensp;<code>float</code>, optional</dt>
+<dd>the buffer size for file reader in seconds</dd>
+<dt><strong><code>storage_format</code></strong> :&ensp;<code>str</code>, optional</dt>
+<dd>the storage format of the files in <code>data_source</code>. It now supports <code>mhealth</code> and <code>actigraph</code>.</dd>
+<dt><strong><code>simulate_reality</code></strong> :&ensp;<code>bool</code>, optional</dt>
+<dd>simulate real world time delay if <code>True</code>.</dd>
+<dt><strong><code>name</code></strong> :&ensp;<code>str</code>, optional</dt>
+<dd>see <code>Stream.name</code>.</dd>
+</dl></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">class SensorFileStream(Stream):
+    &#34;&#34;&#34;Data stream to syncly or asyncly load sensor file or files with different storage formats.
+
+    This class inherits `Stream` class to load data files.
+
+    The stream will load a file or files in the `data_source` and separate them into chunks specified by `window_size` to be loaded in the data queue.
+
+    Examples:
+        1. Loading a list of files as 12.8s chunks asynchronously.
+
+        ```python
+        .. include:: ../../examples/mhealth_stream.py
+        ```
+    &#34;&#34;&#34;
+
+    def __init__(self, data_source, window_size, sr, start_time=None, buffer_size=1800, storage_format=&#39;mhealth&#39;, simulate_reality=False, name=&#39;mhealth-stream&#39;):
+        &#34;&#34;&#34;
+        Args:
+            data_source (str or list): filepath or list of filepaths of mhealth sensor data
+            sr (int): the sampling rate (Hz) for the given data
+            buffer_size (float, optional): the buffer size for file reader in seconds
+            storage_format (str, optional): the storage format of the files in `data_source`. It now supports `mhealth` and `actigraph`.
+            simulate_reality (bool, optional): simulate real world time delay if `True`.
+            name (str, optional): see `Stream.name`.
+        &#34;&#34;&#34;
+        super().__init__(data_source=data_source,
+                         window_size=window_size, start_time=start_time, name=name)
+        self._sr = sr
+        self._buffer_size = buffer_size
+        self._storage_format = storage_format
+        self._simulate_reality = simulate_reality
+
+    def _load_files_into_chunks(self, filepaths):
+        current_window = []
+        current_window_st = None
+        current_window_et = None
+        current_clock = time.time()
+        previous_window_st = None
+        for filepath in filepaths:
+            for data in self._load_file(filepath):
+                if self.started:
+                    chunks = self._extract_chunks_from_loaded_data(
+                        data)
+                    for chunk, window_st, window_et in chunks:
+                        current_window_st = window_st if current_window_st is None else current_window_st
+                        current_window_et = window_et if current_window_et is None else current_window_et
+                        previous_window_st = window_st if previous_window_st is None else previous_window_st
+                        if current_window_st == window_st and current_window_et == window_et:
+                            current_window.append(chunk)
+                        else:
+                            current_window = pd.concat(current_window, axis=0)
+                            current_clock = self._send_data(
+                                current_window, current_clock, current_window_st, previous_window_st)
+                            current_window = [chunk]
+                            previous_window_st = current_window_st
+                            current_window_st = window_st
+                            current_window_et = window_et
+
+    def _send_data(self, current_window, current_clock, current_window_st, previous_window_st):
+        if self._simulate_reality:
+            delay = (current_window_st - previous_window_st) / \
+                np.timedelta64(1, &#39;s&#39;)
+            logging.debug(&#39;Delay for &#39; + str(delay) +
+                          &#39; seconds to simulate reality&#39;)
+            time.sleep(max(current_clock + delay - time.time(), 0))
+            self._put_data_in_queue(current_window)
+            return time.time()
+        else:
+            self._put_data_in_queue(current_window)
+            return current_clock
+
+    def _load_file(self, filepath):
+        chunksize = self._sr * self._buffer_size
+        if self._storage_format == &#39;mhealth&#39;:
+            reader = read_data_csv(
+                filepath, chunksize=chunksize, iterator=True)
+            for data in reader:
+                yield data
+        elif self._storage_format == &#39;actigraph&#39;:
+            reader, format_as_mhealth = read_actigraph_csv(
+                filepath, chunksize=chunksize, iterator=True)
+            for data in reader:
+                data = format_as_mhealth(data)
+                yield data
+        else:
+            raise NotImplementedError(
+                &#39;The given storage format argument is not supported&#39;)
+
+    def _extract_chunks_from_loaded_data(self, data):
+        data_et = mh_data.get_end_time(data, 0)
+        data_st = mh_data.get_start_time(data, 0)
+        if self._start_time is None:
+            self._start_time = data_st
+        window_ts_marks = pd.date_range(start=self._start_time, end=data_et,
+                                        freq=str(self._window_size * 1000) + &#39;ms&#39;)
+        self._start_time = window_ts_marks[-1]
+        chunks = []
+        for window_st in window_ts_marks:
+            window_et = window_st + \
+                pd.Timedelta(self._window_size * 1000, unit=&#39;ms&#39;)
+            chunk = mh_data.segment_sensor(
+                data, start_time=window_st, stop_time=window_et)
+            if chunk.empty:
+                continue
+            else:
+                chunks.append((chunk, window_st, window_et))
+        return chunks
+
+    def load_(self, obj_toload):
+        if isinstance(obj_toload, str):
+            obj_toload = [obj_toload]
+        self._load_files_into_chunks(obj_toload)
+        self._put_data_in_queue(None)</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="arus.core.stream.Stream" href="#arus.core.stream.Stream">Stream</a></li>
+</ul>
+<h3>Instance variables</h3>
+<dl>
+<dt id="arus.core.stream.SensorFileStream.started"><code class="name">var <span class="ident">started</span></code></dt>
+<dd>
+<p class="inheritance">
+<em>Inherited from:</em>
+<code><a title="arus.core.stream.Stream" href="#arus.core.stream.Stream">Stream</a></code>.<code><a title="arus.core.stream.Stream.started" href="#arus.core.stream.Stream.started">started</a></code>
+</p>
+<section class="desc inherited"><p>Status of the stream …</p></section>
+</dd>
+<dt id="arus.core.stream.SensorFileStream.name"><code class="name">var <span class="ident">name</span></code></dt>
+<dd>
+<p class="inheritance">
+<em>Inherited from:</em>
+<code><a title="arus.core.stream.Stream" href="#arus.core.stream.Stream">Stream</a></code>.<code><a title="arus.core.stream.Stream.name" href="#arus.core.stream.Stream.name">name</a></code>
+</p>
+<section class="desc inherited"><p>The name of the data stream …</p></section>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="arus.core.stream.SensorFileStream.load_"><code class="name flex">
+<span>def <span class="ident">load_</span></span>(<span>self, obj_toload)</span>
+</code></dt>
+<dd>
+<p class="inheritance">
+<em>Inherited from:</em>
+<code><a title="arus.core.stream.Stream" href="#arus.core.stream.Stream">Stream</a></code>.<code><a title="arus.core.stream.Stream.load_" href="#arus.core.stream.Stream.load_">load_</a></code>
+</p>
+<section class="desc inherited"><p>Implement this in the sub class …</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def load_(self, obj_toload):
+    if isinstance(obj_toload, str):
+        obj_toload = [obj_toload]
+    self._load_files_into_chunks(obj_toload)
+    self._put_data_in_queue(None)</code></pre>
+</details>
+</dd>
+<dt id="arus.core.stream.SensorFileStream.get_iterator"><code class="name flex">
+<span>def <span class="ident">get_iterator</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<p class="inheritance">
+<em>Inherited from:</em>
+<code><a title="arus.core.stream.Stream" href="#arus.core.stream.Stream">Stream</a></code>.<code><a title="arus.core.stream.Stream.get_iterator" href="#arus.core.stream.Stream.get_iterator">get_iterator</a></code>
+</p>
+<section class="desc inherited"><p>Get a python iterator for the loaded data queue …</p></section>
+</dd>
+<dt id="arus.core.stream.SensorFileStream.next"><code class="name flex">
+<span>def <span class="ident">next</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<p class="inheritance">
+<em>Inherited from:</em>
+<code><a title="arus.core.stream.Stream" href="#arus.core.stream.Stream">Stream</a></code>.<code><a title="arus.core.stream.Stream.next" href="#arus.core.stream.Stream.next">next</a></code>
+</p>
+<section class="desc inherited"><p>Manually get the next loaded data in data queue. Rarely used. Recommend to use the <a title="arus.core.stream.Stream.get_iterator" href="#arus.core.stream.Stream.get_iterator"><code>Stream.get_iterator()</code></a> method …</p></section>
+</dd>
+<dt id="arus.core.stream.SensorFileStream.start"><code class="name flex">
+<span>def <span class="ident">start</span></span>(<span>self, scheduler=None)</span>
+</code></dt>
+<dd>
+<p class="inheritance">
+<em>Inherited from:</em>
+<code><a title="arus.core.stream.Stream" href="#arus.core.stream.Stream">Stream</a></code>.<code><a title="arus.core.stream.Stream.start" href="#arus.core.stream.Stream.start">start</a></code>
+</p>
+<section class="desc inherited"><p>Method to start loading data from the provided data source.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>scheduler</code></strong> :&ensp;<code>str</code>, optional</dt>
+<dd>The scheduler used to load data. This will override …</dd>
+</dl></section>
+</dd>
+<dt id="arus.core.stream.SensorFileStream.stop"><code class="name flex">
+<span>def <span class="ident">stop</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<p class="inheritance">
+<em>Inherited from:</em>
+<code><a title="arus.core.stream.Stream" href="#arus.core.stream.Stream">Stream</a></code>.<code><a title="arus.core.stream.Stream.stop" href="#arus.core.stream.Stream.stop">stop</a></code>
+</p>
+<section class="desc inherited"><p>Method to stop the loading process</p></section>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<h1>Index</h1>
+<div class="toc">
+<ul>
+<li><a href="#usage-of-aruscorestreamsensorfilestream">Usage of arus.core.stream.SensorFileStream</a><ul>
+<li><a href="#on-mhealth-sensor-files">On mhealth sensor files</a></li>
+<li><a href="#on-an-actigraph-sensor-file">On an Actigraph sensor file</a></li>
+<li><a href="#on-mhealth-sensor-files-with-real-time-delay">On mhealth sensor files with real-time delay</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="arus.core" href="index.html">arus.core</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="arus.core.stream.Stream" href="#arus.core.stream.Stream">Stream</a></code></h4>
+<ul class="">
+<li><code><a title="arus.core.stream.Stream.get_iterator" href="#arus.core.stream.Stream.get_iterator">get_iterator</a></code></li>
+<li><code><a title="arus.core.stream.Stream.next" href="#arus.core.stream.Stream.next">next</a></code></li>
+<li><code><a title="arus.core.stream.Stream.start" href="#arus.core.stream.Stream.start">start</a></code></li>
+<li><code><a title="arus.core.stream.Stream.stop" href="#arus.core.stream.Stream.stop">stop</a></code></li>
+<li><code><a title="arus.core.stream.Stream.load_" href="#arus.core.stream.Stream.load_">load_</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="arus.core.stream.SensorFileStream" href="#arus.core.stream.SensorFileStream">SensorFileStream</a></code></h4>
+<ul class="">
+<li><code><a title="arus.core.stream.SensorFileStream.load_" href="#arus.core.stream.SensorFileStream.load_">load_</a></code></li>
+<li><code><a title="arus.core.stream.SensorFileStream.get_iterator" href="#arus.core.stream.SensorFileStream.get_iterator">get_iterator</a></code></li>
+<li><code><a title="arus.core.stream.SensorFileStream.next" href="#arus.core.stream.SensorFileStream.next">next</a></code></li>
+<li><code><a title="arus.core.stream.SensorFileStream.start" href="#arus.core.stream.SensorFileStream.start">start</a></code></li>
+<li><code><a title="arus.core.stream.SensorFileStream.stop" href="#arus.core.stream.SensorFileStream.stop">stop</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<a href='https://qutang.github.io'>Qu Tang © 2019</a>
+<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.7.1</a>.</p>
+</footer>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad()</script>
+</body>
+</html>

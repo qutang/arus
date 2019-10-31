@@ -1,0 +1,442 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+<meta name="generator" content="pdoc 0.7.1" />
+<title>arus.core.libs.dsp.detect_peaks API documentation</title>
+<meta name="description" content="Detect peaks in data based on their amplitude and other features." />
+<link href='https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.0/normalize.min.css' rel='stylesheet'>
+<link href='https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/8.0.0/sanitize.min.css' rel='stylesheet'>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github-gist.min.css" rel="stylesheet">
+<style>.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}a{color:#058;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#e82}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{font-weight:bold}#index h4 + ul{margin-bottom:.6em}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase;cursor:pointer}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}.admonition{padding:.1em .5em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:0.9em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>arus.core.libs.dsp.detect_peaks</code></h1>
+</header>
+<section id="section-intro">
+<p>Detect peaks in data based on their amplitude and other features.</p>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">&#34;&#34;&#34;Detect peaks in data based on their amplitude and other features.&#34;&#34;&#34;
+
+import numpy as np
+import pandas as pd
+
+__author__ = &#34;Marcos Duarte, https://github.com/demotu/BMC&#34;
+__version__ = &#34;1.0.4&#34;
+__license__ = &#34;MIT&#34;
+
+def detect_peaks(x, mph=None, mpd=1, threshold=0, edge=&#39;rising&#39;,
+                 kpsh=False, valley=False, show=False, ax=None):
+
+    &#34;&#34;&#34;Detect peaks in data based on their amplitude and other features.
+
+    Parameters
+    ----------
+    x : 1D array_like
+        data.
+    mph : {None, number}, optional (default = None)
+        detect peaks that are greater than minimum peak height.
+    mpd : positive integer, optional (default = 1)
+        detect peaks that are at least separated by minimum peak distance (in
+        number of data).
+    threshold : positive number, optional (default = 0)
+        detect peaks (valleys) that are greater (smaller) than `threshold`
+        in relation to their immediate neighbors.
+    edge : {None, &#39;rising&#39;, &#39;falling&#39;, &#39;both&#39;}, optional (default = &#39;rising&#39;)
+        for a flat peak, keep only the rising edge (&#39;rising&#39;), only the
+        falling edge (&#39;falling&#39;), both edges (&#39;both&#39;), or don&#39;t detect a
+        flat peak (None).
+    kpsh : bool, optional (default = False)
+        keep peaks with same height even if they are closer than `mpd`.
+    valley : bool, optional (default = False)
+        if True (1), detect valleys (local minima) instead of peaks.
+    show : bool, optional (default = False)
+        if True (1), plot data in matplotlib figure.
+    ax : a matplotlib.axes.Axes instance, optional (default = None).
+
+    Returns
+    -------
+    ind : 1D array_like
+        indeces of the peaks in `x`.
+
+    Notes
+    -----
+    The detection of valleys instead of peaks is performed internally by simply
+    negating the data: `ind_valleys = detect_peaks(-x)`
+    
+    The function can handle NaN&#39;s 
+
+    See this IPython Notebook [1]_.
+
+    References
+    ----------
+    .. [1] http://nbviewer.ipython.org/github/demotu/BMC/blob/master/notebooks/DetectPeaks.ipynb
+
+    Examples
+    --------
+    &gt;&gt;&gt; from detect_peaks import detect_peaks
+    &gt;&gt;&gt; x = np.random.randn(100)
+    &gt;&gt;&gt; x[60:81] = np.nan
+    &gt;&gt;&gt; # detect all peaks and plot data
+    &gt;&gt;&gt; ind = detect_peaks(x, show=True)
+    &gt;&gt;&gt; print(ind)
+
+    &gt;&gt;&gt; x = np.sin(2*np.pi*5*np.linspace(0, 1, 200)) + np.random.randn(200)/5
+    &gt;&gt;&gt; # set minimum peak height = 0 and minimum peak distance = 20
+    &gt;&gt;&gt; detect_peaks(x, mph=0, mpd=20, show=True)
+
+    &gt;&gt;&gt; x = [0, 1, 0, 2, 0, 3, 0, 2, 0, 1, 0]
+    &gt;&gt;&gt; # set minimum peak distance = 2
+    &gt;&gt;&gt; detect_peaks(x, mpd=2, show=True)
+
+    &gt;&gt;&gt; x = np.sin(2*np.pi*5*np.linspace(0, 1, 200)) + np.random.randn(200)/5
+    &gt;&gt;&gt; # detection of valleys instead of peaks
+    &gt;&gt;&gt; detect_peaks(x, mph=0, mpd=20, valley=True, show=True)
+
+    &gt;&gt;&gt; x = [0, 1, 1, 0, 1, 1, 0]
+    &gt;&gt;&gt; # detect both edges
+    &gt;&gt;&gt; detect_peaks(x, edge=&#39;both&#39;, show=True)
+
+    &gt;&gt;&gt; x = [-2, 1, -2, 2, 1, 1, 3, 0]
+    &gt;&gt;&gt; # set threshold = 2
+    &gt;&gt;&gt; detect_peaks(x, threshold = 2, show=True)
+    &#34;&#34;&#34;
+    x = np.atleast_1d(x).astype(&#39;float64&#39;)
+    if x.size &lt; 3:
+        return np.array([], dtype=int)
+    if valley:
+        x = -x
+    # find indexes of all peaks
+    dx = x[1:] - x[:-1]
+    # handle NaN&#39;s
+    indnan = np.where(np.isnan(x))[0]
+    if indnan.size:
+        x[indnan] = np.inf
+        dx[np.where(np.isnan(dx))[0]] = np.inf
+    ine, ire, ife = np.array([[], [], []], dtype=int)
+    if not edge:
+        ine = np.where((np.hstack((dx, 0)) &lt; 0) &amp; (np.hstack((0, dx)) &gt; 0))[0]
+    else:
+        if edge.lower() in [&#39;rising&#39;, &#39;both&#39;]:
+            ire = np.where((np.hstack((dx, 0)) &lt;= 0) &amp; (np.hstack((0, dx)) &gt; 0))[0]
+        if edge.lower() in [&#39;falling&#39;, &#39;both&#39;]:
+            ife = np.where((np.hstack((dx, 0)) &lt; 0) &amp; (np.hstack((0, dx)) &gt;= 0))[0]
+    ind = np.unique(np.hstack((ine, ire, ife)))
+    # handle NaN&#39;s
+    if ind.size and indnan.size:
+        # NaN&#39;s and values close to NaN&#39;s cannot be peaks
+        ind = ind[np.in1d(ind, np.unique(np.hstack((indnan, indnan-1, indnan+1))), invert=True)]
+    # first and last values of x cannot be peaks
+    if ind.size and ind[0] == 0:
+        ind = ind[1:]
+    if ind.size and ind[-1] == x.size-1:
+        ind = ind[:-1]
+    # remove peaks &lt; minimum peak height
+    if ind.size and mph is not None:
+        ind = ind[x[ind] &gt;= mph]
+    # remove peaks - neighbors &lt; threshold
+    if ind.size and threshold &gt; 0:
+        dx = np.min(np.vstack([x[ind]-x[ind-1], x[ind]-x[ind+1]]), axis=0)
+        ind = np.delete(ind, np.where(dx &lt; threshold)[0])
+    # detect small peaks closer than minimum peak distance
+    if ind.size and mpd &gt; 1:
+        ind = ind[np.argsort(x[ind])][::-1]  # sort ind by peak height
+        idel = np.zeros(ind.size, dtype=bool)
+        for i in range(ind.size):
+            if not idel[i]:
+                # keep peaks with the same height if kpsh is True
+                idel = idel | (ind &gt;= ind[i] - mpd) &amp; (ind &lt;= ind[i] + mpd) \
+                    &amp; (x[ind[i]] &gt; x[ind] if kpsh else True)
+                idel[i] = 0  # Keep current peak
+        # remove the small peaks and sort back the indexes by their occurrence
+        ind = np.sort(ind[~idel])
+
+    if show:
+        if indnan.size:
+            x[indnan] = np.nan
+        if valley:
+            x = -x
+        _plot(x, mph, mpd, threshold, edge, valley, ax, ind)
+    return ind
+
+def _plot(x, mph, mpd, threshold, edge, valley, ax, ind):
+    &#34;&#34;&#34;Plot results of the detect_peaks function, see its help.&#34;&#34;&#34;
+    try:
+        import matplotlib.pyplot as plt
+    except ImportError:
+        print(&#39;matplotlib is not available.&#39;)
+    else:
+        if ax is None:
+            _, ax = plt.subplots(1, 1, figsize=(8, 4))
+
+        ax.plot(x, &#39;b&#39;, lw=1)
+        if ind.size:
+            label = &#39;valley&#39; if valley else &#39;peak&#39;
+            label = label + &#39;s&#39; if ind.size &gt; 1 else label
+            ax.plot(ind, x[ind], &#39;+&#39;, mfc=None, mec=&#39;r&#39;, mew=2, ms=8,
+                    label=&#39;%d %s&#39; % (ind.size, label))
+            ax.legend(loc=&#39;best&#39;, framealpha=.5, numpoints=1)
+        ax.set_xlim(-.02*x.size, x.size*1.02-1)
+        ymin, ymax = x[np.isfinite(x)].min(), x[np.isfinite(x)].max()
+        yrange = ymax - ymin if ymax &gt; ymin else 1
+        ax.set_ylim(ymin - 0.1*yrange, ymax + 0.1*yrange)
+        ax.set_xlabel(&#39;Data #&#39;, fontsize=14)
+        ax.set_ylabel(&#39;Amplitude&#39;, fontsize=14)
+        mode = &#39;Valley detection&#39; if valley else &#39;Peak detection&#39;
+        ax.set_title(&#34;%s (mph=%s, mpd=%d, threshold=%s, edge=&#39;%s&#39;)&#34;
+                     % (mode, str(mph), mpd, str(threshold), edge))
+        plt.show()</code></pre>
+</details>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="arus.core.libs.dsp.detect_peaks.detect_peaks"><code class="name flex">
+<span>def <span class="ident">detect_peaks</span></span>(<span>x, mph=None, mpd=1, threshold=0, edge='rising', kpsh=False, valley=False, show=False, ax=None)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Detect peaks in data based on their amplitude and other features.</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>x</code></strong> :&ensp;<code>1D</code> <code>array_like</code></dt>
+<dd>data.</dd>
+<dt><strong><code>mph</code></strong> :&ensp;{<code>None</code>, <code>number</code>}, optional (default = <code>None</code>)</dt>
+<dd>detect peaks that are greater than minimum peak height.</dd>
+<dt><strong><code>mpd</code></strong> :&ensp;<code>positive</code> <code>integer</code>, optional (default = <code>1</code>)</dt>
+<dd>detect peaks that are at least separated by minimum peak distance (in
+number of data).</dd>
+<dt><strong><code>threshold</code></strong> :&ensp;<code>positive</code> <code>number</code>, optional (default = <code>0</code>)</dt>
+<dd>detect peaks (valleys) that are greater (smaller) than <code>threshold</code>
+in relation to their immediate neighbors.</dd>
+<dt><strong><code>edge</code></strong> :&ensp;{<code>None</code>, <code>'rising'</code>, <code>'falling'</code>, <code>'both'</code>}, optional (default = <code>'rising'</code>)</dt>
+<dd>for a flat peak, keep only the rising edge ('rising'), only the
+falling edge ('falling'), both edges ('both'), or don't detect a
+flat peak (None).</dd>
+<dt><strong><code>kpsh</code></strong> :&ensp;<code>bool</code>, optional (default = <code>False</code>)</dt>
+<dd>keep peaks with same height even if they are closer than <code>mpd</code>.</dd>
+<dt><strong><code>valley</code></strong> :&ensp;<code>bool</code>, optional (default = <code>False</code>)</dt>
+<dd>if True (1), detect valleys (local minima) instead of peaks.</dd>
+<dt><strong><code>show</code></strong> :&ensp;<code>bool</code>, optional (default = <code>False</code>)</dt>
+<dd>if True (1), plot data in matplotlib figure.</dd>
+</dl>
+<p>ax : a matplotlib.axes.Axes instance, optional (default = None).</p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><strong><code>ind</code></strong> :&ensp;<code>1D</code> <code>array_like</code></dt>
+<dd>indeces of the peaks in <code>x</code>.</dd>
+</dl>
+<h2 id="notes">Notes</h2>
+<p>The detection of valleys instead of peaks is performed internally by simply
+negating the data: <code>ind_valleys = detect_peaks(-x)</code></p>
+<p>The function can handle NaN's </p>
+<p>See this IPython Notebook [1]_.</p>
+<h2 id="references">References</h2>
+<p>.. [1] <a href="http://nbviewer.ipython.org/github/demotu/BMC/blob/master/notebooks/DetectPeaks.ipynb">http://nbviewer.ipython.org/github/demotu/BMC/blob/master/notebooks/DetectPeaks.ipynb</a></p>
+<h2 id="examples">Examples</h2>
+<pre><code>&gt;&gt;&gt; from detect_peaks import detect_peaks
+&gt;&gt;&gt; x = np.random.randn(100)
+&gt;&gt;&gt; x[60:81] = np.nan
+&gt;&gt;&gt; # detect all peaks and plot data
+&gt;&gt;&gt; ind = detect_peaks(x, show=True)
+&gt;&gt;&gt; print(ind)
+
+&gt;&gt;&gt; x = np.sin(2*np.pi*5*np.linspace(0, 1, 200)) + np.random.randn(200)/5
+&gt;&gt;&gt; # set minimum peak height = 0 and minimum peak distance = 20
+&gt;&gt;&gt; detect_peaks(x, mph=0, mpd=20, show=True)
+
+&gt;&gt;&gt; x = [0, 1, 0, 2, 0, 3, 0, 2, 0, 1, 0]
+&gt;&gt;&gt; # set minimum peak distance = 2
+&gt;&gt;&gt; detect_peaks(x, mpd=2, show=True)
+
+&gt;&gt;&gt; x = np.sin(2*np.pi*5*np.linspace(0, 1, 200)) + np.random.randn(200)/5
+&gt;&gt;&gt; # detection of valleys instead of peaks
+&gt;&gt;&gt; detect_peaks(x, mph=0, mpd=20, valley=True, show=True)
+
+&gt;&gt;&gt; x = [0, 1, 1, 0, 1, 1, 0]
+&gt;&gt;&gt; # detect both edges
+&gt;&gt;&gt; detect_peaks(x, edge='both', show=True)
+
+&gt;&gt;&gt; x = [-2, 1, -2, 2, 1, 1, 3, 0]
+&gt;&gt;&gt; # set threshold = 2
+&gt;&gt;&gt; detect_peaks(x, threshold = 2, show=True)
+</code></pre></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def detect_peaks(x, mph=None, mpd=1, threshold=0, edge=&#39;rising&#39;,
+                 kpsh=False, valley=False, show=False, ax=None):
+
+    &#34;&#34;&#34;Detect peaks in data based on their amplitude and other features.
+
+    Parameters
+    ----------
+    x : 1D array_like
+        data.
+    mph : {None, number}, optional (default = None)
+        detect peaks that are greater than minimum peak height.
+    mpd : positive integer, optional (default = 1)
+        detect peaks that are at least separated by minimum peak distance (in
+        number of data).
+    threshold : positive number, optional (default = 0)
+        detect peaks (valleys) that are greater (smaller) than `threshold`
+        in relation to their immediate neighbors.
+    edge : {None, &#39;rising&#39;, &#39;falling&#39;, &#39;both&#39;}, optional (default = &#39;rising&#39;)
+        for a flat peak, keep only the rising edge (&#39;rising&#39;), only the
+        falling edge (&#39;falling&#39;), both edges (&#39;both&#39;), or don&#39;t detect a
+        flat peak (None).
+    kpsh : bool, optional (default = False)
+        keep peaks with same height even if they are closer than `mpd`.
+    valley : bool, optional (default = False)
+        if True (1), detect valleys (local minima) instead of peaks.
+    show : bool, optional (default = False)
+        if True (1), plot data in matplotlib figure.
+    ax : a matplotlib.axes.Axes instance, optional (default = None).
+
+    Returns
+    -------
+    ind : 1D array_like
+        indeces of the peaks in `x`.
+
+    Notes
+    -----
+    The detection of valleys instead of peaks is performed internally by simply
+    negating the data: `ind_valleys = detect_peaks(-x)`
+    
+    The function can handle NaN&#39;s 
+
+    See this IPython Notebook [1]_.
+
+    References
+    ----------
+    .. [1] http://nbviewer.ipython.org/github/demotu/BMC/blob/master/notebooks/DetectPeaks.ipynb
+
+    Examples
+    --------
+    &gt;&gt;&gt; from detect_peaks import detect_peaks
+    &gt;&gt;&gt; x = np.random.randn(100)
+    &gt;&gt;&gt; x[60:81] = np.nan
+    &gt;&gt;&gt; # detect all peaks and plot data
+    &gt;&gt;&gt; ind = detect_peaks(x, show=True)
+    &gt;&gt;&gt; print(ind)
+
+    &gt;&gt;&gt; x = np.sin(2*np.pi*5*np.linspace(0, 1, 200)) + np.random.randn(200)/5
+    &gt;&gt;&gt; # set minimum peak height = 0 and minimum peak distance = 20
+    &gt;&gt;&gt; detect_peaks(x, mph=0, mpd=20, show=True)
+
+    &gt;&gt;&gt; x = [0, 1, 0, 2, 0, 3, 0, 2, 0, 1, 0]
+    &gt;&gt;&gt; # set minimum peak distance = 2
+    &gt;&gt;&gt; detect_peaks(x, mpd=2, show=True)
+
+    &gt;&gt;&gt; x = np.sin(2*np.pi*5*np.linspace(0, 1, 200)) + np.random.randn(200)/5
+    &gt;&gt;&gt; # detection of valleys instead of peaks
+    &gt;&gt;&gt; detect_peaks(x, mph=0, mpd=20, valley=True, show=True)
+
+    &gt;&gt;&gt; x = [0, 1, 1, 0, 1, 1, 0]
+    &gt;&gt;&gt; # detect both edges
+    &gt;&gt;&gt; detect_peaks(x, edge=&#39;both&#39;, show=True)
+
+    &gt;&gt;&gt; x = [-2, 1, -2, 2, 1, 1, 3, 0]
+    &gt;&gt;&gt; # set threshold = 2
+    &gt;&gt;&gt; detect_peaks(x, threshold = 2, show=True)
+    &#34;&#34;&#34;
+    x = np.atleast_1d(x).astype(&#39;float64&#39;)
+    if x.size &lt; 3:
+        return np.array([], dtype=int)
+    if valley:
+        x = -x
+    # find indexes of all peaks
+    dx = x[1:] - x[:-1]
+    # handle NaN&#39;s
+    indnan = np.where(np.isnan(x))[0]
+    if indnan.size:
+        x[indnan] = np.inf
+        dx[np.where(np.isnan(dx))[0]] = np.inf
+    ine, ire, ife = np.array([[], [], []], dtype=int)
+    if not edge:
+        ine = np.where((np.hstack((dx, 0)) &lt; 0) &amp; (np.hstack((0, dx)) &gt; 0))[0]
+    else:
+        if edge.lower() in [&#39;rising&#39;, &#39;both&#39;]:
+            ire = np.where((np.hstack((dx, 0)) &lt;= 0) &amp; (np.hstack((0, dx)) &gt; 0))[0]
+        if edge.lower() in [&#39;falling&#39;, &#39;both&#39;]:
+            ife = np.where((np.hstack((dx, 0)) &lt; 0) &amp; (np.hstack((0, dx)) &gt;= 0))[0]
+    ind = np.unique(np.hstack((ine, ire, ife)))
+    # handle NaN&#39;s
+    if ind.size and indnan.size:
+        # NaN&#39;s and values close to NaN&#39;s cannot be peaks
+        ind = ind[np.in1d(ind, np.unique(np.hstack((indnan, indnan-1, indnan+1))), invert=True)]
+    # first and last values of x cannot be peaks
+    if ind.size and ind[0] == 0:
+        ind = ind[1:]
+    if ind.size and ind[-1] == x.size-1:
+        ind = ind[:-1]
+    # remove peaks &lt; minimum peak height
+    if ind.size and mph is not None:
+        ind = ind[x[ind] &gt;= mph]
+    # remove peaks - neighbors &lt; threshold
+    if ind.size and threshold &gt; 0:
+        dx = np.min(np.vstack([x[ind]-x[ind-1], x[ind]-x[ind+1]]), axis=0)
+        ind = np.delete(ind, np.where(dx &lt; threshold)[0])
+    # detect small peaks closer than minimum peak distance
+    if ind.size and mpd &gt; 1:
+        ind = ind[np.argsort(x[ind])][::-1]  # sort ind by peak height
+        idel = np.zeros(ind.size, dtype=bool)
+        for i in range(ind.size):
+            if not idel[i]:
+                # keep peaks with the same height if kpsh is True
+                idel = idel | (ind &gt;= ind[i] - mpd) &amp; (ind &lt;= ind[i] + mpd) \
+                    &amp; (x[ind[i]] &gt; x[ind] if kpsh else True)
+                idel[i] = 0  # Keep current peak
+        # remove the small peaks and sort back the indexes by their occurrence
+        ind = np.sort(ind[~idel])
+
+    if show:
+        if indnan.size:
+            x[indnan] = np.nan
+        if valley:
+            x = -x
+        _plot(x, mph, mpd, threshold, edge, valley, ax, ind)
+    return ind</code></pre>
+</details>
+</dd>
+</dl>
+</section>
+<section>
+</section>
+</article>
+<nav id="sidebar">
+<h1>Index</h1>
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="arus.core.libs.dsp" href="index.html">arus.core.libs.dsp</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="arus.core.libs.dsp.detect_peaks.detect_peaks" href="#arus.core.libs.dsp.detect_peaks.detect_peaks">detect_peaks</a></code></li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<a href='https://qutang.github.io'>Qu Tang © 2019</a>
+<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.7.1</a>.</p>
+</footer>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad()</script>
+</body>
+</html>
