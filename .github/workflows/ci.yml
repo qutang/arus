@@ -27,7 +27,7 @@ jobs:
         poetry install
 
     - name: Run tests
-      run: pytest --cov --cov-report=xml arus
+      run: poetry run pytest --cov --cov-report=xml arus
 
     - name: Report to codecov
       uses: codecov/codecov-action@v1.0.3
