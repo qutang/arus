@@ -22,8 +22,26 @@ jobs:
 
     - name: Setup python dev environment
       run: |
+        pip install --upgrade pip
         pip install poetry
         poetry install
+
+    - name: Run tests
+      run: pytest --cov --cov-report=xml arus
+
+    - name: Report to codecov
+      uses: codecov/codecov-action@v1.0.3
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        file: ./coverage.xml
+        flags: unittests
+        name: codecov-umbrella
+
+    - name: Build pypi package
+      run: poetry build
+
+    - name: Deploy to pypi
+      run: poetry run twine upload dist/* --skip-existing -u ${{ secrets.PYPI_USERNAME }} -p ${{ secrets.PYPI_PASSWORD }}
 
     - name: Build website
       run: poetry run python doc.py
