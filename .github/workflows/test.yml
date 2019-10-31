@@ -3,23 +3,16 @@ name: Test
 on:
   pull_request:
     branches:
-    - feat/**
-    - dependabot/**
-    - fix/**
-    - build/**
-    - docs/**
-    - refactor/**
-    - test/**
-    - "!master"
+    - master
   push:
     branches:
-    - feat/**
-    - dependabot/**
-    - fix/**
-    - build/**
-    - docs/**
-    - refactor/**
-    - test/**
+    - "feat/**"
+    - "dependabot/**"
+    - "fix/**"
+    - "build/**"
+    - "docs/**"
+    - "refactor/**"
+    - "test/**"
     - "!master"
 
 
