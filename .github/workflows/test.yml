@@ -1,7 +1,16 @@
 name: Test
 
 on:
-  pull_request
+  pull_request:
+    branches:
+    - feat/**
+    - dependabot/**
+    - fix/**
+    - build/**
+    - docs/**
+    - refactor/**
+    - test/**
+    - "!master"
   push:
     branches:
     - feat/**
@@ -11,6 +20,7 @@ on:
     - docs/**
     - refactor/**
     - test/**
+    - "!master"
 
 
 jobs:
