@@ -4,7 +4,7 @@ __arus__ python package provides a computation framework to manage and process u
 
 [![PyPI version](https://badge.fury.io/py/arus.svg)](https://badge.fury.io/py/arus)
 [![Downloads](https://pepy.tech/badge/arus)](https://pepy.tech/project/arus)
-[![Build Status](https://travis-ci.org/qutang/arus.svg?branch=master)](https://travis-ci.org/qutang/arus)
+[![Build Status](https://github.com/qutang/arus/workflows/Continuous%20integration/badge.svg)](https://github.com/qutang/arus/actions)
 [![codecov](https://codecov.io/gh/qutang/arus/branch/master/graph/badge.svg)](https://codecov.io/gh/qutang/arus)
 
 
