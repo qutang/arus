@@ -12,6 +12,8 @@ def parse_timestamp(ts):
         result = pd.Timestamp(ts)
     elif type(ts) == int or type(ts) == float:
         result = pd.Timestamp.fromtimestamp(ts)
+    else:
+        result = ts
     return result
 
 

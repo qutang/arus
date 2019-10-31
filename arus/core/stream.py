@@ -58,7 +58,7 @@ class Stream:
         self._queue = queue.Queue()
         self._data_source = data_source
         self._window_size = window_size
-        self._start_time = start_time
+        self._start_time = parse_timestamp(start_time)
         self.started = False
         self.name = name
         self._scheduler = scheduler
