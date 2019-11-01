@@ -39,7 +39,7 @@ pdoc3 = "^0.7.1"
 twine = "^1.12"
 pytest-cov = "^2.8"
 codecov = "^2.0"
-auto-changelog = "^0.3.0"
+auto-changelog = "^0.4.0"
 python-semantic-release = "^4.3"
 
 [tool.semantic_release]
