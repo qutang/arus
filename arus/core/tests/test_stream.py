@@ -19,15 +19,15 @@ def test_SensorFileStream():
     assert np.all(np.array(chunk_sizes[1:-1]) == 1024)
 
     # multiple mhealth streams, consistent sampling rate
-    # files, sr = load_test_data(file_type='mhealth',
-    #                            file_num='multiple', sr_type='consistent')
-    # stream = SensorFileStream(
-    #     data_source=files, window_size=window_size, start_time=None, sr=sr, buffer_size=buffer_size, storage_format='mhealth', name='multiple-mhealth-stream')
-    # stream.start(scheduler='thread')
-    # chunk_sizes = []
-    # for data in stream.get_iterator():
-    #     chunk_sizes.append(data.shape[0])
-    # assert np.all(np.array(chunk_sizes[1:-1]) == 1024)
+    files, sr = load_test_data(file_type='mhealth',
+                               file_num='multiple', sr_type='consistent')
+    stream = SensorFileStream(
+        data_source=files, window_size=window_size, start_time=None, sr=sr, buffer_size=buffer_size, storage_format='mhealth', name='multiple-mhealth-stream')
+    stream.start(scheduler='thread')
+    chunk_sizes = []
+    for data in stream.get_iterator():
+        chunk_sizes.append(data.shape[0])
+    assert np.all(np.array(chunk_sizes[1:-1]) == 1024)
 
     # single mhealth stream, inconsistent sampling rate
     files, sr = load_test_data(file_type='mhealth',
