@@ -23,7 +23,7 @@ def test_SensorFileStream():
                                file_num='multiple', sr_type='consistent')
     stream = SensorFileStream(
         data_source=files, window_size=window_size, start_time=None, sr=sr, buffer_size=buffer_size, storage_format='mhealth', name='multiple-mhealth-stream')
-    stream.start(scheduler='thread')
+    stream.start(scheduler='sync')
     chunk_sizes = []
     i = 0
     for data in stream.get_iterator():
