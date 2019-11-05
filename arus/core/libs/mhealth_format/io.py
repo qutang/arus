@@ -39,11 +39,9 @@ def read_data_csv(filepath, chunksize=None, iterator=False):
     result = None if filepath is None else pd.read_csv(
         filepath, parse_dates=get_datetime_columns(file_type), infer_datetime_format=True, chunksize=chunksize, iterator=iterator, engine='c')
     if not iterator:
-        assert is_sensor_data(result) or is_annotation_data(result)
         return rename_columns(result, file_type)
     else:
         return result
-
 
 def read_meta_csv(filepath):
     result = None if filepath is None else pd.read_csv(filepath)
