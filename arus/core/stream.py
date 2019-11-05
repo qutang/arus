@@ -217,7 +217,7 @@ class SensorFileStream(Stream):
                         if current_window_st == window_st and current_window_et == window_et:
                             current_window.append(chunk)
                         else:
-                            current_window = pd.concat(current_window, axis=0)
+                            current_window = pd.concat(current_window, axis=0, sort=False)
                             current_clock = self._send_data(
                                 current_window, current_clock, current_window_st, previous_window_st)
                             current_window = [chunk]
@@ -274,6 +274,109 @@ class SensorFileStream(Stream):
             else:
                 chunks.append((chunk, window_st, window_et))
         return chunks
+
+    def load_(self, obj_toload):
+        if isinstance(obj_toload, str):
+            obj_toload = [obj_toload]
+        self._load_files_into_chunks(obj_toload)
+        self._put_data_in_queue(None)
+
+
+class AnnotationFileStream(Stream):
+    """Stream to syncly or asyncly load annotation file or files.
+
+    This class inherits `Stream` class to load annotation files.
+
+    The stream will load a file or files in the `data_source` and separate them into chunks specified by `window_size` to be loaded in the data queue.
+
+    Examples:
+        1. Loading a list of files as 12.8s chunks asynchronously.
+
+        ```python
+        .. include:: ../../examples/annotation_stream.py
+        ```
+    """
+
+    def __init__(self, data_source, window_size, start_time=None, storage_format='mhealth', simulate_reality=False, name='mhealth-stream'):
+        """
+        Args:
+            data_source (str or list): filepath or list of filepaths of mhealth annotation data
+            storage_format (str, optional): the storage format of the files in `data_source`. It now supports `mhealth`.
+            simulate_reality (bool, optional): simulate real world time delay if `True`.
+            name (str, optional): see `Stream.name`.
+        """
+        super().__init__(data_source=data_source,
+                         window_size=window_size, start_time=start_time, name=name)
+        self._storage_format = storage_format
+        self._simulate_reality = simulate_reality
+
+    def _load_file(self, filepath):
+        if self._storage_format == 'mhealth':
+            data = read_data_csv(
+                filepath, chunksize=None, iterator=False)
+            yield data
+        else:
+            raise NotImplementedError(
+                'The given storage format argument is not supported')
+
+    def _extract_chunks_from_loaded_data(self, data):
+        data_et = mh_data.get_end_time(data, 2)
+        data_st = mh_data.get_start_time(data, 1)
+        if self._start_time is None:
+            self._start_time = data_st
+        window_ts_marks = pd.date_range(start=self._start_time, end=data_et,
+                                        freq=str(self._window_size * 1000) + 'ms')
+        self._start_time = window_ts_marks[-1]
+        chunks = []
+        for window_st in window_ts_marks:
+            window_et = window_st + \
+                pd.Timedelta(self._window_size * 1000, unit='ms')
+            chunk = mh_data.segment_annotation(
+                data, start_time=window_st, stop_time=window_et)
+            if chunk.empty:
+                continue
+            else:
+                chunks.append((chunk, window_st, window_et))
+        return chunks
+
+    def _send_data(self, current_window, current_clock, current_window_st, previous_window_st):
+        if self._simulate_reality:
+            delay = (current_window_st - previous_window_st) / \
+                np.timedelta64(1, 's')
+            logging.debug('Delay for ' + str(delay) +
+                          ' seconds to simulate reality')
+            time.sleep(max(current_clock + delay - time.time(), 0))
+            self._put_data_in_queue(current_window)
+            return time.time()
+        else:
+            self._put_data_in_queue(current_window)
+            return current_clock
+
+    def _load_files_into_chunks(self, filepaths):
+        current_window = []
+        current_window_st = None
+        current_window_et = None
+        current_clock = time.time()
+        previous_window_st = None
+        for filepath in filepaths:
+            for data in self._load_file(filepath):
+                if self.started:
+                    chunks = self._extract_chunks_from_loaded_data(
+                        data)
+                    for chunk, window_st, window_et in chunks:
+                        current_window_st = window_st if current_window_st is None else current_window_st
+                        current_window_et = window_et if current_window_et is None else current_window_et
+                        previous_window_st = window_st if previous_window_st is None else previous_window_st
+                        if current_window_st == window_st and current_window_et == window_et:
+                            current_window.append(chunk)
+                        else:
+                            current_window = pd.concat(current_window, axis=0, sort=False)
+                            current_clock = self._send_data(
+                                current_window, current_clock, current_window_st, previous_window_st)
+                            current_window = [chunk]
+                            previous_window_st = current_window_st
+                            current_window_st = window_st
+                            current_window_et = window_et
 
     def load_(self, obj_toload):
         if isinstance(obj_toload, str):
