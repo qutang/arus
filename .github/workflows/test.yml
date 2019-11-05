@@ -42,3 +42,6 @@ jobs:
 
     - name: Test building
       run: poetry build
+
+    - name: Test building website
+      run: poetry run python doc.py
