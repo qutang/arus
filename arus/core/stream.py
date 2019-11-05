@@ -217,7 +217,8 @@ class SensorFileStream(Stream):
                         if current_window_st == window_st and current_window_et == window_et:
                             current_window.append(chunk)
                         else:
-                            current_window = pd.concat(current_window, axis=0, sort=False)
+                            current_window = pd.concat(
+                                current_window, axis=0, sort=False)
                             current_clock = self._send_data(
                                 current_window, current_clock, current_window_st, previous_window_st)
                             current_window = [chunk]
@@ -262,6 +263,7 @@ class SensorFileStream(Stream):
             self._start_time = data_st
         window_ts_marks = pd.date_range(start=self._start_time, end=data_et,
                                         freq=str(self._window_size * 1000) + 'ms')
+        print(window_ts_marks)
         self._start_time = window_ts_marks[-1]
         chunks = []
         for window_st in window_ts_marks:
@@ -370,7 +372,8 @@ class AnnotationFileStream(Stream):
                         if current_window_st == window_st and current_window_et == window_et:
                             current_window.append(chunk)
                         else:
-                            current_window = pd.concat(current_window, axis=0, sort=False)
+                            current_window = pd.concat(
+                                current_window, axis=0, sort=False)
                             current_clock = self._send_data(
                                 current_window, current_clock, current_window_st, previous_window_st)
                             current_window = [chunk]
