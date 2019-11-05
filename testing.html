@@ -26,10 +26,14 @@
 from glob import glob
 
 
-def load_test_data(file_type=&#39;mhealth&#39;, file_num=&#39;multiple&#39;, sr_type=&#39;consistent&#39;):
+def load_test_data(file_type=&#39;mhealth&#39;, sensor_type=&#39;sensor&#39;, file_num=&#39;multiple&#39;, sr_type=&#39;consistent&#39;):
     cwd = os.path.dirname(os.path.realpath(__file__))
-    data_folder = os.path.join(cwd, &#39;..&#39;, &#39;data&#39;, file_num,
-                               file_type, sr_type + &#39;_sr&#39;)
+    if sensor_type == &#39;sensor&#39;:
+        data_folder = os.path.join(cwd, &#39;..&#39;, &#39;data&#39;, file_num,
+                                file_type, sensor_type, sr_type + &#39;_sr&#39;)
+    elif sensor_type == &#39;annotation&#39;:
+        data_folder = os.path.join(cwd, &#39;..&#39;, &#39;data&#39;, file_num,
+                                file_type, sensor_type)
     meta_file = os.path.join(data_folder, &#39;meta.csv&#39;)
     if file_num == &#39;multiple&#39;:
         data = list(filter(lambda f: &#39;meta&#39; not in f, glob(
@@ -37,8 +41,11 @@ def load_test_data(file_type=&#39;mhealth&#39;, file_num=&#39;multiple&#39;, sr_
     else:
         data = list(filter(lambda f: &#39;meta&#39; not in f, glob(
             os.path.join(data_folder, &#39;*.csv&#39;))))[0]
-    with open(meta_file, &#39;r&#39;) as meta:
-        sr = int(meta.readline().split(&#39;,&#39;)[1])
+    if sensor_type != &#39;annotation&#39;:
+        with open(meta_file, &#39;r&#39;) as meta:
+            sr = int(meta.readline().split(&#39;,&#39;)[1])
+    else:
+        sr = None
     return data, sr</code></pre>
 </details>
 </section>
@@ -50,16 +57,20 @@ def load_test_data(file_type=&#39;mhealth&#39;, file_num=&#39;multiple&#39;, sr_
 <h2 class="section-title" id="header-functions">Functions</h2>
 <dl>
 <dt id="arus.testing.load_test_data"><code class="name flex">
-<span>def <span class="ident">load_test_data</span></span>(<span>file_type='mhealth', file_num='multiple', sr_type='consistent')</span>
+<span>def <span class="ident">load_test_data</span></span>(<span>file_type='mhealth', sensor_type='sensor', file_num='multiple', sr_type='consistent')</span>
 </code></dt>
 <dd>
 <section class="desc"></section>
 <details class="source">
 <summary>Source code</summary>
-<pre><code class="python">def load_test_data(file_type=&#39;mhealth&#39;, file_num=&#39;multiple&#39;, sr_type=&#39;consistent&#39;):
+<pre><code class="python">def load_test_data(file_type=&#39;mhealth&#39;, sensor_type=&#39;sensor&#39;, file_num=&#39;multiple&#39;, sr_type=&#39;consistent&#39;):
     cwd = os.path.dirname(os.path.realpath(__file__))
-    data_folder = os.path.join(cwd, &#39;..&#39;, &#39;data&#39;, file_num,
-                               file_type, sr_type + &#39;_sr&#39;)
+    if sensor_type == &#39;sensor&#39;:
+        data_folder = os.path.join(cwd, &#39;..&#39;, &#39;data&#39;, file_num,
+                                file_type, sensor_type, sr_type + &#39;_sr&#39;)
+    elif sensor_type == &#39;annotation&#39;:
+        data_folder = os.path.join(cwd, &#39;..&#39;, &#39;data&#39;, file_num,
+                                file_type, sensor_type)
     meta_file = os.path.join(data_folder, &#39;meta.csv&#39;)
     if file_num == &#39;multiple&#39;:
         data = list(filter(lambda f: &#39;meta&#39; not in f, glob(
@@ -67,8 +78,11 @@ def load_test_data(file_type=&#39;mhealth&#39;, file_num=&#39;multiple&#39;, sr_
     else:
         data = list(filter(lambda f: &#39;meta&#39; not in f, glob(
             os.path.join(data_folder, &#39;*.csv&#39;))))[0]
-    with open(meta_file, &#39;r&#39;) as meta:
-        sr = int(meta.readline().split(&#39;,&#39;)[1])
+    if sensor_type != &#39;annotation&#39;:
+        with open(meta_file, &#39;r&#39;) as meta:
+            sr = int(meta.readline().split(&#39;,&#39;)[1])
+    else:
+        sr = None
     return data, sr</code></pre>
 </details>
 </dd>

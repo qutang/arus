@@ -61,7 +61,7 @@ def is_annotation_data(df):
     is_from_annotation = True
     arr = df.values[:, 3]
     is_from_annotation = is_from_annotation and (
-        arr.dtype.type == np.unicode_ or arr.dtype.type == np.string_)
+        arr.dtype.type == np.unicode_ or arr.dtype.type == np.string_ or arr.dtype.type == np.object_)
     # first three columns are timestamp
     ts = df.values[:, 0:2]
     is_from_annotation = is_from_annotation and ts.dtype.type == np.datetime64
@@ -167,7 +167,6 @@ def rename_columns(df, file_type):
     Returns:
         result (pandas.DataFrame): The mhealth dataframe with columns renamed.
     &#34;&#34;&#34;
-    assert is_sensor_data(df) or is_annotation_data(df)
     result = df
     result = result.rename(columns={result.columns[0]: &#39;HEADER_TIME_STAMP&#39;})
     if file_type == &#39;annotation&#39;:
@@ -349,7 +348,7 @@ def append_edge_data(df, before_df=None, after_df=None, duration=120,
     is_from_annotation = True
     arr = df.values[:, 3]
     is_from_annotation = is_from_annotation and (
-        arr.dtype.type == np.unicode_ or arr.dtype.type == np.string_)
+        arr.dtype.type == np.unicode_ or arr.dtype.type == np.string_ or arr.dtype.type == np.object_)
     # first three columns are timestamp
     ts = df.values[:, 0:2]
     is_from_annotation = is_from_annotation and ts.dtype.type == np.datetime64
@@ -548,7 +547,6 @@ def append_edge_data(df, before_df=None, after_df=None, duration=120,
     Returns:
         result (pandas.DataFrame): The mhealth dataframe with columns renamed.
     &#34;&#34;&#34;
-    assert is_sensor_data(df) or is_annotation_data(df)
     result = df
     result = result.rename(columns={result.columns[0]: &#39;HEADER_TIME_STAMP&#39;})
     if file_type == &#39;annotation&#39;:
