@@ -335,7 +335,8 @@ class AnnotationFileStream(Stream):
             chunk = mh_data.segment_annotation(
                 data, start_time=window_st, stop_time=window_et)
             if chunk.empty:
-                continue
+                chunk = pd.DataFrame(data={'HEADER_TIME_STAMP': [window_st], 'START_TIME': [window_st], 'STOP_TIME': [window_et], 'LABEL_NAME': ["Unknown"]})
+                chunks.append((chunk, window_st, window_et))
             else:
                 chunks.append((chunk, window_st, window_et))
         return chunks
