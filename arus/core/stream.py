@@ -26,7 +26,6 @@ import threading
 from .libs.mhealth_format.io import read_data_csv
 from .libs.mhealth_format.io import read_actigraph_csv
 from .libs.mhealth_format import data as mh_data
-from .libs.mhealth_format.path import extract_file_type
 from .libs.date import parse_timestamp
 import pandas as pd
 import numpy as np
