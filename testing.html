@@ -30,14 +30,15 @@ def load_test_data(file_type=&#39;mhealth&#39;, sensor_type=&#39;sensor&#39;, fi
     cwd = os.path.dirname(os.path.realpath(__file__))
     if sensor_type == &#39;sensor&#39;:
         data_folder = os.path.join(cwd, &#39;..&#39;, &#39;data&#39;, file_num,
-                                file_type, sensor_type, sr_type + &#39;_sr&#39;)
+                                   file_type, sensor_type, sr_type + &#39;_sr&#39;)
     elif sensor_type == &#39;annotation&#39;:
         data_folder = os.path.join(cwd, &#39;..&#39;, &#39;data&#39;, file_num,
-                                file_type, sensor_type)
+                                   file_type, sensor_type)
     meta_file = os.path.join(data_folder, &#39;meta.csv&#39;)
     if file_num == &#39;multiple&#39;:
         data = list(filter(lambda f: &#39;meta&#39; not in f, glob(
             os.path.join(data_folder, &#39;*.csv&#39;))))
+        data = sorted(data)
     else:
         data = list(filter(lambda f: &#39;meta&#39; not in f, glob(
             os.path.join(data_folder, &#39;*.csv&#39;))))[0]
@@ -67,14 +68,15 @@ def load_test_data(file_type=&#39;mhealth&#39;, sensor_type=&#39;sensor&#39;, fi
     cwd = os.path.dirname(os.path.realpath(__file__))
     if sensor_type == &#39;sensor&#39;:
         data_folder = os.path.join(cwd, &#39;..&#39;, &#39;data&#39;, file_num,
-                                file_type, sensor_type, sr_type + &#39;_sr&#39;)
+                                   file_type, sensor_type, sr_type + &#39;_sr&#39;)
     elif sensor_type == &#39;annotation&#39;:
         data_folder = os.path.join(cwd, &#39;..&#39;, &#39;data&#39;, file_num,
-                                file_type, sensor_type)
+                                   file_type, sensor_type)
     meta_file = os.path.join(data_folder, &#39;meta.csv&#39;)
     if file_num == &#39;multiple&#39;:
         data = list(filter(lambda f: &#39;meta&#39; not in f, glob(
             os.path.join(data_folder, &#39;*.csv&#39;))))
+        data = sorted(data)
     else:
         data = list(filter(lambda f: &#39;meta&#39; not in f, glob(
             os.path.join(data_folder, &#39;*.csv&#39;))))[0]

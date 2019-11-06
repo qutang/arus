@@ -282,8 +282,8 @@ def extract_sid(filepath):
 
 
 def extract_file_type(filepath):
-    assert is_mhealth_filepath(filepath) or is_mhealth_flat_filepath(
-        filepath) or is_mhealth_filename(os.path.basename(filepath))
+    # assert is_mhealth_filepath(filepath) or is_mhealth_flat_filepath(
+        # filepath) or is_mhealth_filename(os.path.basename(filepath))
     filename = os.path.basename(filepath)
     if filename.endswith(&#39;gz&#39;):
         return filename.split(&#39;.&#39;)[-3]
@@ -918,8 +918,8 @@ def build_mhealth_filepath(rootpath, pid, timestamp, filename, flat=False):
 <details class="source">
 <summary>Source code</summary>
 <pre><code class="python">def extract_file_type(filepath):
-    assert is_mhealth_filepath(filepath) or is_mhealth_flat_filepath(
-        filepath) or is_mhealth_filename(os.path.basename(filepath))
+    # assert is_mhealth_filepath(filepath) or is_mhealth_flat_filepath(
+        # filepath) or is_mhealth_filename(os.path.basename(filepath))
     filename = os.path.basename(filepath)
     if filename.endswith(&#39;gz&#39;):
         return filename.split(&#39;.&#39;)[-3]
