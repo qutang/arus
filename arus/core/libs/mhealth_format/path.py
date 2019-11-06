@@ -258,8 +258,8 @@ def extract_sid(filepath):
 
 
 def extract_file_type(filepath):
-    assert is_mhealth_filepath(filepath) or is_mhealth_flat_filepath(
-        filepath) or is_mhealth_filename(os.path.basename(filepath))
+    # assert is_mhealth_filepath(filepath) or is_mhealth_flat_filepath(
+        # filepath) or is_mhealth_filename(os.path.basename(filepath))
     filename = os.path.basename(filepath)
     if filename.endswith('gz'):
         return filename.split('.')[-3]

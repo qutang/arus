@@ -37,7 +37,7 @@ def is_annotation_data(df):
     is_from_annotation = True
     arr = df.values[:, 3]
     is_from_annotation = is_from_annotation and (
-        arr.dtype.type == np.unicode_ or arr.dtype.type == np.string_)
+        arr.dtype.type == np.unicode_ or arr.dtype.type == np.string_ or arr.dtype.type == np.object_)
     # first three columns are timestamp
     ts = df.values[:, 0:2]
     is_from_annotation = is_from_annotation and ts.dtype.type == np.datetime64
@@ -143,7 +143,6 @@ def rename_columns(df, file_type):
     Returns:
         result (pandas.DataFrame): The mhealth dataframe with columns renamed.
     """
-    assert is_sensor_data(df) or is_annotation_data(df)
     result = df
     result = result.rename(columns={result.columns[0]: 'HEADER_TIME_STAMP'})
     if file_type == 'annotation':

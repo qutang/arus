@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 if __name__ == "__main__":
     window_size = 12.8
     files, sr = load_test_data(file_type='actigraph',
-                               file_num='single', sr_type='consistent')
+                               file_num='single', exception_type='consistent_sr')
     stream = SensorFileStream(
         data_source=files, window_size=window_size, start_time=None, sr=sr, buffer_size=1800, storage_format='actigraph', name='spades_2')
     stream.start(scheduler='thread')
