@@ -14,6 +14,7 @@ def load_test_data(file_type='mhealth', sensor_type='sensor', file_num='multiple
     if file_num == 'multiple':
         data = list(filter(lambda f: 'meta' not in f, glob(
             os.path.join(data_folder, '*.csv'))))
+        data = sorted(data)
     else:
         data = list(filter(lambda f: 'meta' not in f, glob(
             os.path.join(data_folder, '*.csv'))))[0]
@@ -22,5 +23,4 @@ def load_test_data(file_type='mhealth', sensor_type='sensor', file_num='multiple
             sr = int(meta.readline().split(',')[1])
     else:
         sr = None
-    data = sorted(data)
     return data, sr
