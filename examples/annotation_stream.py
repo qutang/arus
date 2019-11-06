@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 if __name__ == "__main__":
     window_size = 12.8
     files, sr = load_test_data(file_type='mhealth', sensor_type='annotation',
-                               file_num='multiple', sr_type='consistent')
+                               file_num='multiple', exception_type='no_missing')
     stream = AnnotationFileStream(
         data_source=files, window_size=window_size, start_time=None, storage_format='mhealth', name='annotation-stream')
     stream.start(scheduler='thread')
