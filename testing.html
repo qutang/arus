@@ -26,14 +26,10 @@
 from glob import glob
 
 
-def load_test_data(file_type=&#39;mhealth&#39;, sensor_type=&#39;sensor&#39;, file_num=&#39;multiple&#39;, sr_type=&#39;consistent&#39;):
+def load_test_data(file_type=&#39;mhealth&#39;, sensor_type=&#39;sensor&#39;, file_num=&#39;multiple&#39;, exception_type=&#39;consistent_sr&#39;):
     cwd = os.path.dirname(os.path.realpath(__file__))
-    if sensor_type == &#39;sensor&#39;:
-        data_folder = os.path.join(cwd, &#39;..&#39;, &#39;data&#39;, file_num,
-                                   file_type, sensor_type, sr_type + &#39;_sr&#39;)
-    elif sensor_type == &#39;annotation&#39;:
-        data_folder = os.path.join(cwd, &#39;..&#39;, &#39;data&#39;, file_num,
-                                   file_type, sensor_type)
+    data_folder = os.path.join(cwd, &#39;..&#39;, &#39;data&#39;, file_num,
+                                file_type, sensor_type, exception_type)
     meta_file = os.path.join(data_folder, &#39;meta.csv&#39;)
     if file_num == &#39;multiple&#39;:
         data = list(filter(lambda f: &#39;meta&#39; not in f, glob(
@@ -58,20 +54,16 @@ def load_test_data(file_type=&#39;mhealth&#39;, sensor_type=&#39;sensor&#39;, fi
 <h2 class="section-title" id="header-functions">Functions</h2>
 <dl>
 <dt id="arus.testing.load_test_data"><code class="name flex">
-<span>def <span class="ident">load_test_data</span></span>(<span>file_type='mhealth', sensor_type='sensor', file_num='multiple', sr_type='consistent')</span>
+<span>def <span class="ident">load_test_data</span></span>(<span>file_type='mhealth', sensor_type='sensor', file_num='multiple', exception_type='consistent_sr')</span>
 </code></dt>
 <dd>
 <section class="desc"></section>
 <details class="source">
 <summary>Source code</summary>
-<pre><code class="python">def load_test_data(file_type=&#39;mhealth&#39;, sensor_type=&#39;sensor&#39;, file_num=&#39;multiple&#39;, sr_type=&#39;consistent&#39;):
+<pre><code class="python">def load_test_data(file_type=&#39;mhealth&#39;, sensor_type=&#39;sensor&#39;, file_num=&#39;multiple&#39;, exception_type=&#39;consistent_sr&#39;):
     cwd = os.path.dirname(os.path.realpath(__file__))
-    if sensor_type == &#39;sensor&#39;:
-        data_folder = os.path.join(cwd, &#39;..&#39;, &#39;data&#39;, file_num,
-                                   file_type, sensor_type, sr_type + &#39;_sr&#39;)
-    elif sensor_type == &#39;annotation&#39;:
-        data_folder = os.path.join(cwd, &#39;..&#39;, &#39;data&#39;, file_num,
-                                   file_type, sensor_type)
+    data_folder = os.path.join(cwd, &#39;..&#39;, &#39;data&#39;, file_num,
+                                file_type, sensor_type, exception_type)
     meta_file = os.path.join(data_folder, &#39;meta.csv&#39;)
     if file_num == &#39;multiple&#39;:
         data = list(filter(lambda f: &#39;meta&#39; not in f, glob(
