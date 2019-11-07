@@ -5,13 +5,26 @@ import numpy as np
 import queue
 import pandas as pd
 import logging
+import threading
 
 
 class Pipeline:
+    """
+
+    Implementation details:
+
+    Streams are served in threads. Data windows coming from the streams will be synced on a separate thread at first and the synced and merged data windows will be sent to process pools as process tasks for CPU intensive processing asynchronizedly. Another separate thread will wait for the completion of the process tasks and send the result to the result queue.
+
+    This implementation, compared with previous version, makes the data processing most flexible considering that some processing needs to use data from more than one stream. Moreover, the customized process task can spawn other sub processes to further parallize the computational tasks for different combinations of stream data.
+    """
+
     def __init__(self, *, name='default-pipeline'):
+        self._process_tasks = queue.Queue()
         self._queue = queue.Queue()
         self.name = name
         self._streams = []
+        self._chunks = dict()
+        self._stream_pointer = dict()
         self.started = False
 
     @property
@@ -42,12 +55,11 @@ class Pipeline:
         found = list(filter(lambda s: s.name == stream_name, self._streams))
         return None if len(found) == 0 else found[0]
 
-    def add_streams(self, *streams):
+    def add_stream(self, stream, process_fun):
         if self._is_running():
             return
-        for stream in streams:
-            if self.get_stream(stream.name) is None:
-                self._streams.append(stream)
+        if self.get_stream(stream.name) is None:
+            self._streams.append(stream)
 
     def remove_stream(self, stream_name):
         if self._is_running():
@@ -56,27 +68,58 @@ class Pipeline:
         if found_stream is not None:
             self._streams.remove(found_stream)
 
-    def process_stream(self, stream):
-        """Abstract method to be implemented by subclasses to process data in a data stream.
+    def _sync_streams(self):
+        """
+
+        This method depends on the stream to make sure it will not block for a long time when providing the chunk
+
+        In real time, because stream runs on separate thread, as long as the data is successfully passed to the stream queue, it won't block for a long time.
+        """
+        num_of_processors = cpu_count() - 2
+        pool = ProcessPool(nodes=num_of_processors)
+        while self.started:
+            for stream in self._streams:
+                for data, st, prev_st, name in stream.get_iterator():
+                    self._chunks[st.timestamp()] = []
+                    self._chunks[st.timestamp()].append((data, name))
+                    self._stream_pointer[name] = st.timestamp()
+                    break
+                self._process_synced_chunks(st, name, pool)
+        pool.close()
+
+    def _send_result(self):
+        while True:
+            task = self._process_tasks.get()
+            result = task.get()
+            self._put_result_in_queue(result)
+
+    def _process_synced_chunks(self, st, name, pool):
+        chunk_list = self._chunks[st.timestamp()]
+        if len(chunk_list) == len(self._streams):
+            # this is the last stream chunk for st
+            task = pool.apipe(self.process_, chunk_list)
+            self._process_tasks.put(task)
+            del self._chunks[st.timestamp()]
+
+    def process_(self, chunk_list):
+        """Method to run process_fun on data in a data stream.
 
         Args:
             stream (Stream): an instance of data stream
-
-        Raises:
-            NotImplementedError: This method must be implemented by subclasses
+            process_fun (object): a function to process the stream data
 
         Examples:
-            1. An example of implementation: computing mean of each data column of each data in the stream
+            1. An example of process_fun: computing mean of each data column of each data in the stream
 
             ```python
-            def process_stream(self, stream):
-                stream.start()
+            def process_fun(stream):
+                for data in stream.get_iterator():
                 all_data = [data.iloc[:, 1:4].mean(axis=0)
                             for data in stream.get_iterator()]
                 return pd.concat(all_data, axis=1).transpose()
             ```
         """
-        raise NotImplementedError("Subclass must implement this method")
+        return
 
     def process_stream_outputs(self, all_data):
         """Abstract method to be implemented by subclasses to process outputs of `Pipeline.process_stream` from all data streams.
@@ -102,29 +145,27 @@ class Pipeline:
     def _put_result_in_queue(self, result):
         self._queue.put(result)
 
-    def start(self, stream_subprocess=True, mode='online'):
-        if stream_subprocess:
-            results = self._run_streams_in_process_pool(self._streams)
-        else:
-            raise NotImplementedError('This given scheduler is not supported')
-        final_result = self.process_stream_outputs(results)
-        self._put_result_in_queue(final_result)
-
-    def _run_streams_in_process_pool(self, streams):
-        num_of_processors = min(len(streams), cpu_count())
-        pool = ProcessPool(nodes=num_of_processors)
-        results = pool.map(self.process_stream, streams)
-        return results
+    def start(self):
+        self._sync_thread = threading.Thread(
+            target=self._sync_streams, name='sync-streams')
+        self._sender_thread = threading.Thread(
+            target=self._send_result, name='send-result')
+        )
+        for stream in self._streams:
+            stream.start(scheduler = 'thread')
+        self.started=True
+        self._sync_thread.start()
+        self._sender_thread.start()
 
     def get_iterator(self):
-        data_queue = self._queue
+        data_queue=self._queue
 
         class _result_iterator:
             def __iter__(self):
                 return self
 
             def __next__(self):
-                data = data_queue.get()
+                data=data_queue.get()
                 if data is None:
                     # end of the stream, stop
                     raise StopIteration
