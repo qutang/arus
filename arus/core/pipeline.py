@@ -150,22 +150,21 @@ class Pipeline:
             target=self._sync_streams, name='sync-streams')
         self._sender_thread = threading.Thread(
             target=self._send_result, name='send-result')
-        )
         for stream in self._streams:
-            stream.start(scheduler = 'thread')
-        self.started=True
+            stream.start(scheduler='thread')
+        self.started = True
         self._sync_thread.start()
         self._sender_thread.start()
 
     def get_iterator(self):
-        data_queue=self._queue
+        data_queue = self._queue
 
         class _result_iterator:
             def __iter__(self):
                 return self
 
             def __next__(self):
-                data=data_queue.get()
+                data = data_queue.get()
                 if data is None:
                     # end of the stream, stop
                     raise StopIteration
