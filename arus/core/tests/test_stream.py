@@ -15,7 +15,7 @@ def test_SensorFileStream():
         data_source=files, window_size=window_size, start_time=None, sr=sr, buffer_size=buffer_size, storage_format='mhealth', name='single-mhealth-stream')
     stream.start(scheduler='thread')
     chunk_sizes = []
-    for data in stream.get_iterator():
+    for data, _, _, _ in stream.get_iterator():
         chunk_sizes.append(data.shape[0])
     assert np.all(np.array(chunk_sizes[1:-1]) == 1024)
 
@@ -28,7 +28,7 @@ def test_SensorFileStream():
     stream.start(scheduler='sync')
     chunk_sizes = []
     i = 0
-    for data in stream.get_iterator():
+    for data, _, _, _ in stream.get_iterator():
         chunk_sizes.append(data.shape[0])
         i = i + 1
         if i >= 10:
@@ -43,7 +43,7 @@ def test_SensorFileStream():
         data_source=files, window_size=window_size, start_time=None, sr=sr, buffer_size=buffer_size, storage_format='mhealth', name='single-mhealth-stream')
     stream.start(scheduler='thread')
     chunk_sizes = []
-    for data in stream.get_iterator():
+    for data, _, _, _ in stream.get_iterator():
         chunk_sizes.append(data.shape[0])
     result = np.unique(chunk_sizes, return_counts=True)
     np.testing.assert_array_equal(result[0], np.array(
@@ -58,7 +58,7 @@ def test_SensorFileStream():
         data_source=files, window_size=window_size, start_time=None, sr=sr, buffer_size=buffer_size, storage_format='mhealth', name='multiple-mhealth-stream')
     stream.start(scheduler='thread')
     chunk_sizes = []
-    for data in stream.get_iterator():
+    for data, _, _, _ in stream.get_iterator():
         chunk_sizes.append(data.shape[0])
     result = np.unique(chunk_sizes, return_counts=True)
     np.testing.assert_array_equal(result[0], np.array(
@@ -74,7 +74,7 @@ def test_SensorFileStream():
         data_source=files, window_size=window_size, start_time=None, sr=sr, buffer_size=buffer_size, storage_format='mhealth', name='single-mhealth-stream')
     stream.start(scheduler='thread')
     chunk_sizes = []
-    for data in stream.get_iterator():
+    for data, _, _, _ in stream.get_iterator():
         chunk_sizes.append(data.shape[0])
     assert np.all(np.array(chunk_sizes[1:-1]) == 1024)
 
@@ -87,7 +87,7 @@ def test_SensorFileStream():
         data_source=files, window_size=window_size, start_time=None, sr=sr, buffer_size=buffer_size, storage_format='mhealth', name='single-mhealth-stream')
     stream.start(scheduler='thread')
     chunk_sizes = []
-    for data in stream.get_iterator():
+    for data, _, _, _ in stream.get_iterator():
         chunk_sizes.append(data.shape[0])
     assert np.all(np.array(chunk_sizes[1:-1]) == 160)
 
@@ -104,8 +104,9 @@ def test_AnnotationFileStream():
     chunk_sizes = []
     unknown_labels = 0
     valid_labels = 0
-    for data in stream.get_iterator():
-        chunk_sizes.append((data.iloc[-1, 2] - data.iloc[0, 1]) / pd.Timedelta(1, 's'))
+    for data, _, _, _ in stream.get_iterator():
+        chunk_sizes.append(
+            (data.iloc[-1, 2] - data.iloc[0, 1]) / pd.Timedelta(1, 's'))
         if data.iloc[0, 3] == 'Unknown':
             unknown_labels += 1
         else:
@@ -124,8 +125,9 @@ def test_AnnotationFileStream():
     chunk_sizes = []
     unknown_labels = 0
     valid_labels = 0
-    for data in stream.get_iterator():
-        chunk_sizes.append((data.iloc[-1, 2] - data.iloc[0, 1]) / pd.Timedelta(1, 's'))
+    for data, _, _, _ in stream.get_iterator():
+        chunk_sizes.append(
+            (data.iloc[-1, 2] - data.iloc[0, 1]) / pd.Timedelta(1, 's'))
         if data.iloc[0, 3] == 'Unknown':
             unknown_labels += 1
         else:
@@ -145,8 +147,9 @@ def test_AnnotationFileStream():
     chunk_sizes = []
     unknown_labels = 0
     valid_labels = 0
-    for data in stream.get_iterator():
-        chunk_sizes.append((data.iloc[-1, 2] - data.iloc[0, 1]) / pd.Timedelta(1, 's'))
+    for data, _, _, _ in stream.get_iterator():
+        chunk_sizes.append(
+            (data.iloc[-1, 2] - data.iloc[0, 1]) / pd.Timedelta(1, 's'))
         if data.iloc[0, 3] == 'Unknown':
             unknown_labels += 1
         else:
@@ -166,8 +169,9 @@ def test_AnnotationFileStream():
     chunk_sizes = []
     unknown_labels = 0
     valid_labels = 0
-    for data in stream.get_iterator():
-        chunk_sizes.append((data.iloc[-1, 2] - data.iloc[0, 1]) / pd.Timedelta(1, 's'))
+    for data, _, _, _ in stream.get_iterator():
+        chunk_sizes.append(
+            (data.iloc[-1, 2] - data.iloc[0, 1]) / pd.Timedelta(1, 's'))
         if data.iloc[0, 3] == 'Unknown':
             unknown_labels += 1
         else:

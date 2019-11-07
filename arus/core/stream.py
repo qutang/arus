@@ -219,23 +219,25 @@ class SensorFileStream(Stream):
                             current_window = pd.concat(
                                 current_window, axis=0, sort=False)
                             current_clock = self._send_data(
-                                current_window, current_clock, current_window_st, previous_window_st)
+                                current_window, current_clock, current_window_st, current_window_et, previous_window_st)
                             current_window = [chunk]
                             previous_window_st = current_window_st
                             current_window_st = window_st
                             current_window_et = window_et
 
-    def _send_data(self, current_window, current_clock, current_window_st, previous_window_st):
+    def _send_data(self, current_window, current_clock, current_window_st, current_window_et, previous_window_st):
+        package = (current_window, current_window_st,
+                   previous_window_st, self.name)
         if self._simulate_reality:
             delay = (current_window_st - previous_window_st) / \
                 np.timedelta64(1, 's')
             logging.debug('Delay for ' + str(delay) +
                           ' seconds to simulate reality')
             time.sleep(max(current_clock + delay - time.time(), 0))
-            self._put_data_in_queue(current_window)
+            self._put_data_in_queue(package)
             return time.time()
         else:
-            self._put_data_in_queue(current_window)
+            self._put_data_in_queue(package)
             return current_clock
 
     def _load_file(self, filepath):
@@ -335,23 +337,26 @@ class AnnotationFileStream(Stream):
             chunk = mh_data.segment_annotation(
                 data, start_time=window_st, stop_time=window_et)
             if chunk.empty:
-                chunk = pd.DataFrame(data={'HEADER_TIME_STAMP': [window_st], 'START_TIME': [window_st], 'STOP_TIME': [window_et], 'LABEL_NAME': ["Unknown"]})
+                chunk = pd.DataFrame(data={'HEADER_TIME_STAMP': [window_st], 'START_TIME': [
+                                     window_st], 'STOP_TIME': [window_et], 'LABEL_NAME': ["Unknown"]})
                 chunks.append((chunk, window_st, window_et))
             else:
                 chunks.append((chunk, window_st, window_et))
         return chunks
 
-    def _send_data(self, current_window, current_clock, current_window_st, previous_window_st):
+    def _send_data(self, current_window, current_clock, current_window_st, current_window_et, previous_window_st):
+        package = (current_window, current_window_st,
+                   previous_window_st, self.name)
         if self._simulate_reality:
             delay = (current_window_st - previous_window_st) / \
                 np.timedelta64(1, 's')
             logging.debug('Delay for ' + str(delay) +
                           ' seconds to simulate reality')
             time.sleep(max(current_clock + delay - time.time(), 0))
-            self._put_data_in_queue(current_window)
+            self._put_data_in_queue(package)
             return time.time()
         else:
-            self._put_data_in_queue(current_window)
+            self._put_data_in_queue(package)
             return current_clock
 
     def _load_files_into_chunks(self, filepaths):
@@ -375,7 +380,7 @@ class AnnotationFileStream(Stream):
                             current_window = pd.concat(
                                 current_window, axis=0, sort=False)
                             current_clock = self._send_data(
-                                current_window, current_clock, current_window_st, previous_window_st)
+                                current_window, current_clock, current_window_st, current_window_et, previous_window_st)
                             current_window = [chunk]
                             previous_window_st = current_window_st
                             current_window_st = window_st
