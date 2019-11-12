@@ -48,15 +48,18 @@ def spectrum_features(X, sr, n=1, freq_range=None, prev_spectrum_features=None, 
             freq_peaks, Sxx_peaks, prev_dom_freq=None, n=1)
     f9_names = ['DOM_FREQ_RATIO_PREV_BOUT_' +
                 str(i) for i in range(X.shape[1])]
-
+    f10 = _spectral_entropy(freq, Sxx)
+    f10_names = ['SPECTRAL_ENTROPY_' +
+                 str(i) for i in range(X.shape[1])]
     if preset == 'muss':
         result = np.concatenate([f1, f2, f3, f4, f5, f6, f7, f8], axis=1)
         names = f1_names + f2_names + f3_names + f4_names + \
             f5_names + f6_names + f7_names + f8_names
     else:
-        result = np.concatenate([f1, f2, f3, f4, f5, f6, f7, f8, f9], axis=1)
+        result = np.concatenate(
+            [f1, f2, f3, f4, f5, f6, f7, f8, f9, f10], axis=1)
         names = f1_names + f2_names + f3_names + f4_names + \
-            f5_names + f6_names + f7_names + f8_names + f9_names
+            f5_names + f6_names + f7_names + f8_names + f9_names + f10_names
     return result, names
 
 
@@ -125,6 +128,16 @@ def _fft_peaks(freq, Sxx):
         # [freq_peaks_for_x_axis, freq_peaks_for_y_axis, ...]
         #  And each item would be a 1d array
     return freq_peaks, Sxx_peaks
+
+
+def _spectral_entropy(freqs, Sxx):
+    # normalized
+    sum_of_Sxx = np.sum(Sxx, axis=0)
+    psd = Sxx / sum_of_Sxx
+    s_entropy = -np.sum(np.multiply(psd, np.log2(psd)), axis=0)
+    result = s_entropy / np.log2(len(freqs))
+    result = np.atleast_2d(result)
+    return result
 
 
 def _dom_freq(freq_peaks, Sxx_peaks, n=1):

@@ -8,6 +8,7 @@ Date: Oct 16, 2019
 
 """
 import numpy as np
+from scipy import stats as sp_stats
 from ...libs.num import format_arr
 
 
@@ -17,10 +18,30 @@ def mean(X):
     return result, ['MEAN_' + str(i) for i in range(X.shape[1])]
 
 
+def median(X):
+    X = format_arr(X)
+    result = np.nanmedian(X, axis=0, keepdims=True)
+    return result, ['MEDIAN_' + str(i) for i in range(X.shape[1])]
+
+
 def std(X):
     X = format_arr(X)
     result = np.nanstd(X, axis=0, ddof=1, keepdims=True)
     return result, ['STD_' + str(i) for i in range(X.shape[1])]
+
+
+def skew(X):
+    X = format_arr(X)
+    result = np.atleast_2d(sp_stats.skew(X, axis=0, nan_policy='omit'))
+    result = result, ['SKEW_' + str(i) for i in range(X.shape[1])]
+    return result
+
+
+def kurtosis(X):
+    X = format_arr(X)
+    result = np.atleast_2d(sp_stats.kurtosis(X, axis=0, nan_policy='omit'))
+    result = result, ['KURTOSIS_' + str(i) for i in range(X.shape[1])]
+    return result
 
 
 def max_value(X):
@@ -51,3 +72,17 @@ def abs_min_value(X):
     X = format_arr(X)
     result = np.nanmin(np.abs(X), axis=0, keepdims=True)
     return result, ['ABS_MIN_' + str(i) for i in range(X.shape[1])]
+
+
+def correlation(X):
+    X = format_arr(X)
+    corr_mat = np.corrcoef(X, rowvar=False)
+    if np.isscalar(corr_mat) and np.isnan(corr_mat):
+        result = np.repeat(np.nan, X.shape[1])
+    else:
+        inds = np.tril_indices(n=corr_mat.shape[0], k=-1, m=corr_mat.shape[1])
+        result = []
+        for i, j in zip(inds[0], inds[1]):
+            result.append(corr_mat[i, j])
+    result = np.atleast_2d(result)
+    return result, ['CORRELATION_' + str(i) for i in range(result.shape[1])]
