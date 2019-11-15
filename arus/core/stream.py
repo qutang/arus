@@ -1,4 +1,4 @@
-"""Module that loads external data sources (e.g., file, network port, socket and etc.) into a data queue using separate thread or not.
+"""Module includes classes that loads external data sources (e.g., file, network port, socket, user inputs and etc.) into a data queue using a separate thread.
 
 ## Usage of `arus.core.stream.SensorFileStream` 
 
@@ -19,6 +19,17 @@
 ```python
 .. include:: ../../examples/sensor_stream_simulated_reality.py
 ```
+
+## Usage of `arus.core.stream.AnnotationFileStream`
+
+```python
+.. include:: ../../examples/annotation_stream.py
+```
+
+Author: Qu Tang
+Date: 2019-11-15
+
+.. include: ../../LICENSE
 """
 
 import queue

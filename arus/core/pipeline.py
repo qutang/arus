@@ -1,3 +1,26 @@
+"""
+Module includes classes that accept single or multiple `arus.core.stream` instances, synchronize data from the streams, process the data using customized processor function, and output using the same iterator interface as `arus.core.stream`.
+
+## Usage of `arus.core.pipeline.Pipeline`
+
+### Single stream case
+
+```python
+.. include: ../../examples/single_stream_pipeline.py
+```
+
+### Multiple streams case
+
+```python
+.. include: ../../examples/multi_stream_pipeline.py
+```
+
+Author: Qu Tang
+Date: 2019-11-15
+
+.. include: ../../LICENSE
+"""
+
 from .stream import Stream
 from pathos.multiprocessing import ProcessPool
 from pathos.helpers import cpu_count
@@ -10,16 +33,29 @@ import time
 
 
 class Pipeline:
-    """
+    """The base class for a pipeline
+
+    Pipeline class is a base class of any processor that accepts multiple `arus.core.stream` instances, sync and process them, and output the processed results.
+
+    The base class provides the functionality to add, and sync multiple streams, as well as the functionality to add customized processor functions.
+
+    Subclass may implement more complex logic such as saving the status of the processed results internally and reuse them with new data from the stream.
 
     Implementation details:
+        Streams are served in threads. Data windows coming from the streams will be synced on a separate thread at first and the synced and merged data windows will be sent to process pools as process tasks for CPU intensive processing asynchronizedly. Another separate thread will wait for the completion of the process tasks and send the result to the result queue.
 
-    Streams are served in threads. Data windows coming from the streams will be synced on a separate thread at first and the synced and merged data windows will be sent to process pools as process tasks for CPU intensive processing asynchronizedly. Another separate thread will wait for the completion of the process tasks and send the result to the result queue.
+        This implementation, compared with previous version, makes the data processing most flexible considering that some processing needs to use data from more than one stream. Moreover, the customized process task can spawn other sub processes to further parallize the computational tasks for different combinations of stream data.
 
-    This implementation, compared with previous version, makes the data processing most flexible considering that some processing needs to use data from more than one stream. Moreover, the customized process task can spawn other sub processes to further parallize the computational tasks for different combinations of stream data.
+    Returns:
+        pipeline (Pipeline): an instance object of type `Pipeline`.
     """
 
     def __init__(self, *, name='default-pipeline'):
+        """
+
+        Args:
+            name (str, optional): the name of the pipeline. It will also be used as a prefix for all threads spawned by the class. Defaults to 'default-pipeline'.
+        """
         self._process_tasks = queue.Queue()
         self._queue = queue.Queue()
         self.name = name
@@ -31,28 +67,66 @@ class Pipeline:
 
     @property
     def name(self):
+        """`name` property getter
+
+        Returns:
+            str: the name of the pipeline
+        """
         return self._name
 
     @name.setter
     def name(self, value):
+        """`name` property setter
+
+        Args:
+            value (str): the name of the pipeline
+        """
         self._name = value
 
     @property
     def started(self):
+        """The status of the pipeline. Getter.
+
+        Returns:
+            bool: the status of the pipeline. 'True' means the pipeline is running.
+        """
         return self._started
 
     @started.setter
     def started(self, value):
+        """The status of the pipeline. Setter.
+
+        Args:
+            value (bool): the status of the pipeline. 'True' means the pipeline is running.
+        """
         self._started = value
 
     def finish_tasks_and_stop(self):
-        self.started = False
-        self._process_tasks.join()
-        self._stop_sender = True
-        self._pool.close()
-        for stream in self._streams:
-            stream.stop()
-        self._pool.terminate()
+        """Gracefully shutdown the pipeline using the following procedure.
+
+        1. It stops accepting incoming stream data.
+        2. It allows sub-processes to finish existing tasks.
+        3. It stops the sender thread.
+        4. It stops the sub process pool to accept new tasks.
+        5. It stops all incoming streams.
+        6. It terminates the sub process pool.
+
+        If any exceptions occur during the process, the function will return `False`.
+
+        Returns:
+            bool: `True` if the pipeline is shut down correctly.
+        """
+        try:
+            self.started = False
+            self._process_tasks.join()
+            self._stop_sender = True
+            self._pool.close()
+            for stream in self._streams:
+                stream.stop()
+            self._pool.terminate()
+        except Exception as e:
+            return False
+        return True
 
     def _is_running(self):
         if self.started:
@@ -63,16 +137,41 @@ class Pipeline:
             return False
 
     def get_stream(self, stream_name):
+        """Get the stream instance by its name
+
+        Args:
+            stream_name (str): The name of the stream
+
+        Returns:
+            arus.core.Stream: The instance of the stream if it is found, otherwise return `None`.
+        """
         found = list(filter(lambda s: s.name == stream_name, self._streams))
         return None if len(found) == 0 else found[0]
 
     def add_stream(self, stream):
+        """Add a new stream to the pipeline
+
+        The stream will only be added when the pipeline is stopped.
+
+        Args:
+            stream (arus.core.Stream): an instance of arus.core.Stream class.
+        """
         if self._is_running():
             return
         if self.get_stream(stream.name) is None:
             self._streams.append(stream)
 
     def set_processor(self, processor, **kwargs):
+        """Set the processor function and its arguments
+
+        The processor function should accept the following arg in the first place:
+            chunk_list (list): A list of tuple including chunked data (one window) from all streams. Each tuple includes the following items.
+            1. data: the chunked data of the stream
+            2. name: the name of the stream
+
+        Args:
+            processor (object): A function 
+        """
         self._processor = processor
         self._processor_kwargs = kwargs
 
