@@ -37,7 +37,8 @@ def test_Pipeline():
     stream = SensorGeneratorStream(
         stream_config, window_size=window_size, sr=sr, start_time=start_time, name='stream-1')
 
-    pipeline = Pipeline(max_processes=2, name='single-stream-pipeline')
+    pipeline = Pipeline(max_processes=2, scheduler='threads',
+                        name='single-stream-pipeline')
     pipeline.add_stream(stream)
     pipeline.set_processor(_pipeline_test_processor)
     pipeline.start()
