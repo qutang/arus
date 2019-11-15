@@ -22,7 +22,7 @@ Date: 2019-11-15
 """
 
 from .stream import Stream
-from pathos.multiprocessing import ProcessPool
+from pathos.pools import ProcessPool, ThreadPool
 from pathos.helpers import cpu_count
 import numpy as np
 import queue
@@ -50,13 +50,15 @@ class Pipeline:
         pipeline (Pipeline): an instance object of type `Pipeline`.
     """
 
-    def __init__(self, *, max_processes=None, name='default-pipeline'):
+    def __init__(self, *, max_processes=None, scheduler='processes', name='default-pipeline'):
         """
 
         Args:
             max_processes (int, optional): the max number of sub processes to be spawned. Defaults to 'None'. If it is `None`, the max processes will be the number of cores - 2.
+            scheduler (str, optional): scheduler to use, either 'processes' or 'threads'. Defaults to 'processes'.
             name (str, optional): the name of the pipeline. It will also be used as a prefix for all threads spawned by the class. Defaults to 'default-pipeline'.
         """
+        self._scheduler = scheduler
         self._max_processes = max_processes
         self._process_tasks = queue.Queue()
         self._queue = queue.Queue()
@@ -122,10 +124,11 @@ class Pipeline:
             self.started = False
             self._process_tasks.join()
             self._stop_sender = True
-            self._pool.close()
+            if self._pool is not None:
+                self._pool.close()
+                self._pool.terminate()
             for stream in self._streams:
                 stream.stop()
-            self._pool.terminate()
         except Exception as e:
             return False
         return True
@@ -196,8 +199,16 @@ class Pipeline:
         In real time, because stream runs on separate thread, as long as the data is successfully passed to the stream queue, it won't block for a long time.
         """
         num_of_processors = min(cpu_count() - 2, self._max_processes)
-
-        self._pool = ProcessPool(nodes=num_of_processors)
+        if num_of_processors == 0:
+            self._pool = None
+        else:
+            if self._scheduler == 'processes':
+                self._pool = ProcessPool(nodes=num_of_processors)
+            elif self._scheduler == 'threads':
+                self._pool = ThreadPool(nodes=num_of_processors)
+            else:
+                raise NotImplementedError(
+                    'This scheduler is not supported: {}'.format(self._scheduler))
         while self.started:
             for stream in self._streams:
                 for data, st, prev_st, name in stream.get_iterator():
@@ -207,15 +218,19 @@ class Pipeline:
                     self._stream_pointer[name] = st.timestamp()
                     break
                 self._process_synced_chunks(st, name)
-        self._pool.close()
+        if num_of_processors > 0:
+            self._pool.close()
 
     def _send_result(self):
         while not self._stop_sender:
             try:
-                task = self._process_tasks.get_nowait()
-                result = task.get()
+                task = self._process_tasks.get(block=False, timeout=1)
+                if self._max_processes == 0:
+                    result = task
+                else:
+                    result = task.get()
+                    self._process_tasks.task_done()
                 self._put_result_in_queue(result)
-                self._process_tasks.task_done()
             except queue.Empty:
                 pass
         self._put_result_in_queue(None)
@@ -224,13 +239,18 @@ class Pipeline:
         chunk_list = self._chunks[st.timestamp()]
         if len(chunk_list) == len(self._streams):
             # this is the last stream chunk for st
-            try:
-                task = self._pool.apipe(self._processor, chunk_list,
-                                        **self._processor_kwargs)
-                self._process_tasks.put(task)
+            if self._max_processes == 0:
+                result = self._processor(chunk_list, **self._processor_kwargs)
+                self._process_tasks.put(result)
                 del self._chunks[st.timestamp()]
-            except ValueError as e:
-                return
+            else:
+                try:
+                    task = self._pool.apipe(self._processor, chunk_list,
+                                            **self._processor_kwargs)
+                    self._process_tasks.put(task)
+                    del self._chunks[st.timestamp()]
+                except ValueError as e:
+                    return
 
     def _put_result_in_queue(self, result):
         self._queue.put(result)
