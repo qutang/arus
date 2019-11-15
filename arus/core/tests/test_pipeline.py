@@ -4,6 +4,8 @@ from ...core.accelerometer import generator
 from datetime import datetime
 import pandas as pd
 import numpy as np
+import sys
+import pytest
 
 
 def _pipeline_test_processor(chunk_list, **kwargs):
@@ -18,6 +20,7 @@ def _pipeline_test_processor(chunk_list, **kwargs):
     return result
 
 
+@pytest.mark.skipif(sys.platform == 'linux', reason="does not run on linux")
 def test_Pipeline():
     # test on a single stream
     stream_config = {
