@@ -4,9 +4,10 @@ Module of testing utility functions
 This module provides utility functions for testing modules in `arus.core`.
 
 Author: Qu Tang
+
 Date: 2019-11-15
 
-.. includes: ../LICENSE
+License: see LICENSE file
 """
 
 import os

@@ -27,9 +27,10 @@
 ```
 
 Author: Qu Tang
+
 Date: 2019-11-15
 
-.. include: ../../LICENSE
+License: see LICENSE file
 """
 
 import queue

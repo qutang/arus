@@ -6,19 +6,20 @@ Module includes classes that accept single or multiple `arus.core.stream` instan
 ### Single stream case
 
 ```python
-.. include: ../../examples/single_stream_pipeline.py
+.. include:: ../../examples/single_stream_pipeline.py
 ```
 
 ### Multiple streams case
 
 ```python
-.. include: ../../examples/multi_stream_pipeline.py
+.. include:: ../../examples/multi_stream_pipeline.py
 ```
 
 Author: Qu Tang
+
 Date: 2019-11-15
 
-.. include: ../../LICENSE
+License: see LICENSE file
 """
 
 from .stream import Stream
