@@ -6,6 +6,7 @@ import queue
 import pandas as pd
 import logging
 import threading
+import time
 
 
 class Pipeline:
@@ -26,6 +27,7 @@ class Pipeline:
         self._chunks = dict()
         self._stream_pointer = dict()
         self.started = False
+        self._stop_sender = False
 
     @property
     def name(self):
@@ -43,6 +45,15 @@ class Pipeline:
     def started(self, value):
         self._started = value
 
+    def finish_tasks_and_stop(self):
+        self.started = False
+        self._process_tasks.join()
+        self._stop_sender = True
+        self._pool.close()
+        for stream in self._streams:
+            stream.stop()
+        self._pool.terminate()
+
     def _is_running(self):
         if self.started:
             logging.warning(
@@ -55,11 +66,15 @@ class Pipeline:
         found = list(filter(lambda s: s.name == stream_name, self._streams))
         return None if len(found) == 0 else found[0]
 
-    def add_stream(self, stream, process_fun):
+    def add_stream(self, stream):
         if self._is_running():
             return
         if self.get_stream(stream.name) is None:
             self._streams.append(stream)
+
+    def set_processor(self, processor, **kwargs):
+        self._processor = processor
+        self._processor_kwargs = kwargs
 
     def remove_stream(self, stream_name):
         if self._is_running():
@@ -71,90 +86,62 @@ class Pipeline:
     def _sync_streams(self):
         """
 
-        This method depends on the stream to make sure it will not block for a long time when providing the chunk
+        This method depends on the stream to make sure it will not block for a long time when providing the chunk.
+
+        This method also asssumes that when one window of data is missing, the stream should provide a notification, such as `None` for that window.
+
+        Therefore, in the case when a Bluetooth device disconnects, the stream that serves the data of the device should always output `None` or empty DataFrame for those windows.
 
         In real time, because stream runs on separate thread, as long as the data is successfully passed to the stream queue, it won't block for a long time.
         """
         num_of_processors = cpu_count() - 2
-        pool = ProcessPool(nodes=num_of_processors)
+        self._pool = ProcessPool(nodes=num_of_processors)
         while self.started:
             for stream in self._streams:
                 for data, st, prev_st, name in stream.get_iterator():
-                    self._chunks[st.timestamp()] = []
+                    self._chunks[st.timestamp()] = [] if st.timestamp(
+                    ) not in self._chunks else self._chunks[st.timestamp()]
                     self._chunks[st.timestamp()].append((data, name))
                     self._stream_pointer[name] = st.timestamp()
                     break
-                self._process_synced_chunks(st, name, pool)
-        pool.close()
+                self._process_synced_chunks(st, name)
+        self._pool.close()
 
     def _send_result(self):
-        while True:
-            task = self._process_tasks.get()
-            result = task.get()
-            self._put_result_in_queue(result)
+        while not self._stop_sender:
+            try:
+                task = self._process_tasks.get_nowait()
+                result = task.get()
+                self._put_result_in_queue(result)
+                self._process_tasks.task_done()
+            except queue.Empty:
+                pass
+        self._put_result_in_queue(None)
 
-    def _process_synced_chunks(self, st, name, pool):
+    def _process_synced_chunks(self, st, name):
         chunk_list = self._chunks[st.timestamp()]
         if len(chunk_list) == len(self._streams):
             # this is the last stream chunk for st
-            task = pool.apipe(self.process_, chunk_list)
+            task = self._pool.apipe(self._processor, chunk_list,
+                                    **self._processor_kwargs)
             self._process_tasks.put(task)
             del self._chunks[st.timestamp()]
-
-    def process_(self, chunk_list):
-        """Method to run process_fun on data in a data stream.
-
-        Args:
-            stream (Stream): an instance of data stream
-            process_fun (object): a function to process the stream data
-
-        Examples:
-            1. An example of process_fun: computing mean of each data column of each data in the stream
-
-            ```python
-            def process_fun(stream):
-                for data in stream.get_iterator():
-                all_data = [data.iloc[:, 1:4].mean(axis=0)
-                            for data in stream.get_iterator()]
-                return pd.concat(all_data, axis=1).transpose()
-            ```
-        """
-        return
-
-    def process_stream_outputs(self, all_data):
-        """Abstract method to be implemented by subclasses to process outputs of `Pipeline.process_stream` from all data streams.
-
-        Results should be put into the queue using method `Pipeline._put_result_in_queue`.
-
-        Args:
-            all_data (object): This depends on the concrete implementation.
-
-        Raises:
-            NotImplementedError: This method must be implemented by subclasses
-
-        Examples:
-            1. An example of implementation: concatenate outputs of each stream by columns
-
-            ```python
-            def process_stream_outputs(self, all_data):
-                return pd.concat(all_data, axis=1)
-            ```
-        """
-        raise NotImplementedError("Subclass must implement this method")
 
     def _put_result_in_queue(self, result):
         self._queue.put(result)
 
     def start(self):
         self._sync_thread = threading.Thread(
-            target=self._sync_streams, name='sync-streams')
+            target=self._sync_streams, name=self._name + '-sync-streams')
+        self._sync_thread.daemon = True
         self._sender_thread = threading.Thread(
-            target=self._send_result, name='send-result')
-        for stream in self._streams:
-            stream.start(scheduler='thread')
+            target=self._send_result, name=self._name + '-send-result')
+        self._sender_thread.daemon = True
         self.started = True
         self._sync_thread.start()
         self._sender_thread.start()
+        for stream in self._streams:
+            stream.start(scheduler='thread')
 
     def get_iterator(self):
         data_queue = self._queue
