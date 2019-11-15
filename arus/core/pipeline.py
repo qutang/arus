@@ -50,12 +50,14 @@ class Pipeline:
         pipeline (Pipeline): an instance object of type `Pipeline`.
     """
 
-    def __init__(self, *, name='default-pipeline'):
+    def __init__(self, *, max_processes=None, name='default-pipeline'):
         """
 
         Args:
+            max_processes (int, optional): the max number of sub processes to be spawned. Defaults to 'None'. If it is `None`, the max processes will be the number of cores - 2.
             name (str, optional): the name of the pipeline. It will also be used as a prefix for all threads spawned by the class. Defaults to 'default-pipeline'.
         """
+        self._max_processes = max_processes
         self._process_tasks = queue.Queue()
         self._queue = queue.Queue()
         self.name = name
@@ -193,7 +195,8 @@ class Pipeline:
 
         In real time, because stream runs on separate thread, as long as the data is successfully passed to the stream queue, it won't block for a long time.
         """
-        num_of_processors = cpu_count() - 2
+        num_of_processors = min(cpu_count() - 2, self._max_processes)
+
         self._pool = ProcessPool(nodes=num_of_processors)
         while self.started:
             for stream in self._streams:
@@ -221,10 +224,13 @@ class Pipeline:
         chunk_list = self._chunks[st.timestamp()]
         if len(chunk_list) == len(self._streams):
             # this is the last stream chunk for st
-            task = self._pool.apipe(self._processor, chunk_list,
-                                    **self._processor_kwargs)
-            self._process_tasks.put(task)
-            del self._chunks[st.timestamp()]
+            try:
+                task = self._pool.apipe(self._processor, chunk_list,
+                                        **self._processor_kwargs)
+                self._process_tasks.put(task)
+                del self._chunks[st.timestamp()]
+            except ValueError as e:
+                return
 
     def _put_result_in_queue(self, result):
         self._queue.put(result)
