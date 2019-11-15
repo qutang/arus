@@ -41,6 +41,7 @@ or with `poetry`
 #### Official plugins
 
 1. [`arus-stream-metawear`](https://qutang.github.io/arus-stream-metawear/): a `Stream` class that can be used to stream data acquired from a Metawear device (A wireless Bluetooth sensor) in real-time.
+2. [`arus-components-hci`](https://qutang.github.io/arus-components-hci/): plugins that include streams, pipelines and broadcasters connected to some HCI interface, such as GUI, headphones and haptical devices.
 
 
 ### Development

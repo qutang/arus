@@ -14,9 +14,11 @@ if __name__ == "__main__":
         data_source=files, window_size=window_size, start_time=None, sr=sr, buffer_size=1800, storage_format='actigraph', name='spades_2')
     stream.start(scheduler='thread')
     chunk_sizes = []
-    for data in stream.get_iterator():
-        print("{},{},{}".format(
-            data.iloc[0, 0], data.iloc[-1, 0], data.shape[0]))
+    for package in stream.get_iterator():
+        data = package[0]
+        name = package[3]
+        print("{},{},{},{}".format(name,
+                                   data.iloc[0, 0], data.iloc[-1, 0], data.shape[0]))
         chunk_sizes.append(data.shape[0])
     pd.Series(chunk_sizes).plot(
         title='chunk sizes of the given stream with \nwindow size of ' + str(window_size) + ' seconds, sampling rate at ' + str(sr) + ' Hz')

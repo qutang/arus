@@ -1,4 +1,4 @@
-"""Module that loads external data sources (e.g., file, network port, socket and etc.) into a data queue using separate thread or not.
+"""Module includes classes that loads external data sources (e.g., file, network port, socket, user inputs and etc.) into a data queue using a separate thread.
 
 ## Usage of `arus.core.stream.SensorFileStream` 
 
@@ -19,6 +19,17 @@
 ```python
 .. include:: ../../examples/sensor_stream_simulated_reality.py
 ```
+
+## Usage of `arus.core.stream.AnnotationFileStream`
+
+```python
+.. include:: ../../examples/annotation_stream.py
+```
+
+Author: Qu Tang
+Date: 2019-11-15
+
+.. include: ../../LICENSE
 """
 
 import queue
@@ -136,6 +147,7 @@ class Stream:
         if self._scheduler == 'thread':
             self._loading_thread = self._get_thread_for_loading(
                 self._data_source)
+            self._loading_thread.daemon = True
             self._loading_thread.start()
         elif self._scheduler == 'sync':
             self.load_(self._data_source)
@@ -219,23 +231,25 @@ class SensorFileStream(Stream):
                             current_window = pd.concat(
                                 current_window, axis=0, sort=False)
                             current_clock = self._send_data(
-                                current_window, current_clock, current_window_st, previous_window_st)
+                                current_window, current_clock, current_window_st, current_window_et, previous_window_st)
                             current_window = [chunk]
                             previous_window_st = current_window_st
                             current_window_st = window_st
                             current_window_et = window_et
 
-    def _send_data(self, current_window, current_clock, current_window_st, previous_window_st):
+    def _send_data(self, current_window, current_clock, current_window_st, current_window_et, previous_window_st):
+        package = (current_window, current_window_st,
+                   previous_window_st, self.name)
         if self._simulate_reality:
             delay = (current_window_st - previous_window_st) / \
                 np.timedelta64(1, 's')
             logging.debug('Delay for ' + str(delay) +
                           ' seconds to simulate reality')
             time.sleep(max(current_clock + delay - time.time(), 0))
-            self._put_data_in_queue(current_window)
+            self._put_data_in_queue(package)
             return time.time()
         else:
-            self._put_data_in_queue(current_window)
+            self._put_data_in_queue(package)
             return current_clock
 
     def _load_file(self, filepath):
@@ -262,7 +276,6 @@ class SensorFileStream(Stream):
             self._start_time = data_st
         window_ts_marks = pd.date_range(start=self._start_time, end=data_et,
                                         freq=str(self._window_size * 1000) + 'ms')
-        print(window_ts_marks)
         self._start_time = window_ts_marks[-1]
         chunks = []
         for window_st in window_ts_marks:
@@ -280,6 +293,97 @@ class SensorFileStream(Stream):
         if isinstance(obj_toload, str):
             obj_toload = [obj_toload]
         self._load_files_into_chunks(obj_toload)
+        self._put_data_in_queue(None)
+
+
+class SensorGeneratorStream(Stream):
+    """Data stream to output randomly simulated sensor data.
+
+    This class inherits `Stream` class to generate simulated sensor data.
+
+    The stream will generate a sensor data stream with the generator function defined in the `data_source` and separate them into chunks specified by `window_size` to be loaded in the data queue.
+    """
+
+    def __init__(self, data_source, window_size, sr, start_time=None, simulate_reality=False, name='sensor-generator-stream'):
+        """
+        Args:
+            data_source (dict): a dict that stores a generator function for the simulated sensor data and its kwargs
+            sr (int): the sampling rate (Hz) for the given data
+            simulate_reality (bool, optional): simulate real world time delay if `True`.
+            name (str, optional): see `Stream.name`.
+        """
+        super().__init__(data_source=data_source,
+                         window_size=window_size, start_time=start_time, name=name)
+        self._sr = sr
+        self._simulate_reality = simulate_reality
+
+    def _load_generator_into_chunks(self, config):
+        current_window = []
+        current_window_st = None
+        current_window_et = None
+        current_clock = time.time()
+        previous_window_st = None
+        generator = config['generator']
+        kwargs = config['kwargs']
+        for data in generator(sr=self._sr, **kwargs):
+            if self.started:
+                chunks = self._extract_chunks_from_loaded_data(
+                    data)
+                for chunk, window_st, window_et in chunks:
+                    current_window_st = window_st if current_window_st is None else current_window_st
+                    current_window_et = window_et if current_window_et is None else current_window_et
+                    previous_window_st = window_st if previous_window_st is None else previous_window_st
+                    if current_window_st == window_st and current_window_et == window_et:
+                        current_window.append(chunk)
+                    else:
+                        current_window = pd.concat(
+                            current_window, axis=0, sort=False)
+                        current_clock = self._send_data(
+                            current_window, current_clock, current_window_st, current_window_et, previous_window_st)
+                        current_window = [chunk]
+                        previous_window_st = current_window_st
+                        current_window_st = window_st
+                        current_window_et = window_et
+            else:
+                break
+
+    def _send_data(self, current_window, current_clock, current_window_st, current_window_et, previous_window_st):
+        package = (current_window, current_window_st,
+                   previous_window_st, self.name)
+        if self._simulate_reality:
+            delay = (current_window_st - previous_window_st) / \
+                np.timedelta64(1, 's')
+            logging.debug('Delay for ' + str(delay) +
+                          ' seconds to simulate reality')
+            time.sleep(max(current_clock + delay - time.time(), 0))
+            self._put_data_in_queue(package)
+            return time.time()
+        else:
+            self._put_data_in_queue(package)
+            return current_clock
+
+    def _extract_chunks_from_loaded_data(self, data):
+        data_et = mh_data.get_end_time(data, 0)
+        data_st = mh_data.get_start_time(data, 0)
+        if self._start_time is None:
+            self._start_time = data_st
+        window_ts_marks = pd.date_range(start=self._start_time, end=data_et,
+                                        freq=str(self._window_size * 1000) + 'ms')
+        self._start_time = window_ts_marks[-1]
+        chunks = []
+        for window_st in window_ts_marks:
+            window_et = window_st + \
+                pd.Timedelta(self._window_size * 1000, unit='ms')
+            chunk = mh_data.segment_sensor(
+                data, start_time=window_st, stop_time=window_et)
+            if chunk.empty:
+                continue
+            else:
+                chunks.append((chunk, window_st, window_et))
+        return chunks
+
+    def load_(self, obj_toload):
+        self._load_generator_into_chunks(obj_toload)
         self._put_data_in_queue(None)
 
 
@@ -335,23 +439,26 @@ class AnnotationFileStream(Stream):
             chunk = mh_data.segment_annotation(
                 data, start_time=window_st, stop_time=window_et)
             if chunk.empty:
-                chunk = pd.DataFrame(data={'HEADER_TIME_STAMP': [window_st], 'START_TIME': [window_st], 'STOP_TIME': [window_et], 'LABEL_NAME': ["Unknown"]})
+                chunk = pd.DataFrame(data={'HEADER_TIME_STAMP': [window_st], 'START_TIME': [
+                                     window_st], 'STOP_TIME': [window_et], 'LABEL_NAME': ["Unknown"]})
                 chunks.append((chunk, window_st, window_et))
             else:
                 chunks.append((chunk, window_st, window_et))
         return chunks
 
-    def _send_data(self, current_window, current_clock, current_window_st, previous_window_st):
+    def _send_data(self, current_window, current_clock, current_window_st, current_window_et, previous_window_st):
+        package = (current_window, current_window_st,
+                   previous_window_st, self.name)
         if self._simulate_reality:
             delay = (current_window_st - previous_window_st) / \
                 np.timedelta64(1, 's')
             logging.debug('Delay for ' + str(delay) +
                           ' seconds to simulate reality')
             time.sleep(max(current_clock + delay - time.time(), 0))
-            self._put_data_in_queue(current_window)
+            self._put_data_in_queue(package)
             return time.time()
         else:
-            self._put_data_in_queue(current_window)
+            self._put_data_in_queue(package)
             return current_clock
 
     def _load_files_into_chunks(self, filepaths):
@@ -375,7 +482,7 @@ class AnnotationFileStream(Stream):
                             current_window = pd.concat(
                                 current_window, axis=0, sort=False)
                             current_clock = self._send_data(
-                                current_window, current_clock, current_window_st, previous_window_st)
+                                current_window, current_clock, current_window_st, current_window_et, previous_window_st)
                             current_window = [chunk]
                             previous_window_st = current_window_st
                             current_window_st = window_st

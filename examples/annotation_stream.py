@@ -14,12 +14,13 @@ if __name__ == "__main__":
         data_source=files, window_size=window_size, start_time=None, storage_format='mhealth', name='annotation-stream')
     stream.start(scheduler='thread')
     chunk_sizes = []
-    for data in stream.get_iterator():
-        chunk_sizes.append((data.iloc[-1, 2] - data.iloc[0, 1]) / pd.Timedelta(1, 's'))
+    for package in stream.get_iterator():
+        data = package[0]
+        chunk_sizes.append(
+            (data.iloc[-1, 2] - data.iloc[0, 1]) / pd.Timedelta(1, 's'))
     chunk_sizes
     pd.Series(chunk_sizes).plot(
         title='chunk sizes of the given stream with \nwindow size of ' + str(window_size) + ' seconds')
     plt.hlines(y=window_size, xmin=0,
                xmax=len(chunk_sizes), linestyles='dashed')
     plt.show()
-
