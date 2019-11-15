@@ -265,7 +265,6 @@ class SensorFileStream(Stream):
             self._start_time = data_st
         window_ts_marks = pd.date_range(start=self._start_time, end=data_et,
                                         freq=str(self._window_size * 1000) + 'ms')
-        print(window_ts_marks)
         self._start_time = window_ts_marks[-1]
         chunks = []
         for window_st in window_ts_marks:
@@ -334,6 +333,8 @@ class SensorGeneratorStream(Stream):
                         previous_window_st = current_window_st
                         current_window_st = window_st
                         current_window_et = window_et
+            else:
+                break
 
     def _send_data(self, current_window, current_clock, current_window_st, current_window_et, previous_window_st):
         package = (current_window, current_window_st,
@@ -357,7 +358,6 @@ class SensorGeneratorStream(Stream):
             self._start_time = data_st
         window_ts_marks = pd.date_range(start=self._start_time, end=data_et,
                                         freq=str(self._window_size * 1000) + 'ms')
-        print(window_ts_marks)
         self._start_time = window_ts_marks[-1]
         chunks = []
         for window_st in window_ts_marks:
