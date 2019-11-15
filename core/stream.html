@@ -3,9 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
-<meta name="generator" content="pdoc 0.7.1" />
+<meta name="generator" content="pdoc 0.7.2" />
 <title>arus.core.stream API documentation</title>
-<meta name="description" content="Module that loads external data sources (e.g., file, network port, socket and etc.) into a data queue using separate thread or not …" />
+<meta name="description" content="Module includes classes that loads external data sources (e.g., file, network port, socket, user inputs and etc.) into a data queue using a separate …" />
 <link href='https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.0/normalize.min.css' rel='stylesheet'>
 <link href='https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/8.0.0/sanitize.min.css' rel='stylesheet'>
 <link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github-gist.min.css" rel="stylesheet">
@@ -20,7 +20,7 @@
 <h1 class="title">Module <code>arus.core.stream</code></h1>
 </header>
 <section id="section-intro">
-<p>Module that loads external data sources (e.g., file, network port, socket and etc.) into a data queue using separate thread or not.</p>
+<p>Module includes classes that loads external data sources (e.g., file, network port, socket, user inputs and etc.) into a data queue using a separate thread.</p>
 <h2 id="usage-of-sensorfilestream">Usage of <a title="arus.core.stream.SensorFileStream" href="#arus.core.stream.SensorFileStream"><code>SensorFileStream</code></a></h2>
 <h3 id="on-mhealth-sensor-files">On mhealth sensor files</h3>
 <pre><code class="python">from arus.core.stream import SensorFileStream
@@ -39,7 +39,8 @@ if __name__ == &quot;__main__&quot;:
         data_source=files, window_size=window_size, start_time=None, sr=sr, buffer_size=900, storage_format='mhealth', name='spades_2')
     stream.start(scheduler='thread')
     chunk_sizes = []
-    for data in stream.get_iterator():
+    for package in stream.get_iterator():
+        data = package[0]
         print(&quot;{},{},{}&quot;.format(
             data.iloc[0, 0], data.iloc[-1, 0], data.shape[0]))
         chunk_sizes.append(data.shape[0])
@@ -66,9 +67,11 @@ if __name__ == &quot;__main__&quot;:
         data_source=files, window_size=window_size, start_time=None, sr=sr, buffer_size=1800, storage_format='actigraph', name='spades_2')
     stream.start(scheduler='thread')
     chunk_sizes = []
-    for data in stream.get_iterator():
-        print(&quot;{},{},{}&quot;.format(
-            data.iloc[0, 0], data.iloc[-1, 0], data.shape[0]))
+    for package in stream.get_iterator():
+        data = package[0]
+        name = package[3]
+        print(&quot;{},{},{},{}&quot;.format(name,
+                                   data.iloc[0, 0], data.iloc[-1, 0], data.shape[0]))
         chunk_sizes.append(data.shape[0])
     pd.Series(chunk_sizes).plot(
         title='chunk sizes of the given stream with \nwindow size of ' + str(window_size) + ' seconds, sampling rate at ' + str(sr) + ' Hz')
@@ -93,7 +96,8 @@ if __name__ == &quot;__main__&quot;:
         data_source=files, window_size=window_size, start_time=None, sr=sr, buffer_size=900, storage_format='mhealth', simulate_reality=True, name='spades_2')
     stream.start(scheduler='thread')
     chunk_sizes = []
-    for data in stream.get_iterator():
+    for package in stream.get_iterator():
+        data = package[0]
         print(&quot;{},{},{}&quot;.format(
             data.iloc[0, 0], data.iloc[-1, 0], data.shape[0]))
         chunk_sizes.append(data.shape[0])
@@ -103,9 +107,40 @@ if __name__ == &quot;__main__&quot;:
                xmax=len(chunk_sizes), linestyles='dashed')
     plt.show()
 </code></pre>
+<h2 id="usage-of-aruscorestreamannotationfilestream">Usage of <code>arus.core.stream.AnnotationFileStream</code></h2>
+<pre><code class="python">from arus.core.stream import AnnotationFileStream
+from arus.testing import load_test_data
+from glob import glob
+import os
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+
+if __name__ == &quot;__main__&quot;:
+    window_size = 12.8
+    files, sr = load_test_data(file_type='mhealth', sensor_type='annotation',
+                               file_num='multiple', exception_type='no_missing')
+    stream = AnnotationFileStream(
+        data_source=files, window_size=window_size, start_time=None, storage_format='mhealth', name='annotation-stream')
+    stream.start(scheduler='thread')
+    chunk_sizes = []
+    for package in stream.get_iterator():
+        data = package[0]
+        chunk_sizes.append(
+            (data.iloc[-1, 2] - data.iloc[0, 1]) / pd.Timedelta(1, 's'))
+    chunk_sizes
+    pd.Series(chunk_sizes).plot(
+        title='chunk sizes of the given stream with \nwindow size of ' + str(window_size) + ' seconds')
+    plt.hlines(y=window_size, xmin=0,
+               xmax=len(chunk_sizes), linestyles='dashed')
+    plt.show()
+</code></pre>
+<p>Author: Qu Tang
+Date: 2019-11-15</p>
+<p>.. include: ../../LICENSE</p>
 <details class="source">
 <summary>Source code</summary>
-<pre><code class="python">&#34;&#34;&#34;Module that loads external data sources (e.g., file, network port, socket and etc.) into a data queue using separate thread or not.
+<pre><code class="python">&#34;&#34;&#34;Module includes classes that loads external data sources (e.g., file, network port, socket, user inputs and etc.) into a data queue using a separate thread.
 
 ## Usage of `arus.core.stream.SensorFileStream` 
 
@@ -126,6 +161,17 @@ if __name__ == &quot;__main__&quot;:
 ```python
 .. include:: ../../examples/sensor_stream_simulated_reality.py
 ```
+
+## Usage of `arus.core.stream.AnnotationFileStream`
+
+```python
+.. include:: ../../examples/annotation_stream.py
+```
+
+Author: Qu Tang
+Date: 2019-11-15
+
+.. include: ../../LICENSE
 &#34;&#34;&#34;
 
 import queue
@@ -243,6 +289,7 @@ class Stream:
         if self._scheduler == &#39;thread&#39;:
             self._loading_thread = self._get_thread_for_loading(
                 self._data_source)
+            self._loading_thread.daemon = True
             self._loading_thread.start()
         elif self._scheduler == &#39;sync&#39;:
             self.load_(self._data_source)
@@ -326,23 +373,25 @@ class SensorFileStream(Stream):
                             current_window = pd.concat(
                                 current_window, axis=0, sort=False)
                             current_clock = self._send_data(
-                                current_window, current_clock, current_window_st, previous_window_st)
+                                current_window, current_clock, current_window_st, current_window_et, previous_window_st)
                             current_window = [chunk]
                             previous_window_st = current_window_st
                             current_window_st = window_st
                             current_window_et = window_et
 
-    def _send_data(self, current_window, current_clock, current_window_st, previous_window_st):
+    def _send_data(self, current_window, current_clock, current_window_st, current_window_et, previous_window_st):
+        package = (current_window, current_window_st,
+                   previous_window_st, self.name)
         if self._simulate_reality:
             delay = (current_window_st - previous_window_st) / \
                 np.timedelta64(1, &#39;s&#39;)
             logging.debug(&#39;Delay for &#39; + str(delay) +
                           &#39; seconds to simulate reality&#39;)
             time.sleep(max(current_clock + delay - time.time(), 0))
-            self._put_data_in_queue(current_window)
+            self._put_data_in_queue(package)
             return time.time()
         else:
-            self._put_data_in_queue(current_window)
+            self._put_data_in_queue(package)
             return current_clock
 
     def _load_file(self, filepath):
@@ -369,7 +418,6 @@ class SensorFileStream(Stream):
             self._start_time = data_st
         window_ts_marks = pd.date_range(start=self._start_time, end=data_et,
                                         freq=str(self._window_size * 1000) + &#39;ms&#39;)
-        print(window_ts_marks)
         self._start_time = window_ts_marks[-1]
         chunks = []
         for window_st in window_ts_marks:
@@ -387,6 +435,97 @@ class SensorFileStream(Stream):
         if isinstance(obj_toload, str):
             obj_toload = [obj_toload]
         self._load_files_into_chunks(obj_toload)
+        self._put_data_in_queue(None)
+
+
+class SensorGeneratorStream(Stream):
+    &#34;&#34;&#34;Data stream to output randomly simulated sensor data.
+
+    This class inherits `Stream` class to generate simulated sensor data.
+
+    The stream will generate a sensor data stream with the generator function defined in the `data_source` and separate them into chunks specified by `window_size` to be loaded in the data queue.
+    &#34;&#34;&#34;
+
+    def __init__(self, data_source, window_size, sr, start_time=None, simulate_reality=False, name=&#39;sensor-generator-stream&#39;):
+        &#34;&#34;&#34;
+        Args:
+            data_source (dict): a dict that stores a generator function for the simulated sensor data and its kwargs
+            sr (int): the sampling rate (Hz) for the given data
+            simulate_reality (bool, optional): simulate real world time delay if `True`.
+            name (str, optional): see `Stream.name`.
+        &#34;&#34;&#34;
+        super().__init__(data_source=data_source,
+                         window_size=window_size, start_time=start_time, name=name)
+        self._sr = sr
+        self._simulate_reality = simulate_reality
+
+    def _load_generator_into_chunks(self, config):
+        current_window = []
+        current_window_st = None
+        current_window_et = None
+        current_clock = time.time()
+        previous_window_st = None
+        generator = config[&#39;generator&#39;]
+        kwargs = config[&#39;kwargs&#39;]
+        for data in generator(sr=self._sr, **kwargs):
+            if self.started:
+                chunks = self._extract_chunks_from_loaded_data(
+                    data)
+                for chunk, window_st, window_et in chunks:
+                    current_window_st = window_st if current_window_st is None else current_window_st
+                    current_window_et = window_et if current_window_et is None else current_window_et
+                    previous_window_st = window_st if previous_window_st is None else previous_window_st
+                    if current_window_st == window_st and current_window_et == window_et:
+                        current_window.append(chunk)
+                    else:
+                        current_window = pd.concat(
+                            current_window, axis=0, sort=False)
+                        current_clock = self._send_data(
+                            current_window, current_clock, current_window_st, current_window_et, previous_window_st)
+                        current_window = [chunk]
+                        previous_window_st = current_window_st
+                        current_window_st = window_st
+                        current_window_et = window_et
+            else:
+                break
+
+    def _send_data(self, current_window, current_clock, current_window_st, current_window_et, previous_window_st):
+        package = (current_window, current_window_st,
+                   previous_window_st, self.name)
+        if self._simulate_reality:
+            delay = (current_window_st - previous_window_st) / \
+                np.timedelta64(1, &#39;s&#39;)
+            logging.debug(&#39;Delay for &#39; + str(delay) +
+                          &#39; seconds to simulate reality&#39;)
+            time.sleep(max(current_clock + delay - time.time(), 0))
+            self._put_data_in_queue(package)
+            return time.time()
+        else:
+            self._put_data_in_queue(package)
+            return current_clock
+
+    def _extract_chunks_from_loaded_data(self, data):
+        data_et = mh_data.get_end_time(data, 0)
+        data_st = mh_data.get_start_time(data, 0)
+        if self._start_time is None:
+            self._start_time = data_st
+        window_ts_marks = pd.date_range(start=self._start_time, end=data_et,
+                                        freq=str(self._window_size * 1000) + &#39;ms&#39;)
+        self._start_time = window_ts_marks[-1]
+        chunks = []
+        for window_st in window_ts_marks:
+            window_et = window_st + \
+                pd.Timedelta(self._window_size * 1000, unit=&#39;ms&#39;)
+            chunk = mh_data.segment_sensor(
+                data, start_time=window_st, stop_time=window_et)
+            if chunk.empty:
+                continue
+            else:
+                chunks.append((chunk, window_st, window_et))
+        return chunks
+
+    def load_(self, obj_toload):
+        self._load_generator_into_chunks(obj_toload)
         self._put_data_in_queue(None)
 
 
@@ -442,23 +581,26 @@ class AnnotationFileStream(Stream):
             chunk = mh_data.segment_annotation(
                 data, start_time=window_st, stop_time=window_et)
             if chunk.empty:
-                chunk = pd.DataFrame(data={&#39;HEADER_TIME_STAMP&#39;: [window_st], &#39;START_TIME&#39;: [window_st], &#39;STOP_TIME&#39;: [window_et], &#39;LABEL_NAME&#39;: [&#34;Unknown&#34;]})
+                chunk = pd.DataFrame(data={&#39;HEADER_TIME_STAMP&#39;: [window_st], &#39;START_TIME&#39;: [
+                                     window_st], &#39;STOP_TIME&#39;: [window_et], &#39;LABEL_NAME&#39;: [&#34;Unknown&#34;]})
                 chunks.append((chunk, window_st, window_et))
             else:
                 chunks.append((chunk, window_st, window_et))
         return chunks
 
-    def _send_data(self, current_window, current_clock, current_window_st, previous_window_st):
+    def _send_data(self, current_window, current_clock, current_window_st, current_window_et, previous_window_st):
+        package = (current_window, current_window_st,
+                   previous_window_st, self.name)
         if self._simulate_reality:
             delay = (current_window_st - previous_window_st) / \
                 np.timedelta64(1, &#39;s&#39;)
             logging.debug(&#39;Delay for &#39; + str(delay) +
                           &#39; seconds to simulate reality&#39;)
             time.sleep(max(current_clock + delay - time.time(), 0))
-            self._put_data_in_queue(current_window)
+            self._put_data_in_queue(package)
             return time.time()
         else:
-            self._put_data_in_queue(current_window)
+            self._put_data_in_queue(package)
             return current_clock
 
     def _load_files_into_chunks(self, filepaths):
@@ -482,7 +624,7 @@ class AnnotationFileStream(Stream):
                             current_window = pd.concat(
                                 current_window, axis=0, sort=False)
                             current_clock = self._send_data(
-                                current_window, current_clock, current_window_st, previous_window_st)
+                                current_window, current_clock, current_window_st, current_window_et, previous_window_st)
                             current_window = [chunk]
                             previous_window_st = current_window_st
                             current_window_st = window_st
@@ -635,6 +777,7 @@ class AnnotationFileStream(Stream):
         if self._scheduler == &#39;thread&#39;:
             self._loading_thread = self._get_thread_for_loading(
                 self._data_source)
+            self._loading_thread.daemon = True
             self._loading_thread.start()
         elif self._scheduler == &#39;sync&#39;:
             self.load_(self._data_source)
@@ -667,6 +810,7 @@ class AnnotationFileStream(Stream):
 <h3>Subclasses</h3>
 <ul class="hlist">
 <li><a title="arus.core.stream.SensorFileStream" href="#arus.core.stream.SensorFileStream">SensorFileStream</a></li>
+<li><a title="arus.core.stream.SensorGeneratorStream" href="#arus.core.stream.SensorGeneratorStream">SensorGeneratorStream</a></li>
 <li><a title="arus.core.stream.AnnotationFileStream" href="#arus.core.stream.AnnotationFileStream">AnnotationFileStream</a></li>
 </ul>
 <h3>Instance variables</h3>
@@ -805,6 +949,7 @@ def name(self):
     if self._scheduler == &#39;thread&#39;:
         self._loading_thread = self._get_thread_for_loading(
             self._data_source)
+        self._loading_thread.daemon = True
         self._loading_thread.start()
     elif self._scheduler == &#39;sync&#39;:
         self.load_(self._data_source)
@@ -880,7 +1025,8 @@ if __name__ == &quot;__main__&quot;:
         data_source=files, window_size=window_size, start_time=None, sr=sr, buffer_size=900, storage_format='mhealth', name='spades_2')
     stream.start(scheduler='thread')
     chunk_sizes = []
-    for data in stream.get_iterator():
+    for package in stream.get_iterator():
+        data = package[0]
         print(&quot;{},{},{}&quot;.format(
             data.iloc[0, 0], data.iloc[-1, 0], data.shape[0]))
         chunk_sizes.append(data.shape[0])
@@ -960,23 +1106,25 @@ if __name__ == &quot;__main__&quot;:
                             current_window = pd.concat(
                                 current_window, axis=0, sort=False)
                             current_clock = self._send_data(
-                                current_window, current_clock, current_window_st, previous_window_st)
+                                current_window, current_clock, current_window_st, current_window_et, previous_window_st)
                             current_window = [chunk]
                             previous_window_st = current_window_st
                             current_window_st = window_st
                             current_window_et = window_et
 
-    def _send_data(self, current_window, current_clock, current_window_st, previous_window_st):
+    def _send_data(self, current_window, current_clock, current_window_st, current_window_et, previous_window_st):
+        package = (current_window, current_window_st,
+                   previous_window_st, self.name)
         if self._simulate_reality:
             delay = (current_window_st - previous_window_st) / \
                 np.timedelta64(1, &#39;s&#39;)
             logging.debug(&#39;Delay for &#39; + str(delay) +
                           &#39; seconds to simulate reality&#39;)
             time.sleep(max(current_clock + delay - time.time(), 0))
-            self._put_data_in_queue(current_window)
+            self._put_data_in_queue(package)
             return time.time()
         else:
-            self._put_data_in_queue(current_window)
+            self._put_data_in_queue(package)
             return current_clock
 
     def _load_file(self, filepath):
@@ -1003,7 +1151,6 @@ if __name__ == &quot;__main__&quot;:
             self._start_time = data_st
         window_ts_marks = pd.date_range(start=self._start_time, end=data_et,
                                         freq=str(self._window_size * 1000) + &#39;ms&#39;)
-        print(window_ts_marks)
         self._start_time = window_ts_marks[-1]
         chunks = []
         for window_st in window_ts_marks:
@@ -1113,6 +1260,205 @@ if __name__ == &quot;__main__&quot;:
 </dd>
 </dl>
 </dd>
+<dt id="arus.core.stream.SensorGeneratorStream"><code class="flex name class">
+<span>class <span class="ident">SensorGeneratorStream</span></span>
+<span>(</span><span>data_source, window_size, sr, start_time=None, simulate_reality=False, name='sensor-generator-stream')</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Data stream to output randomly simulated sensor data.</p>
+<p>This class inherits <a title="arus.core.stream.Stream" href="#arus.core.stream.Stream"><code>Stream</code></a> class to generate simulated sensor data.</p>
+<p>The stream will generate a sensor data stream with the generator function defined in the <code>data_source</code> and separate them into chunks specified by <code>window_size</code> to be loaded in the data queue.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>data_source</code></strong> :&ensp;<code>dict</code></dt>
+<dd>a dict that stores a generator function for the simulated sensor data and its kwargs</dd>
+<dt><strong><code>sr</code></strong> :&ensp;<code>int</code></dt>
+<dd>the sampling rate (Hz) for the given data</dd>
+<dt><strong><code>simulate_reality</code></strong> :&ensp;<code>bool</code>, optional</dt>
+<dd>simulate real world time delay if <code>True</code>.</dd>
+<dt><strong><code>name</code></strong> :&ensp;<code>str</code>, optional</dt>
+<dd>see <a title="arus.core.stream.Stream.name" href="#arus.core.stream.Stream.name"><code>Stream.name</code></a>.</dd>
+</dl></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">class SensorGeneratorStream(Stream):
+    &#34;&#34;&#34;Data stream to output randomly simulated sensor data.
+
+    This class inherits `Stream` class to generate simulated sensor data.
+
+    The stream will generate a sensor data stream with the generator function defined in the `data_source` and separate them into chunks specified by `window_size` to be loaded in the data queue.
+    &#34;&#34;&#34;
+
+    def __init__(self, data_source, window_size, sr, start_time=None, simulate_reality=False, name=&#39;sensor-generator-stream&#39;):
+        &#34;&#34;&#34;
+        Args:
+            data_source (dict): a dict that stores a generator function for the simulated sensor data and its kwargs
+            sr (int): the sampling rate (Hz) for the given data
+            simulate_reality (bool, optional): simulate real world time delay if `True`.
+            name (str, optional): see `Stream.name`.
+        &#34;&#34;&#34;
+        super().__init__(data_source=data_source,
+                         window_size=window_size, start_time=start_time, name=name)
+        self._sr = sr
+        self._simulate_reality = simulate_reality
+
+    def _load_generator_into_chunks(self, config):
+        current_window = []
+        current_window_st = None
+        current_window_et = None
+        current_clock = time.time()
+        previous_window_st = None
+        generator = config[&#39;generator&#39;]
+        kwargs = config[&#39;kwargs&#39;]
+        for data in generator(sr=self._sr, **kwargs):
+            if self.started:
+                chunks = self._extract_chunks_from_loaded_data(
+                    data)
+                for chunk, window_st, window_et in chunks:
+                    current_window_st = window_st if current_window_st is None else current_window_st
+                    current_window_et = window_et if current_window_et is None else current_window_et
+                    previous_window_st = window_st if previous_window_st is None else previous_window_st
+                    if current_window_st == window_st and current_window_et == window_et:
+                        current_window.append(chunk)
+                    else:
+                        current_window = pd.concat(
+                            current_window, axis=0, sort=False)
+                        current_clock = self._send_data(
+                            current_window, current_clock, current_window_st, current_window_et, previous_window_st)
+                        current_window = [chunk]
+                        previous_window_st = current_window_st
+                        current_window_st = window_st
+                        current_window_et = window_et
+            else:
+                break
+
+    def _send_data(self, current_window, current_clock, current_window_st, current_window_et, previous_window_st):
+        package = (current_window, current_window_st,
+                   previous_window_st, self.name)
+        if self._simulate_reality:
+            delay = (current_window_st - previous_window_st) / \
+                np.timedelta64(1, &#39;s&#39;)
+            logging.debug(&#39;Delay for &#39; + str(delay) +
+                          &#39; seconds to simulate reality&#39;)
+            time.sleep(max(current_clock + delay - time.time(), 0))
+            self._put_data_in_queue(package)
+            return time.time()
+        else:
+            self._put_data_in_queue(package)
+            return current_clock
+
+    def _extract_chunks_from_loaded_data(self, data):
+        data_et = mh_data.get_end_time(data, 0)
+        data_st = mh_data.get_start_time(data, 0)
+        if self._start_time is None:
+            self._start_time = data_st
+        window_ts_marks = pd.date_range(start=self._start_time, end=data_et,
+                                        freq=str(self._window_size * 1000) + &#39;ms&#39;)
+        self._start_time = window_ts_marks[-1]
+        chunks = []
+        for window_st in window_ts_marks:
+            window_et = window_st + \
+                pd.Timedelta(self._window_size * 1000, unit=&#39;ms&#39;)
+            chunk = mh_data.segment_sensor(
+                data, start_time=window_st, stop_time=window_et)
+            if chunk.empty:
+                continue
+            else:
+                chunks.append((chunk, window_st, window_et))
+        return chunks
+
+    def load_(self, obj_toload):
+        self._load_generator_into_chunks(obj_toload)
+        self._put_data_in_queue(None)</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="arus.core.stream.Stream" href="#arus.core.stream.Stream">Stream</a></li>
+</ul>
+<h3>Instance variables</h3>
+<dl>
+<dt id="arus.core.stream.SensorGeneratorStream.started"><code class="name">var <span class="ident">started</span></code></dt>
+<dd>
+<p class="inheritance">
+<em>Inherited from:</em>
+<code><a title="arus.core.stream.Stream" href="#arus.core.stream.Stream">Stream</a></code>.<code><a title="arus.core.stream.Stream.started" href="#arus.core.stream.Stream.started">started</a></code>
+</p>
+<section class="desc inherited"><p>Status of the stream …</p></section>
+</dd>
+<dt id="arus.core.stream.SensorGeneratorStream.name"><code class="name">var <span class="ident">name</span></code></dt>
+<dd>
+<p class="inheritance">
+<em>Inherited from:</em>
+<code><a title="arus.core.stream.Stream" href="#arus.core.stream.Stream">Stream</a></code>.<code><a title="arus.core.stream.Stream.name" href="#arus.core.stream.Stream.name">name</a></code>
+</p>
+<section class="desc inherited"><p>The name of the data stream …</p></section>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="arus.core.stream.SensorGeneratorStream.load_"><code class="name flex">
+<span>def <span class="ident">load_</span></span>(<span>self, obj_toload)</span>
+</code></dt>
+<dd>
+<p class="inheritance">
+<em>Inherited from:</em>
+<code><a title="arus.core.stream.Stream" href="#arus.core.stream.Stream">Stream</a></code>.<code><a title="arus.core.stream.Stream.load_" href="#arus.core.stream.Stream.load_">load_</a></code>
+</p>
+<section class="desc inherited"><p>Implement this in the sub class …</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def load_(self, obj_toload):
+    self._load_generator_into_chunks(obj_toload)
+    self._put_data_in_queue(None)</code></pre>
+</details>
+</dd>
+<dt id="arus.core.stream.SensorGeneratorStream.get_iterator"><code class="name flex">
+<span>def <span class="ident">get_iterator</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<p class="inheritance">
+<em>Inherited from:</em>
+<code><a title="arus.core.stream.Stream" href="#arus.core.stream.Stream">Stream</a></code>.<code><a title="arus.core.stream.Stream.get_iterator" href="#arus.core.stream.Stream.get_iterator">get_iterator</a></code>
+</p>
+<section class="desc inherited"><p>Get a python iterator for the loaded data queue …</p></section>
+</dd>
+<dt id="arus.core.stream.SensorGeneratorStream.next"><code class="name flex">
+<span>def <span class="ident">next</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<p class="inheritance">
+<em>Inherited from:</em>
+<code><a title="arus.core.stream.Stream" href="#arus.core.stream.Stream">Stream</a></code>.<code><a title="arus.core.stream.Stream.next" href="#arus.core.stream.Stream.next">next</a></code>
+</p>
+<section class="desc inherited"><p>Manually get the next loaded data in data queue. Rarely used. Recommend to use the <a title="arus.core.stream.Stream.get_iterator" href="#arus.core.stream.Stream.get_iterator"><code>Stream.get_iterator()</code></a> method …</p></section>
+</dd>
+<dt id="arus.core.stream.SensorGeneratorStream.start"><code class="name flex">
+<span>def <span class="ident">start</span></span>(<span>self, scheduler=None)</span>
+</code></dt>
+<dd>
+<p class="inheritance">
+<em>Inherited from:</em>
+<code><a title="arus.core.stream.Stream" href="#arus.core.stream.Stream">Stream</a></code>.<code><a title="arus.core.stream.Stream.start" href="#arus.core.stream.Stream.start">start</a></code>
+</p>
+<section class="desc inherited"><p>Method to start loading data from the provided data source.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>scheduler</code></strong> :&ensp;<code>str</code>, optional</dt>
+<dd>The scheduler used to load data. This will override …</dd>
+</dl></section>
+</dd>
+<dt id="arus.core.stream.SensorGeneratorStream.stop"><code class="name flex">
+<span>def <span class="ident">stop</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<p class="inheritance">
+<em>Inherited from:</em>
+<code><a title="arus.core.stream.Stream" href="#arus.core.stream.Stream">Stream</a></code>.<code><a title="arus.core.stream.Stream.stop" href="#arus.core.stream.Stream.stop">stop</a></code>
+</p>
+<section class="desc inherited"><p>Method to stop the loading process</p></section>
+</dd>
+</dl>
+</dd>
 <dt id="arus.core.stream.AnnotationFileStream"><code class="flex name class">
 <span>class <span class="ident">AnnotationFileStream</span></span>
 <span>(</span><span>data_source, window_size, start_time=None, storage_format='mhealth', simulate_reality=False, name='mhealth-stream')</span>
@@ -1141,8 +1487,10 @@ if __name__ == &quot;__main__&quot;:
         data_source=files, window_size=window_size, start_time=None, storage_format='mhealth', name='annotation-stream')
     stream.start(scheduler='thread')
     chunk_sizes = []
-    for data in stream.get_iterator():
-        chunk_sizes.append((data.iloc[-1, 2] - data.iloc[0, 1]) / pd.Timedelta(1, 's'))
+    for package in stream.get_iterator():
+        data = package[0]
+        chunk_sizes.append(
+            (data.iloc[-1, 2] - data.iloc[0, 1]) / pd.Timedelta(1, 's'))
     chunk_sizes
     pd.Series(chunk_sizes).plot(
         title='chunk sizes of the given stream with \nwindow size of ' + str(window_size) + ' seconds')
@@ -1215,23 +1563,26 @@ if __name__ == &quot;__main__&quot;:
             chunk = mh_data.segment_annotation(
                 data, start_time=window_st, stop_time=window_et)
             if chunk.empty:
-                chunk = pd.DataFrame(data={&#39;HEADER_TIME_STAMP&#39;: [window_st], &#39;START_TIME&#39;: [window_st], &#39;STOP_TIME&#39;: [window_et], &#39;LABEL_NAME&#39;: [&#34;Unknown&#34;]})
+                chunk = pd.DataFrame(data={&#39;HEADER_TIME_STAMP&#39;: [window_st], &#39;START_TIME&#39;: [
+                                     window_st], &#39;STOP_TIME&#39;: [window_et], &#39;LABEL_NAME&#39;: [&#34;Unknown&#34;]})
                 chunks.append((chunk, window_st, window_et))
             else:
                 chunks.append((chunk, window_st, window_et))
         return chunks
 
-    def _send_data(self, current_window, current_clock, current_window_st, previous_window_st):
+    def _send_data(self, current_window, current_clock, current_window_st, current_window_et, previous_window_st):
+        package = (current_window, current_window_st,
+                   previous_window_st, self.name)
         if self._simulate_reality:
             delay = (current_window_st - previous_window_st) / \
                 np.timedelta64(1, &#39;s&#39;)
             logging.debug(&#39;Delay for &#39; + str(delay) +
                           &#39; seconds to simulate reality&#39;)
             time.sleep(max(current_clock + delay - time.time(), 0))
-            self._put_data_in_queue(current_window)
+            self._put_data_in_queue(package)
             return time.time()
         else:
-            self._put_data_in_queue(current_window)
+            self._put_data_in_queue(package)
             return current_clock
 
     def _load_files_into_chunks(self, filepaths):
@@ -1255,7 +1606,7 @@ if __name__ == &quot;__main__&quot;:
                             current_window = pd.concat(
                                 current_window, axis=0, sort=False)
                             current_clock = self._send_data(
-                                current_window, current_clock, current_window_st, previous_window_st)
+                                current_window, current_clock, current_window_st, current_window_et, previous_window_st)
                             current_window = [chunk]
                             previous_window_st = current_window_st
                             current_window_st = window_st
@@ -1370,6 +1721,7 @@ if __name__ == &quot;__main__&quot;:
 <li><a href="#on-mhealth-sensor-files-with-real-time-delay">On mhealth sensor files with real-time delay</a></li>
 </ul>
 </li>
+<li><a href="#usage-of-aruscorestreamannotationfilestream">Usage of arus.core.stream.AnnotationFileStream</a></li>
 </ul>
 </div>
 <ul id="index">
@@ -1401,6 +1753,16 @@ if __name__ == &quot;__main__&quot;:
 </ul>
 </li>
 <li>
+<h4><code><a title="arus.core.stream.SensorGeneratorStream" href="#arus.core.stream.SensorGeneratorStream">SensorGeneratorStream</a></code></h4>
+<ul class="">
+<li><code><a title="arus.core.stream.SensorGeneratorStream.load_" href="#arus.core.stream.SensorGeneratorStream.load_">load_</a></code></li>
+<li><code><a title="arus.core.stream.SensorGeneratorStream.get_iterator" href="#arus.core.stream.SensorGeneratorStream.get_iterator">get_iterator</a></code></li>
+<li><code><a title="arus.core.stream.SensorGeneratorStream.next" href="#arus.core.stream.SensorGeneratorStream.next">next</a></code></li>
+<li><code><a title="arus.core.stream.SensorGeneratorStream.start" href="#arus.core.stream.SensorGeneratorStream.start">start</a></code></li>
+<li><code><a title="arus.core.stream.SensorGeneratorStream.stop" href="#arus.core.stream.SensorGeneratorStream.stop">stop</a></code></li>
+</ul>
+</li>
+<li>
 <h4><code><a title="arus.core.stream.AnnotationFileStream" href="#arus.core.stream.AnnotationFileStream">AnnotationFileStream</a></code></h4>
 <ul class="">
 <li><code><a title="arus.core.stream.AnnotationFileStream.load_" href="#arus.core.stream.AnnotationFileStream.load_">load_</a></code></li>
@@ -1417,7 +1779,7 @@ if __name__ == &quot;__main__&quot;:
 </main>
 <footer id="footer">
 <a href='https://qutang.github.io'>Qu Tang © 2019</a>
-<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.7.1</a>.</p>
+<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.7.2</a>.</p>
 </footer>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
 <script>hljs.initHighlightingOnLoad()</script>

@@ -3,9 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
-<meta name="generator" content="pdoc 0.7.1" />
+<meta name="generator" content="pdoc 0.7.2" />
 <title>arus.testing API documentation</title>
-<meta name="description" content="" />
+<meta name="description" content="Module of testing utility functions …" />
 <link href='https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.0/normalize.min.css' rel='stylesheet'>
 <link href='https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/8.0.0/sanitize.min.css' rel='stylesheet'>
 <link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github-gist.min.css" rel="stylesheet">
@@ -20,16 +20,44 @@
 <h1 class="title">Module <code>arus.testing</code></h1>
 </header>
 <section id="section-intro">
+<p>Module of testing utility functions</p>
+<p>This module provides utility functions for testing modules in <a title="arus.core" href="core/index.html"><code>arus.core</code></a>.</p>
+<p>Author: Qu Tang
+Date: 2019-11-15</p>
+<p>.. includes: ../LICENSE</p>
 <details class="source">
 <summary>Source code</summary>
-<pre><code class="python">import os
+<pre><code class="python">&#34;&#34;&#34;
+Module of testing utility functions
+
+This module provides utility functions for testing modules in `arus.core`.
+
+Author: Qu Tang
+Date: 2019-11-15
+
+.. includes: ../LICENSE
+&#34;&#34;&#34;
+
+import os
 from glob import glob
 
 
 def load_test_data(file_type=&#39;mhealth&#39;, sensor_type=&#39;sensor&#39;, file_num=&#39;multiple&#39;, exception_type=&#39;consistent_sr&#39;):
+    &#34;&#34;&#34;Load test data that are bundled in the package.
+
+    Args:
+        file_type (str, optional): either files stored in &#39;mhealth&#39; or &#39;actigraph&#39; csv format. Defaults to &#39;mhealth&#39;.
+        sensor_type (str, optional): either &#39;sensor&#39; or &#39;annotation&#39; files. Defaults to &#39;sensor&#39;.
+        file_num (str, optional): either &#39;single&#39; or &#39;multiple&#39; files. Defaults to &#39;multiple&#39;.
+        exception_type (str, optional): &#39;consistent_sr&#39; (consistent sampling rate), &#39;inconsistent_sr&#39; (inconsistent sampling rate), &#39;missing&#39; (with missing data), &#39;no_missing&#39; (with no missing data). Defaults to &#39;consistent_sr&#39;.
+
+    Returns:
+        tuple: the first element is the list of filepaths found and sorted, the second element is the sampling rate if `sensor_type` is &#39;sensor&#39;, otherwise it is `None`.
+    &#34;&#34;&#34;
+
     cwd = os.path.dirname(os.path.realpath(__file__))
     data_folder = os.path.join(cwd, &#39;..&#39;, &#39;data&#39;, file_num,
-                                file_type, sensor_type, exception_type)
+                               file_type, sensor_type, exception_type)
     meta_file = os.path.join(data_folder, &#39;meta.csv&#39;)
     if file_num == &#39;multiple&#39;:
         data = list(filter(lambda f: &#39;meta&#39; not in f, glob(
@@ -57,13 +85,41 @@ def load_test_data(file_type=&#39;mhealth&#39;, sensor_type=&#39;sensor&#39;, fi
 <span>def <span class="ident">load_test_data</span></span>(<span>file_type='mhealth', sensor_type='sensor', file_num='multiple', exception_type='consistent_sr')</span>
 </code></dt>
 <dd>
-<section class="desc"></section>
+<section class="desc"><p>Load test data that are bundled in the package.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>file_type</code></strong> :&ensp;<code>str</code>, optional</dt>
+<dd>either files stored in 'mhealth' or 'actigraph' csv format. Defaults to 'mhealth'.</dd>
+<dt><strong><code>sensor_type</code></strong> :&ensp;<code>str</code>, optional</dt>
+<dd>either 'sensor' or 'annotation' files. Defaults to 'sensor'.</dd>
+<dt><strong><code>file_num</code></strong> :&ensp;<code>str</code>, optional</dt>
+<dd>either 'single' or 'multiple' files. Defaults to 'multiple'.</dd>
+<dt><strong><code>exception_type</code></strong> :&ensp;<code>str</code>, optional</dt>
+<dd>'consistent_sr' (consistent sampling rate), 'inconsistent_sr' (inconsistent sampling rate), 'missing' (with missing data), 'no_missing' (with no missing data). Defaults to 'consistent_sr'.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><strong><code>tuple</code></strong></dt>
+<dd>the first element is the list of filepaths found and sorted, the second element is the sampling rate if <code>sensor_type</code> is 'sensor', otherwise it is <code>None</code>.</dd>
+</dl></section>
 <details class="source">
 <summary>Source code</summary>
 <pre><code class="python">def load_test_data(file_type=&#39;mhealth&#39;, sensor_type=&#39;sensor&#39;, file_num=&#39;multiple&#39;, exception_type=&#39;consistent_sr&#39;):
+    &#34;&#34;&#34;Load test data that are bundled in the package.
+
+    Args:
+        file_type (str, optional): either files stored in &#39;mhealth&#39; or &#39;actigraph&#39; csv format. Defaults to &#39;mhealth&#39;.
+        sensor_type (str, optional): either &#39;sensor&#39; or &#39;annotation&#39; files. Defaults to &#39;sensor&#39;.
+        file_num (str, optional): either &#39;single&#39; or &#39;multiple&#39; files. Defaults to &#39;multiple&#39;.
+        exception_type (str, optional): &#39;consistent_sr&#39; (consistent sampling rate), &#39;inconsistent_sr&#39; (inconsistent sampling rate), &#39;missing&#39; (with missing data), &#39;no_missing&#39; (with no missing data). Defaults to &#39;consistent_sr&#39;.
+
+    Returns:
+        tuple: the first element is the list of filepaths found and sorted, the second element is the sampling rate if `sensor_type` is &#39;sensor&#39;, otherwise it is `None`.
+    &#34;&#34;&#34;
+
     cwd = os.path.dirname(os.path.realpath(__file__))
     data_folder = os.path.join(cwd, &#39;..&#39;, &#39;data&#39;, file_num,
-                                file_type, sensor_type, exception_type)
+                               file_type, sensor_type, exception_type)
     meta_file = os.path.join(data_folder, &#39;meta.csv&#39;)
     if file_num == &#39;multiple&#39;:
         data = list(filter(lambda f: &#39;meta&#39; not in f, glob(
@@ -106,7 +162,7 @@ def load_test_data(file_type=&#39;mhealth&#39;, sensor_type=&#39;sensor&#39;, fi
 </main>
 <footer id="footer">
 <a href='https://qutang.github.io'>Qu Tang © 2019</a>
-<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.7.1</a>.</p>
+<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.7.2</a>.</p>
 </footer>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
 <script>hljs.initHighlightingOnLoad()</script>

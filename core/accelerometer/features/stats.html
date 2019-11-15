@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
-<meta name="generator" content="pdoc 0.7.1" />
+<meta name="generator" content="pdoc 0.7.2" />
 <title>arus.core.accelerometer.features.stats API documentation</title>
 <meta name="description" content="Computing features of descriptive statistics for accelerometer data …" />
 <link href='https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.0/normalize.min.css' rel='stylesheet'>
@@ -35,6 +35,7 @@ Date: Oct 16, 2019
 
 &#34;&#34;&#34;
 import numpy as np
+from scipy import stats as sp_stats
 from ...libs.num import format_arr
 
 
@@ -44,10 +45,30 @@ def mean(X):
     return result, [&#39;MEAN_&#39; + str(i) for i in range(X.shape[1])]
 
 
+def median(X):
+    X = format_arr(X)
+    result = np.nanmedian(X, axis=0, keepdims=True)
+    return result, [&#39;MEDIAN_&#39; + str(i) for i in range(X.shape[1])]
+
+
 def std(X):
     X = format_arr(X)
     result = np.nanstd(X, axis=0, ddof=1, keepdims=True)
     return result, [&#39;STD_&#39; + str(i) for i in range(X.shape[1])]
+
+
+def skew(X):
+    X = format_arr(X)
+    result = np.atleast_2d(sp_stats.skew(X, axis=0, nan_policy=&#39;omit&#39;))
+    result = result, [&#39;SKEW_&#39; + str(i) for i in range(X.shape[1])]
+    return result
+
+
+def kurtosis(X):
+    X = format_arr(X)
+    result = np.atleast_2d(sp_stats.kurtosis(X, axis=0, nan_policy=&#39;omit&#39;))
+    result = result, [&#39;KURTOSIS_&#39; + str(i) for i in range(X.shape[1])]
+    return result
 
 
 def max_value(X):
@@ -77,7 +98,21 @@ def abs_max_value(X):
 def abs_min_value(X):
     X = format_arr(X)
     result = np.nanmin(np.abs(X), axis=0, keepdims=True)
-    return result, [&#39;ABS_MIN_&#39; + str(i) for i in range(X.shape[1])]</code></pre>
+    return result, [&#39;ABS_MIN_&#39; + str(i) for i in range(X.shape[1])]
+
+
+def correlation(X):
+    X = format_arr(X)
+    corr_mat = np.corrcoef(X, rowvar=False)
+    if np.isscalar(corr_mat) and np.isnan(corr_mat):
+        result = np.repeat(np.nan, X.shape[1])
+    else:
+        inds = np.tril_indices(n=corr_mat.shape[0], k=-1, m=corr_mat.shape[1])
+        result = []
+        for i, j in zip(inds[0], inds[1]):
+            result.append(corr_mat[i, j])
+    result = np.atleast_2d(result)
+    return result, [&#39;CORRELATION_&#39; + str(i) for i in range(result.shape[1])]</code></pre>
 </details>
 </section>
 <section>
@@ -100,6 +135,19 @@ def abs_min_value(X):
     return result, [&#39;MEAN_&#39; + str(i) for i in range(X.shape[1])]</code></pre>
 </details>
 </dd>
+<dt id="arus.core.accelerometer.features.stats.median"><code class="name flex">
+<span>def <span class="ident">median</span></span>(<span>X)</span>
+</code></dt>
+<dd>
+<section class="desc"></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def median(X):
+    X = format_arr(X)
+    result = np.nanmedian(X, axis=0, keepdims=True)
+    return result, [&#39;MEDIAN_&#39; + str(i) for i in range(X.shape[1])]</code></pre>
+</details>
+</dd>
 <dt id="arus.core.accelerometer.features.stats.std"><code class="name flex">
 <span>def <span class="ident">std</span></span>(<span>X)</span>
 </code></dt>
@@ -111,6 +159,34 @@ def abs_min_value(X):
     X = format_arr(X)
     result = np.nanstd(X, axis=0, ddof=1, keepdims=True)
     return result, [&#39;STD_&#39; + str(i) for i in range(X.shape[1])]</code></pre>
+</details>
+</dd>
+<dt id="arus.core.accelerometer.features.stats.skew"><code class="name flex">
+<span>def <span class="ident">skew</span></span>(<span>X)</span>
+</code></dt>
+<dd>
+<section class="desc"></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def skew(X):
+    X = format_arr(X)
+    result = np.atleast_2d(sp_stats.skew(X, axis=0, nan_policy=&#39;omit&#39;))
+    result = result, [&#39;SKEW_&#39; + str(i) for i in range(X.shape[1])]
+    return result</code></pre>
+</details>
+</dd>
+<dt id="arus.core.accelerometer.features.stats.kurtosis"><code class="name flex">
+<span>def <span class="ident">kurtosis</span></span>(<span>X)</span>
+</code></dt>
+<dd>
+<section class="desc"></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def kurtosis(X):
+    X = format_arr(X)
+    result = np.atleast_2d(sp_stats.kurtosis(X, axis=0, nan_policy=&#39;omit&#39;))
+    result = result, [&#39;KURTOSIS_&#39; + str(i) for i in range(X.shape[1])]
+    return result</code></pre>
 </details>
 </dd>
 <dt id="arus.core.accelerometer.features.stats.max_value"><code class="name flex">
@@ -178,6 +254,27 @@ def abs_min_value(X):
     return result, [&#39;ABS_MIN_&#39; + str(i) for i in range(X.shape[1])]</code></pre>
 </details>
 </dd>
+<dt id="arus.core.accelerometer.features.stats.correlation"><code class="name flex">
+<span>def <span class="ident">correlation</span></span>(<span>X)</span>
+</code></dt>
+<dd>
+<section class="desc"></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def correlation(X):
+    X = format_arr(X)
+    corr_mat = np.corrcoef(X, rowvar=False)
+    if np.isscalar(corr_mat) and np.isnan(corr_mat):
+        result = np.repeat(np.nan, X.shape[1])
+    else:
+        inds = np.tril_indices(n=corr_mat.shape[0], k=-1, m=corr_mat.shape[1])
+        result = []
+        for i, j in zip(inds[0], inds[1]):
+            result.append(corr_mat[i, j])
+    result = np.atleast_2d(result)
+    return result, [&#39;CORRELATION_&#39; + str(i) for i in range(result.shape[1])]</code></pre>
+</details>
+</dd>
 </dl>
 </section>
 <section>
@@ -197,12 +294,16 @@ def abs_min_value(X):
 <li><h3><a href="#header-functions">Functions</a></h3>
 <ul class="two-column">
 <li><code><a title="arus.core.accelerometer.features.stats.mean" href="#arus.core.accelerometer.features.stats.mean">mean</a></code></li>
+<li><code><a title="arus.core.accelerometer.features.stats.median" href="#arus.core.accelerometer.features.stats.median">median</a></code></li>
 <li><code><a title="arus.core.accelerometer.features.stats.std" href="#arus.core.accelerometer.features.stats.std">std</a></code></li>
+<li><code><a title="arus.core.accelerometer.features.stats.skew" href="#arus.core.accelerometer.features.stats.skew">skew</a></code></li>
+<li><code><a title="arus.core.accelerometer.features.stats.kurtosis" href="#arus.core.accelerometer.features.stats.kurtosis">kurtosis</a></code></li>
 <li><code><a title="arus.core.accelerometer.features.stats.max_value" href="#arus.core.accelerometer.features.stats.max_value">max_value</a></code></li>
 <li><code><a title="arus.core.accelerometer.features.stats.min_value" href="#arus.core.accelerometer.features.stats.min_value">min_value</a></code></li>
 <li><code><a title="arus.core.accelerometer.features.stats.max_minus_min" href="#arus.core.accelerometer.features.stats.max_minus_min">max_minus_min</a></code></li>
 <li><code><a title="arus.core.accelerometer.features.stats.abs_max_value" href="#arus.core.accelerometer.features.stats.abs_max_value">abs_max_value</a></code></li>
 <li><code><a title="arus.core.accelerometer.features.stats.abs_min_value" href="#arus.core.accelerometer.features.stats.abs_min_value">abs_min_value</a></code></li>
+<li><code><a title="arus.core.accelerometer.features.stats.correlation" href="#arus.core.accelerometer.features.stats.correlation">correlation</a></code></li>
 </ul>
 </li>
 </ul>
@@ -210,7 +311,7 @@ def abs_min_value(X):
 </main>
 <footer id="footer">
 <a href='https://qutang.github.io'>Qu Tang © 2019</a>
-<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.7.1</a>.</p>
+<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.7.2</a>.</p>
 </footer>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
 <script>hljs.initHighlightingOnLoad()</script>

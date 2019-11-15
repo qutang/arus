@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
 <meta name="generator" content="pdoc 0.7.2" />
-<title>arus.core.accelerometer API documentation</title>
+<title>arus.core.accelerometer.generator API documentation</title>
 <meta name="description" content="" />
 <link href='https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.0/normalize.min.css' rel='stylesheet'>
 <link href='https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/8.0.0/sanitize.min.css' rel='stylesheet'>
@@ -17,36 +17,78 @@
 <main>
 <article id="content">
 <header>
-<h1 class="title">Module <code>arus.core.accelerometer</code></h1>
+<h1 class="title">Module <code>arus.core.accelerometer.generator</code></h1>
 </header>
 <section id="section-intro">
 <details class="source">
 <summary>Source code</summary>
-<pre><code class="python">__pdoc__ = {}
+<pre><code class="python">import pandas as pd
+import numpy as np
+from datetime import datetime
+import time
 
-__pdoc__[&#39;tests&#39;] = False</code></pre>
+
+def _generate_ts(start_time, sr, buffer_size):
+    N = buffer_size * sr + 1
+    freq = str(int(1000 / sr)) + &#39;ms&#39;
+    ts = pd.date_range(start=start_time, periods=N, freq=freq)
+    return ts[0:-1], ts[-1]
+
+
+def _create_dataframe(ts, data):
+    result = pd.DataFrame(index=ts, data=data, columns=[&#39;X&#39;, &#39;Y&#39;, &#39;Z&#39;])
+    result = result.reset_index(drop=False)
+    result = result.rename(columns={&#39;index&#39;: &#39;HEADER_TIME_STAMP&#39;})
+    return result
+
+
+def normal_dist(sr, grange=8, start_time=None, buffer_size=1800, sleep_interval=0, sigma=1):
+    start_time = datetime.now() if start_time is None else start_time
+    st = time.time()
+    while True:
+        N = buffer_size * sr
+        data = np.random.standard_normal(size=(N, 3)) * sigma
+        data[data &gt; grange] = grange
+        data[data &lt; -grange] = -grange
+        ts, start_time = _generate_ts(start_time, sr, buffer_size)
+        result = _create_dataframe(ts, data)
+        delay = max([sleep_interval - (time.time() - st), 0])
+        time.sleep(delay)
+        st = time.time()
+        yield result</code></pre>
 </details>
 </section>
 <section>
-<h2 class="section-title" id="header-submodules">Sub-modules</h2>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
 <dl>
-<dt><code class="name"><a title="arus.core.accelerometer.features" href="features/index.html">arus.core.accelerometer.features</a></code></dt>
+<dt id="arus.core.accelerometer.generator.normal_dist"><code class="name flex">
+<span>def <span class="ident">normal_dist</span></span>(<span>sr, grange=8, start_time=None, buffer_size=1800, sleep_interval=0, sigma=1)</span>
+</code></dt>
 <dd>
 <section class="desc"></section>
-</dd>
-<dt><code class="name"><a title="arus.core.accelerometer.generator" href="generator.html">arus.core.accelerometer.generator</a></code></dt>
-<dd>
-<section class="desc"></section>
-</dd>
-<dt><code class="name"><a title="arus.core.accelerometer.transformation" href="transformation.html">arus.core.accelerometer.transformation</a></code></dt>
-<dd>
-<section class="desc"></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def normal_dist(sr, grange=8, start_time=None, buffer_size=1800, sleep_interval=0, sigma=1):
+    start_time = datetime.now() if start_time is None else start_time
+    st = time.time()
+    while True:
+        N = buffer_size * sr
+        data = np.random.standard_normal(size=(N, 3)) * sigma
+        data[data &gt; grange] = grange
+        data[data &lt; -grange] = -grange
+        ts, start_time = _generate_ts(start_time, sr, buffer_size)
+        result = _create_dataframe(ts, data)
+        delay = max([sleep_interval - (time.time() - st), 0])
+        time.sleep(delay)
+        st = time.time()
+        yield result</code></pre>
+</details>
 </dd>
 </dl>
-</section>
-<section>
-</section>
-<section>
 </section>
 <section>
 </section>
@@ -59,14 +101,12 @@ __pdoc__[&#39;tests&#39;] = False</code></pre>
 <ul id="index">
 <li><h3>Super-module</h3>
 <ul>
-<li><code><a title="arus.core" href="../index.html">arus.core</a></code></li>
+<li><code><a title="arus.core.accelerometer" href="index.html">arus.core.accelerometer</a></code></li>
 </ul>
 </li>
-<li><h3><a href="#header-submodules">Sub-modules</a></h3>
-<ul>
-<li><code><a title="arus.core.accelerometer.features" href="features/index.html">arus.core.accelerometer.features</a></code></li>
-<li><code><a title="arus.core.accelerometer.generator" href="generator.html">arus.core.accelerometer.generator</a></code></li>
-<li><code><a title="arus.core.accelerometer.transformation" href="transformation.html">arus.core.accelerometer.transformation</a></code></li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="arus.core.accelerometer.generator.normal_dist" href="#arus.core.accelerometer.generator.normal_dist">normal_dist</a></code></li>
 </ul>
 </li>
 </ul>
