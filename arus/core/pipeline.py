@@ -175,12 +175,20 @@ class Pipeline:
             2. name: the name of the stream
 
         Args:
-            processor (object): A function 
+            processor (object): A function to process chunks from the streams.
+            kwargs (dict): keyword arguments passed to processor.
         """
         self._processor = processor
         self._processor_kwargs = kwargs
 
     def remove_stream(self, stream_name):
+        """Remove stream from the pipeline
+
+        Remove only works when the pipeline is stopped.
+
+        Args:
+            stream_name (str): The name of the stream.
+        """
         if self._is_running():
             return
         found_stream = self.get_stream(stream_name)
@@ -189,14 +197,14 @@ class Pipeline:
 
     def _sync_streams(self):
         """
+        Implementation details:
+            This method depends on the stream to make sure it will not block for a long time when providing the chunk.
 
-        This method depends on the stream to make sure it will not block for a long time when providing the chunk.
+            This method also asssumes that when one window of data is missing, the stream should provide a notification, such as `None` for that window.
 
-        This method also asssumes that when one window of data is missing, the stream should provide a notification, such as `None` for that window.
+            Therefore, in the case when a Bluetooth device disconnects, the stream that serves the data of the device should always output `None` or empty DataFrame for those windows.
 
-        Therefore, in the case when a Bluetooth device disconnects, the stream that serves the data of the device should always output `None` or empty DataFrame for those windows.
-
-        In real time, because stream runs on separate thread, as long as the data is successfully passed to the stream queue, it won't block for a long time.
+            In real time, because stream runs on separate thread, as long as the data is successfully passed to the stream queue, it won't block for a long time.
         """
         num_of_processors = min(cpu_count() - 2, self._max_processes)
         if num_of_processors == 0:
@@ -256,19 +264,36 @@ class Pipeline:
         self._queue.put(result)
 
     def start(self):
+        """Start the pipeline
+
+        Implementation details:
+            The start procedure is as below,
+                1. Start a thread for syncing stream chunks as daemon
+                2. Start a thread for sending processed results as daemon
+                3. Start streams one by one as daemon threads
+                3. Set `started` being True
+        """
         self._sync_thread = threading.Thread(
             target=self._sync_streams, name=self._name + '-sync-streams')
         self._sync_thread.daemon = True
         self._sender_thread = threading.Thread(
             target=self._send_result, name=self._name + '-send-result')
         self._sender_thread.daemon = True
-        self.started = True
         self._sync_thread.start()
         self._sender_thread.start()
         for stream in self._streams:
             stream.start(scheduler='thread')
+        self.started = True
 
     def get_iterator(self):
+        """Iterator for the processed results
+
+        Raises:
+            StopIteration: Raised when iterator ends
+
+        Returns:
+            Iteratable: an instance of a python iteratable for processed results
+        """
         data_queue = self._queue
 
         class _result_iterator:
