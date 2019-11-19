@@ -23,7 +23,7 @@ License: see LICENSE file
 """
 
 from .stream import Stream
-from pathos.pools import ProcessPool, ThreadPool
+from pathos.pools import ThreadPool, ProcessPool
 from pathos.helpers import cpu_count
 import numpy as np
 import queue
@@ -283,7 +283,7 @@ class Pipeline:
         self._sync_thread.start()
         self._sender_thread.start()
         for stream in self._streams:
-            stream.start(scheduler='thread')
+            stream.start()
         self.started = True
 
     def get_iterator(self):
