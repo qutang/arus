@@ -1,5 +1,5 @@
 from ...core.pipeline import Pipeline
-from ...core.stream import SensorGeneratorStream
+from ...core.stream.generator_stream import GeneratorSlidingWindowStream
 from ...core.accelerometer import generator
 from datetime import datetime
 import pandas as pd
@@ -37,7 +37,7 @@ def test_Pipeline():
     window_size = 12.8
     sr = 80
     start_time = datetime.now()
-    stream = SensorGeneratorStream(
+    stream = GeneratorSlidingWindowStream(
         stream_config, window_size=window_size, sr=sr, start_time=start_time, name='stream-1')
 
     pipeline = Pipeline(max_processes=2, scheduler='threads',
@@ -81,9 +81,9 @@ def test_Pipeline():
     }
 
     start_time = datetime.now()
-    stream2 = SensorGeneratorStream(
+    stream2 = GeneratorSlidingWindowStream(
         stream2_config, window_size=window_size, sr=sr, start_time=start_time, name='stream-2')
-    stream3 = SensorGeneratorStream(
+    stream3 = GeneratorSlidingWindowStream(
         stream3_config, window_size=window_size, sr=sr, start_time=start_time, name='stream-3')
     pipeline.get_stream('stream-1')._start_time = start_time
     pipeline.add_stream(stream2)

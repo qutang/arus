@@ -1,5 +1,5 @@
 from arus.core.pipeline import Pipeline
-from arus.core.stream import SensorGeneratorStream
+from arus.core.stream.generator_stream import GeneratorSlidingWindowStream
 from arus.core.accelerometer import generator
 from datetime import datetime
 import pandas as pd
@@ -33,10 +33,10 @@ if __name__ == "__main__":
     window_size = 12.8
     sr = 80
     start_time = datetime.now()
-    stream1 = SensorGeneratorStream(
+    stream1 = GeneratorSlidingWindowStream(
         stream1_config, window_size=window_size, sr=sr, start_time=start_time, name='stream-1')
 
-    pipeline = Pipeline(max_processes=2)
+    pipeline = Pipeline(max_processes=2, scheduler='processes')
     pipeline.add_stream(stream1)
     pipeline.set_processor(_pipeline_test_processor)
     pipeline.start()

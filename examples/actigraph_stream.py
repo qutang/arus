@@ -1,4 +1,4 @@
-from arus.core.stream import SensorFileStream
+from arus.core.stream.sensor_stream import SensorFileSlidingWindowStream
 from arus.testing import load_test_data
 from glob import glob
 import os
@@ -10,9 +10,9 @@ if __name__ == "__main__":
     window_size = 12.8
     files, sr = load_test_data(file_type='actigraph',
                                file_num='single', exception_type='consistent_sr')
-    stream = SensorFileStream(
+    stream = SensorFileSlidingWindowStream(
         data_source=files, window_size=window_size, start_time=None, sr=sr, buffer_size=1800, storage_format='actigraph', name='spades_2')
-    stream.start(scheduler='thread')
+    stream.start()
     chunk_sizes = []
     for package in stream.get_iterator():
         data = package[0]
