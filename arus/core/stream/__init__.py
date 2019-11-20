@@ -200,6 +200,8 @@ class SlidingWindowStream(Stream):
         raise NotImplementedError("Sub class should implement this method and yield loaded data")
 
     def _extract_chunks(self, data):
+        if data.empty:
+            return []
         data_et = mh.data.get_end_time(data, self._stop_time_col)
         data_st = mh.data.get_start_time(data, self._start_time_col)
         if self._start_time is None:
