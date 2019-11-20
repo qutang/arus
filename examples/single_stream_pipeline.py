@@ -26,15 +26,15 @@ if __name__ == "__main__":
             "start_time": None,
             "buffer_size": 100,
             "sleep_interval": 0,
-            "sigma": 1
+            "sigma": 1,
+            "sr": 80
         }
     }
 
     window_size = 12.8
-    sr = 80
     start_time = datetime.now()
     stream1 = GeneratorSlidingWindowStream(
-        stream1_config, window_size=window_size, sr=sr, start_time=start_time, name='stream-1')
+        stream1_config, window_size=window_size, start_time=start_time, start_time_col=0, stop_time_col=0, name='stream-1')
 
     pipeline = Pipeline(max_processes=2, scheduler='processes')
     pipeline.add_stream(stream1)
