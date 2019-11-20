@@ -227,6 +227,7 @@ class SlidingWindowStream(Stream):
         current_window_et = None
         current_clock = time.time()
         previous_window_st = None
+        previous_window_et = None
         for data in self.load_data_source_(data_source):
             if self.started:
                 chunks = self._extract_chunks(
@@ -235,23 +236,25 @@ class SlidingWindowStream(Stream):
                     current_window_st = window_st if current_window_st is None else current_window_st
                     current_window_et = window_et if current_window_et is None else current_window_et
                     previous_window_st = window_st if previous_window_st is None else previous_window_st
+                    previous_window_et = window_et if previous_window_et is None else previous_window_et
                     if current_window_st == window_st and current_window_et == window_et:
                         current_window.append(chunk)
                     else:
                         current_window = pd.concat(
                             current_window, axis=0, sort=False)
                         current_clock = self._send_data(
-                            current_window, current_clock, current_window_st, current_window_et, previous_window_st)
+                            current_window, current_clock, current_window_st, current_window_et, previous_window_st, previous_window_et)
                         current_window = [chunk]
                         previous_window_st = current_window_st
+                        previous_window_et = current_window_et
                         current_window_st = window_st
                         current_window_et = window_et
             else:
                 break
 
-    def _send_data(self, current_window, current_clock, current_window_st, current_window_et, previous_window_st):
-        package = (current_window, current_window_st,
-                   previous_window_st, self.name)
+    def _send_data(self, current_window, current_clock, current_window_st, current_window_et, previous_window_st, previous_window_et):
+        package = (current_window, current_window_st, current_window_et, 
+                   previous_window_st, previous_window_et, self.name)
         if self._simulate_reality:
             delay = (current_window_st - previous_window_st) / \
                 np.timedelta64(1, 's')

@@ -25,7 +25,7 @@ def test_generator():
             break
     duration_mean = np.mean(durations)
     rows_mean = np.mean(rows)
-    np.testing.assert_almost_equal(duration_mean, duration_mu, decimal=1)
-    np.testing.assert_almost_equal(rows_mean, num_mu, decimal=1)
+    np.testing.assert_almost_equal(duration_mean, duration_mu, decimal=0)
+    np.testing.assert_almost_equal(rows_mean, num_mu, decimal=0)
     
     

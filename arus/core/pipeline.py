@@ -220,7 +220,7 @@ class Pipeline:
                     'This scheduler is not supported: {}'.format(self._scheduler))
         while self.started:
             for stream in self._streams:
-                for data, st, prev_st, name in stream.get_iterator():
+                for data, st, et, prev_st, prev_et, name in stream.get_iterator():
                     self._chunks[st.timestamp()] = [] if st.timestamp(
                     ) not in self._chunks else self._chunks[st.timestamp()]
                     self._chunks[st.timestamp()].append((data, name))

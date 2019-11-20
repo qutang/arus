@@ -23,7 +23,7 @@ def test_GeneratorSlidingWindowStream():
     chunk_sizes = []
     chunk_means = []
     n = 5
-    for data, _, _, _ in stream.get_iterator():
+    for data, _, _, _, _, name in stream.get_iterator():
         chunk_sizes.append(data.shape[0])
         chunk_means.append(np.mean(data.values[:, 1:]))
         n = n - 1
@@ -49,7 +49,7 @@ def test_GeneratorSlidingWindowStream():
     stream.start()
     chunk_durations = []
     n = 5
-    for data, _, _, _ in stream.get_iterator():
+    for data, _, _, _, _, name in stream.get_iterator():
         durations = ((data.iloc[:, 2] - data.iloc[:, 1])/pd.Timedelta(1, 'S')).values.tolist()
         chunk_durations += durations
         n = n - 1

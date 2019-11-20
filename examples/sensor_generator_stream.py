@@ -7,11 +7,15 @@ if __name__ == "__main__":
         "start_time": None, 
         "buffer_size": 1800, 
         "sleep_interval": 1, 
-        "sigma": 1
+        "sigma": 1,
+        "sr": 80
     }}
-    sr = 80
-    stream = GeneratorSlidingWindowStream(data_source, window_size=12.8, sr=80, start_time=None, simulate_reality=False, name='sensor-generator-stream')
+    stream = GeneratorSlidingWindowStream(data_source, window_size=12.8, start_time=None, simulate_reality=False, start_time_col=0, stop_time_col=0, name='sensor-generator-stream')
     stream.start()
 
-    for window, st, prev_st, name in stream.get_iterator():
+    n = 5
+    for window, st, et, prev_st, prev_et, name in stream.get_iterator():
         print("{}-{}-{}".format(window.iloc[0,0], window.iloc[-1,0], window.shape))
+        n -= 1
+        if n == 0:
+            break

@@ -14,9 +14,7 @@ if __name__ == "__main__":
         data_source=files, window_size=window_size, start_time=None, sr=sr, buffer_size=1800, storage_format='actigraph', name='spades_2')
     stream.start()
     chunk_sizes = []
-    for package in stream.get_iterator():
-        data = package[0]
-        name = package[3]
+    for data,_,_,_,_, name in stream.get_iterator():
         print("{},{},{},{}".format(name,
                                    data.iloc[0, 0], data.iloc[-1, 0], data.shape[0]))
         chunk_sizes.append(data.shape[0])

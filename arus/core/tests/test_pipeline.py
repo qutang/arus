@@ -30,15 +30,15 @@ def test_Pipeline():
             "start_time": None,
             "buffer_size": 100,
             "sleep_interval": 0,
-            "sigma": 1
+            "sigma": 1,
+            "sr": 80
         }
     }
 
     window_size = 12.8
-    sr = 80
     start_time = datetime.now()
     stream = GeneratorSlidingWindowStream(
-        stream_config, window_size=window_size, sr=sr, start_time=start_time, name='stream-1')
+        stream_config, window_size=window_size, start_time=start_time, name='stream-1')
 
     pipeline = Pipeline(max_processes=2, scheduler='threads',
                         name='single-stream-pipeline')
@@ -65,7 +65,8 @@ def test_Pipeline():
             "start_time": None,
             "buffer_size": 400,
             "sleep_interval": 1,
-            "sigma": 2
+            "sigma": 2,
+            "sr": 50
         }
     }
 
@@ -76,15 +77,16 @@ def test_Pipeline():
             "start_time": None,
             "buffer_size": 800,
             "sleep_interval": 1,
-            "sigma": 2
+            "sigma": 2,
+            "sr": 80
         }
     }
 
     start_time = datetime.now()
     stream2 = GeneratorSlidingWindowStream(
-        stream2_config, window_size=window_size, sr=sr, start_time=start_time, name='stream-2')
+        stream2_config, window_size=window_size, start_time=start_time, name='stream-2')
     stream3 = GeneratorSlidingWindowStream(
-        stream3_config, window_size=window_size, sr=sr, start_time=start_time, name='stream-3')
+        stream3_config, window_size=window_size, start_time=start_time, name='stream-3')
     pipeline.get_stream('stream-1')._start_time = start_time
     pipeline.add_stream(stream2)
     pipeline.add_stream(stream3)

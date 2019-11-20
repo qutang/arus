@@ -15,7 +15,7 @@ def test_AnnotationFileSlidingWindowStream():
     chunk_sizes = []
     unknown_labels = 0
     valid_labels = 0
-    for data, _, _, _ in stream.get_iterator():
+    for data, _, _, _, _, name in stream.get_iterator():
         if data.empty:
             unknown_labels += 1
         else:
@@ -39,7 +39,7 @@ def test_AnnotationFileSlidingWindowStream():
     unknown_labels = 0
     valid_labels = 0
     
-    for data, _, _, _ in stream.get_iterator():
+    for data, _, _, _, _, name in stream.get_iterator():
         if data.empty:
             unknown_labels += 1
         else:
@@ -64,7 +64,7 @@ def test_AnnotationFileSlidingWindowStream():
     chunk_sizes = []
     unknown_labels = 0
     valid_labels = 0
-    for data, _, _, _ in stream.get_iterator():
+    for data, _, _, _, _, name in stream.get_iterator():
         if data.empty:
             unknown_labels += 1
         else:
@@ -88,7 +88,7 @@ def test_AnnotationFileSlidingWindowStream():
     chunk_sizes = []
     unknown_labels = 0
     valid_labels = 0
-    for data, _, _, _ in stream.get_iterator():
+    for data, _, _, _, _, name in stream.get_iterator():
         if data.empty:
             unknown_labels += 1
         else:
