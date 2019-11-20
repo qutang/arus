@@ -9,7 +9,7 @@ def _pipeline_test_processor(chunk_list, **kwargs):
     import pandas as pd
     result = {'NAME': [],
               'START_TIME': [], 'STOP_TIME': []}
-    for data, name in chunk_list:
+    for data, st, et, prev_st, prev_et, name in chunk_list:
         result['NAME'].append(name)
         result['START_TIME'].append(data.iloc[0, 0])
         result['STOP_TIME'].append(data.iloc[-1, 0])
@@ -56,7 +56,12 @@ if __name__ == "__main__":
     pipeline.set_processor(_pipeline_test_processor)
     pipeline.start()
     results = []
-    for result in pipeline.get_iterator():
+    for result, st, et, prev_st, prev_et, name in pipeline.get_iterator():
+        result['WINDOW_ST'] = st
+        result['WINDOW_ET'] = et
+        result['PREV_WINDOW_ST'] = prev_st
+        result['PREV_WINDOW_ET'] = prev_et
+        result['STREAM_NAME'] = name
         results.append(result)
         if len(results) == 10:
             break

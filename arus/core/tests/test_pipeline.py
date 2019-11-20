@@ -12,7 +12,7 @@ def _pipeline_test_processor(chunk_list, **kwargs):
     import pandas as pd
     result = {'NAME': [],
               'START_TIME': [], 'STOP_TIME': []}
-    for data, name in chunk_list:
+    for data, st, et, prev_st, prev_et, name in chunk_list:
         result['NAME'].append(name)
         result['START_TIME'].append(data.iloc[0, 0])
         result['STOP_TIME'].append(data.iloc[-1, 0])
@@ -47,14 +47,19 @@ def test_Pipeline():
     pipeline.start()
 
     results = []
-    for result in pipeline.get_iterator():
+    for result, st, et, prev_st, prev_et, name in pipeline.get_iterator():
+        result['WINDOW_ST'] = st
+        result['WINDOW_ET'] = et
+        result['PREV_WINDOW_ST'] = prev_st
+        result['PREV_WINDOW_ET'] = prev_et
+        result['STREAM_NAME'] = name
         results.append(result)
         if len(results) == 5:
             break
     pipeline.finish_tasks_and_stop()
     results = pd.concat(results, axis=0, sort=False)
-    durations = (results['STOP_TIME'] -
-                 results['START_TIME']) / pd.Timedelta(1, unit='S')
+    durations = (results['WINDOW_ET'] -
+                 results['WINDOW_ST']) / pd.Timedelta(1, unit='S')
     np.testing.assert_array_almost_equal(durations, window_size, decimal=1)
 
     # test on three streams, using the same pipeline but change the parameter of the first stream a little bit
@@ -93,7 +98,12 @@ def test_Pipeline():
     pipeline.start()
 
     results = []
-    for result in pipeline.get_iterator():
+    for result, st, et, prev_st, prev_et, name in pipeline.get_iterator():
+        result['WINDOW_ST'] = st
+        result['WINDOW_ET'] = et
+        result['PREV_WINDOW_ST'] = prev_st
+        result['PREV_WINDOW_ET'] = prev_et
+        result['STREAM_NAME'] = name
         np.testing.assert_array_equal(
             result['START_TIME'].values, result['START_TIME'].values[0])
         results.append(result)
@@ -101,6 +111,6 @@ def test_Pipeline():
             break
     pipeline.finish_tasks_and_stop()
     results = pd.concat(results, axis=0, sort=False)
-    durations = (results['STOP_TIME'] -
-                 results['START_TIME']) / pd.Timedelta(1, unit='S')
+    durations = (results['WINDOW_ET'] -
+                 results['WINDOW_ST']) / pd.Timedelta(1, unit='S')
     np.testing.assert_array_almost_equal(durations, window_size, decimal=1)

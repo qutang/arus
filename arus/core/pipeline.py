@@ -223,28 +223,28 @@ class Pipeline:
                 for data, st, et, prev_st, prev_et, name in stream.get_iterator():
                     self._chunks[st.timestamp()] = [] if st.timestamp(
                     ) not in self._chunks else self._chunks[st.timestamp()]
-                    self._chunks[st.timestamp()].append((data, name))
+                    self._chunks[st.timestamp()].append((data, st, et, prev_st, prev_et, name))
                     self._stream_pointer[name] = st.timestamp()
                     break
-                self._process_synced_chunks(st, name)
+                self._process_synced_chunks(st, et, prev_st, prev_et, self.name)
         if num_of_processors > 0:
             self._pool.close()
 
     def _send_result(self):
         while not self._stop_sender:
             try:
-                task = self._process_tasks.get(block=False, timeout=1)
+                task, st, et, prev_st, prev_et, name = self._process_tasks.get(block=False, timeout=1)
                 if self._max_processes == 0:
                     result = task
                 else:
                     result = task.get()
                     self._process_tasks.task_done()
-                self._put_result_in_queue(result)
+                self._put_result_in_queue((result, st, et, prev_st, prev_et, name))
             except queue.Empty:
                 pass
         self._put_result_in_queue(None)
 
-    def _process_synced_chunks(self, st, name):
+    def _process_synced_chunks(self, st, et, prev_st, prev_et, name):
         chunk_list = self._chunks[st.timestamp()]
         if len(chunk_list) == len(self._streams):
             # this is the last stream chunk for st
@@ -256,7 +256,7 @@ class Pipeline:
                 try:
                     task = self._pool.apipe(self._processor, chunk_list,
                                             **self._processor_kwargs)
-                    self._process_tasks.put(task)
+                    self._process_tasks.put((task, st, et, prev_st, prev_et, name))
                     del self._chunks[st.timestamp()]
                 except ValueError as e:
                     return
