@@ -12,7 +12,7 @@ class AnnotationFileSlidingWindowStream(SlidingWindowStream):
         1. Loading a list of files as 12.8s chunks asynchronously.
 
         ```python
-        .. include:: ../../examples/annotation_stream.py
+        .. include:: ../../../examples/annotation_stream.py
         ```
     """
 

@@ -175,7 +175,7 @@ class SlidingWindowStream(Stream):
         1. Loading a list of files as 12.8s chunks asynchronously.
 
         ```python
-        .. include:: ../../examples/mhealth_stream.py
+        .. include:: ../../../examples/mhealth_stream.py
         ```
     """
 
