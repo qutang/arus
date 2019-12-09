@@ -51,24 +51,28 @@ class Pipeline:
         pipeline (Pipeline): an instance object of type `Pipeline`.
     """
 
-    def __init__(self, *, max_processes=None, scheduler='processes', name='default-pipeline'):
+    def __init__(self, *, max_processes=None, scheduler='processes', preserve_status=False, name='default-pipeline'):
         """
 
         Args:
             max_processes (int, optional): the max number of sub processes to be spawned. Defaults to 'None'. If it is `None`, the max processes will be the number of cores - 2.
             scheduler (str, optional): scheduler to use, either 'processes' or 'threads'. Defaults to 'processes'.
+            preserve_status (bool, optional): whether to preserve the previous input and output in the processor. If `True`, the second and third argument of processor function would be `prev_input` and `prev_output`. Defaults to `False`. When it is `True`, processors will run in sequence, meaning the next processor will start only when the previous one has completed.
             name (str, optional): the name of the pipeline. It will also be used as a prefix for all threads spawned by the class. Defaults to 'default-pipeline'.
         """
         self._scheduler = scheduler
         self._max_processes = max_processes
         self._process_tasks = queue.Queue()
         self._queue = queue.Queue()
+        self._prev_input = queue.Queue(1)
+        self._prev_output = queue.Queue(1)
         self.name = name
         self._streams = []
         self._chunks = dict()
         self._stream_pointer = dict()
         self.started = False
         self._stop_sender = False
+        self._preserve_status = preserve_status
 
     @property
     def name(self):
@@ -239,6 +243,8 @@ class Pipeline:
                 else:
                     result = task.get()
                     self._process_tasks.task_done()
+                if self._preserve_status:
+                    self._prev_output.put(result)
                 self._put_result_in_queue((result, st, et, prev_st, prev_et, name))
             except queue.Empty:
                 pass
@@ -248,18 +254,40 @@ class Pipeline:
         chunk_list = self._chunks[st.timestamp()]
         if len(chunk_list) == len(self._streams):
             # this is the last stream chunk for st
-            if self._max_processes == 0:
-                result = self._processor(chunk_list, **self._processor_kwargs)
-                self._process_tasks.put(result)
-                del self._chunks[st.timestamp()]
-            else:
-                try:
-                    task = self._pool.apipe(self._processor, chunk_list,
-                                            **self._processor_kwargs)
-                    self._process_tasks.put((task, st, et, prev_st, prev_et, name))
+            if self._preserve_status:
+                if prev_st is None:
+                # the first window
+                    prev_input = None
+                    prev_output = None
+                else:
+                    prev_input = self._prev_input.get()
+                    prev_output = self._prev_output.get()
+                if self._max_processes == 0:
+                    result = self._processor(chunk_list, prev_input, prev_output, **self._processor_kwargs)
+                    self._process_tasks.put(result)
                     del self._chunks[st.timestamp()]
-                except ValueError as e:
-                    return
+                else:
+                    try:
+                        task = self._pool.apipe(self._processor, chunk_list, prev_input, prev_output, **self._processor_kwargs)
+                        self._process_tasks.put((task, st, et, prev_st, prev_et, name))
+                        del self._chunks[st.timestamp()]
+                    except ValueError as e:
+                        return
+                if self._preserve_status:
+                    self._prev_input.put(chunk_list)
+            else:
+                if self._max_processes == 0:
+                    result = self._processor(chunk_list, **self._processor_kwargs)
+                    self._process_tasks.put(result)
+                    del self._chunks[st.timestamp()]
+                else:
+                    try:
+                        task = self._pool.apipe(self._processor, chunk_list,
+                                                **self._processor_kwargs)
+                        self._process_tasks.put((task, st, et, prev_st, prev_et, name))
+                        del self._chunks[st.timestamp()]
+                    except ValueError as e:
+                        return
 
     def _put_result_in_queue(self, result):
         self._queue.put(result)
