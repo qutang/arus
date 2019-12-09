@@ -235,8 +235,8 @@ class SlidingWindowStream(Stream):
                 for chunk, window_st, window_et in chunks:
                     current_window_st = window_st if current_window_st is None else current_window_st
                     current_window_et = window_et if current_window_et is None else current_window_et
-                    previous_window_st = window_st if previous_window_st is None else previous_window_st
-                    previous_window_et = window_et if previous_window_et is None else previous_window_et
+                    previous_window_st = None if previous_window_st is None else previous_window_st
+                    previous_window_et = None if previous_window_et is None else previous_window_et
                     if current_window_st == window_st and current_window_et == window_et:
                         current_window.append(chunk)
                     else:
