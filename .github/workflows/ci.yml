@@ -37,15 +37,6 @@ jobs:
         flags: unittests
         name: codecov-umbrella
 
-    - name: Bump version and tagging and publish
-      run: |
-        git config --global user.email "tqshelly@gmail.com"
-        git config --global user.name "github actions"
-        git pull origin master
-        poetry run semantic-release publish
-      env:
-        GH_TOKEN: ${{ secrets.PERSONAL_TOKEN }}
-
     - name: Build pypi package
       run: poetry build
 
