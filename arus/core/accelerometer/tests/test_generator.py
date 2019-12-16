@@ -22,9 +22,9 @@ def test_generator():
         duration = (data.iloc[-1, 0] - data.iloc[0, 0]) / \
             pd.Timedelta(1, unit='seconds')
         np.testing.assert_array_almost_equal(
-            mean_data, np.array([0, 0, 0]), decimal=2)
+            mean_data, np.array([0, 0, 0]), decimal=1)
         np.testing.assert_array_almost_equal(
-            std_data, np.array([sigma, sigma, sigma]),  decimal=2)
+            std_data, np.array([sigma, sigma, sigma]),  decimal=1)
         np.testing.assert_almost_equal(duration, buffer_size, decimal=1)
         n = n - 1
         if n == 0:
@@ -47,11 +47,11 @@ def test_generator():
         duration = (data.iloc[-1, 0] - data.iloc[0, 0]) / \
             pd.Timedelta(1, unit='seconds')
         np.testing.assert_array_almost_equal(
-            mean_data, np.array([0, 0, 0]), decimal=2)
+            mean_data, np.array([0, 0, 0]), decimal=1)
         np.testing.assert_array_almost_equal(
-            std_data, np.array([sigma, sigma, sigma]),  decimal=2)
+            std_data, np.array([sigma, sigma, sigma]),  decimal=1)
         np.testing.assert_almost_equal(duration, buffer_size, decimal=1)
-        np.testing.assert_almost_equal(delay, sleep_interval, decimal=2)
+        np.testing.assert_almost_equal(delay, sleep_interval, decimal=1)
         break
 
     # with max to grange
@@ -69,9 +69,9 @@ def test_generator():
             pd.Timedelta(1, unit='seconds')
         max_counts = np.sum(np.abs(data.values[:, 1:]) == grange)
         np.testing.assert_array_almost_equal(
-            mean_data, np.array([0, 0, 0]), decimal=2)
+            mean_data, np.array([0, 0, 0]), decimal=1)
         np.testing.assert_array_almost_equal(
-            std_data, np.array([1.72, 1.72, 1.72]),  decimal=2)
+            std_data, np.array([1.72, 1.72, 1.72]),  decimal=1)
         np.testing.assert_almost_equal(duration, buffer_size, decimal=1)
         assert max_counts > grange / sigma * sr * buffer_size * 3
         break

@@ -6,23 +6,24 @@ Module includes classes that accept single or multiple `arus.core.stream` instan
 ### Single stream case
 
 ```python
-.. include: ../../examples/single_stream_pipeline.py
+.. include:: ../../examples/single_stream_pipeline.py
 ```
 
 ### Multiple streams case
 
 ```python
-.. include: ../../examples/multi_stream_pipeline.py
+.. include:: ../../examples/multi_stream_pipeline.py
 ```
 
 Author: Qu Tang
+
 Date: 2019-11-15
 
-.. include: ../../LICENSE
+License: see LICENSE file
 """
 
 from .stream import Stream
-from pathos.pools import ProcessPool, ThreadPool
+from pathos.pools import ThreadPool, ProcessPool
 from pathos.helpers import cpu_count
 import numpy as np
 import queue
@@ -50,24 +51,28 @@ class Pipeline:
         pipeline (Pipeline): an instance object of type `Pipeline`.
     """
 
-    def __init__(self, *, max_processes=None, scheduler='processes', name='default-pipeline'):
+    def __init__(self, *, max_processes=None, scheduler='processes', preserve_status=False, name='default-pipeline'):
         """
 
         Args:
             max_processes (int, optional): the max number of sub processes to be spawned. Defaults to 'None'. If it is `None`, the max processes will be the number of cores - 2.
             scheduler (str, optional): scheduler to use, either 'processes' or 'threads'. Defaults to 'processes'.
+            preserve_status (bool, optional): whether to preserve the previous input and output in the processor. If `True`, the second and third argument of processor function would be `prev_input` and `prev_output`. Defaults to `False`. When it is `True`, processors will run in sequence, meaning the next processor will start only when the previous one has completed.
             name (str, optional): the name of the pipeline. It will also be used as a prefix for all threads spawned by the class. Defaults to 'default-pipeline'.
         """
         self._scheduler = scheduler
         self._max_processes = max_processes
         self._process_tasks = queue.Queue()
         self._queue = queue.Queue()
+        self._prev_input = queue.Queue(1)
+        self._prev_output = queue.Queue(1)
         self.name = name
         self._streams = []
         self._chunks = dict()
         self._stream_pointer = dict()
         self.started = False
         self._stop_sender = False
+        self._preserve_status = preserve_status
 
     @property
     def name(self):
@@ -105,6 +110,9 @@ class Pipeline:
         """
         self._started = value
 
+    def stop(self):
+        self.finish_tasks_and_stop()
+
     def finish_tasks_and_stop(self):
         """Gracefully shutdown the pipeline using the following procedure.
 
@@ -126,10 +134,12 @@ class Pipeline:
             self._stop_sender = True
             if self._pool is not None:
                 self._pool.close()
-                self._pool.terminate()
+                self._pool.join()
+                self._pool = None
             for stream in self._streams:
                 stream.stop()
         except Exception as e:
+            print(e)
             return False
         return True
 
@@ -219,46 +229,77 @@ class Pipeline:
                     'This scheduler is not supported: {}'.format(self._scheduler))
         while self.started:
             for stream in self._streams:
-                for data, st, prev_st, name in stream.get_iterator():
+                for data, st, et, prev_st, prev_et, name in stream.get_iterator():
                     self._chunks[st.timestamp()] = [] if st.timestamp(
                     ) not in self._chunks else self._chunks[st.timestamp()]
-                    self._chunks[st.timestamp()].append((data, name))
+                    self._chunks[st.timestamp()].append(
+                        (data, st, et, prev_st, prev_et, name))
                     self._stream_pointer[name] = st.timestamp()
                     break
-                self._process_synced_chunks(st, name)
-        if num_of_processors > 0:
-            self._pool.close()
+                self._process_synced_chunks(
+                    st, et, prev_st, prev_et, self.name)
 
     def _send_result(self):
         while not self._stop_sender:
             try:
-                task = self._process_tasks.get(block=False, timeout=1)
+                task, st, et, prev_st, prev_et, name = self._process_tasks.get(
+                    block=False, timeout=1)
                 if self._max_processes == 0:
                     result = task
                 else:
                     result = task.get()
                     self._process_tasks.task_done()
-                self._put_result_in_queue(result)
+                if self._preserve_status:
+                    self._prev_output.put(result)
+                self._put_result_in_queue(
+                    (result, st, et, prev_st, prev_et, name))
             except queue.Empty:
                 pass
         self._put_result_in_queue(None)
 
-    def _process_synced_chunks(self, st, name):
+    def _process_synced_chunks(self, st, et, prev_st, prev_et, name):
         chunk_list = self._chunks[st.timestamp()]
         if len(chunk_list) == len(self._streams):
             # this is the last stream chunk for st
-            if self._max_processes == 0:
-                result = self._processor(chunk_list, **self._processor_kwargs)
-                self._process_tasks.put(result)
-                del self._chunks[st.timestamp()]
-            else:
-                try:
-                    task = self._pool.apipe(self._processor, chunk_list,
-                                            **self._processor_kwargs)
-                    self._process_tasks.put(task)
+            if self._preserve_status:
+                if prev_st is None:
+                    # the first window
+                    prev_input = None
+                    prev_output = None
+                else:
+                    prev_input = self._prev_input.get()
+                    prev_output = self._prev_output.get()
+                if self._max_processes == 0:
+                    result = self._processor(
+                        chunk_list, prev_input, prev_output, **self._processor_kwargs)
+                    self._process_tasks.put(result)
                     del self._chunks[st.timestamp()]
-                except ValueError as e:
-                    return
+                else:
+                    try:
+                        task = self._pool.apipe(
+                            self._processor, chunk_list, prev_input, prev_output, **self._processor_kwargs)
+                        self._process_tasks.put(
+                            (task, st, et, prev_st, prev_et, name))
+                        del self._chunks[st.timestamp()]
+                    except ValueError as e:
+                        return
+                if self._preserve_status:
+                    self._prev_input.put(chunk_list)
+            else:
+                if self._max_processes == 0:
+                    result = self._processor(
+                        chunk_list, **self._processor_kwargs)
+                    self._process_tasks.put(result)
+                    del self._chunks[st.timestamp()]
+                elif self._pool is not None:
+                    try:
+                        task = self._pool.apipe(self._processor, chunk_list,
+                                                **self._processor_kwargs)
+                        self._process_tasks.put(
+                            (task, st, et, prev_st, prev_et, name))
+                        del self._chunks[st.timestamp()]
+                    except ValueError as e:
+                        return
 
     def _put_result_in_queue(self, result):
         self._queue.put(result)
@@ -282,7 +323,7 @@ class Pipeline:
         self._sync_thread.start()
         self._sender_thread.start()
         for stream in self._streams:
-            stream.start(scheduler='thread')
+            stream.start()
         self.started = True
 
     def get_iterator(self):
