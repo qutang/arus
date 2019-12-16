@@ -9,7 +9,7 @@ Author: Qu Tang
 Date: 2019-12-16
 License: see LICENSE file
 """
-from functools import partial
+from functools import partial, reduce
 
 import numpy as np
 import pandas as pd
@@ -29,11 +29,22 @@ from ..core.libs.num import format_arr
 
 
 class MUSSModel:
-    def __init__(self, window_size=12.8, step_size=12.8):
-        self._ws = window_size
-        self._ss = step_size
+    def __init__(self):
         self._saved_featuresets = []
         self._saved_models = []
+
+    def combine_features(self, *input_features, placement_names=None):
+        if placement_names is None:
+            placement_names = range(0, len(input_features))
+        if len(placement_names) != len(input_features):
+            raise ValueError(
+                'placement_names should have the same length as the number of input_features')
+        sequence = zip(input_features, placement_names)
+
+        def _combine(left, right):
+            return pd.merge(left[0], right[0], on=['START_TIME',
+                                                   'STOP_TIME'], suffixes=('_' + str(left[1]), '_' + str(right[1])))
+        return reduce(_combine, sequence)
 
     def compute_features(self, input_data, sr, st, et, subwin_secs=2, ori_unit='rad', activation_threshold=0.2):
         subwin_samples = subwin_secs * sr
@@ -86,16 +97,21 @@ class MUSSModel:
         return result
 
     def train_classifier(self, input_features, input_classes, C=16, kernel='rbf', gamma=0.25, tol=0.0001, output_probability=True, class_weight='balanced', verbose=False, save=True):
-        """[summary]
+        """Function to train MUSS classifier given input feature vectors and class labels.
 
-        5 better than 0.25, especially between ambulation and lying, we should use a larger gamma for higher decaying impact of neighbor samples.
+        gamma with 5 better than 0.25, especially between ambulation and lying, we should use a larger gamma for higher decaying impact of neighbor samples.
 
         Args:
-            input_features ([type]): [description]
-            input_classes ([type]): [description]
-            C (int, optional): [description]. Defaults to 16.
-            kernel (str, optional): [description]. Defaults to 'rbf'.
-            gamma (float, optional): [description]. Defaults to 0.25.
+            input_features (numpy.array): A 2D array that stores the input feature vectors
+            input_classes (numpy.array): A 2D array that stores the class labels
+            C (int, optional): Parameter for SVM classifier. Defaults to 16.
+            kernel (str, optional): Parameter for SVM classifier. Defaults to 'rbf'.
+            gamma (float, optional): Parameter for SVM classifier. Defaults to 0.25.
+            tol (float, optional): Parameter for SVM classifier. Defaults to 0.0001.
+            output_probability (bool, optional): Parameter for SVM classifier. Defaults to True.
+            class_weight (str, optional): Parameter for SVM classifier. Defaults to 'balanced'.
+            verbose (bool, optional): Display training information. Defaults to True.
+            save (bool, optional): Save trained model to instance variable. Defaults to True.
         """
         input_matrix, input_classes = shuffle(input_features, input_classes)
         classifier = svm.SVC(
