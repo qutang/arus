@@ -110,6 +110,9 @@ class Pipeline:
         """
         self._started = value
 
+    def stop(self):
+        self.finish_tasks_and_stop()
+
     def finish_tasks_and_stop(self):
         """Gracefully shutdown the pipeline using the following procedure.
 
@@ -131,10 +134,12 @@ class Pipeline:
             self._stop_sender = True
             if self._pool is not None:
                 self._pool.close()
-                self._pool.terminate()
+                self._pool.join()
+                self._pool = None
             for stream in self._streams:
                 stream.stop()
         except Exception as e:
+            print(e)
             return False
         return True
 
@@ -227,17 +232,18 @@ class Pipeline:
                 for data, st, et, prev_st, prev_et, name in stream.get_iterator():
                     self._chunks[st.timestamp()] = [] if st.timestamp(
                     ) not in self._chunks else self._chunks[st.timestamp()]
-                    self._chunks[st.timestamp()].append((data, st, et, prev_st, prev_et, name))
+                    self._chunks[st.timestamp()].append(
+                        (data, st, et, prev_st, prev_et, name))
                     self._stream_pointer[name] = st.timestamp()
                     break
-                self._process_synced_chunks(st, et, prev_st, prev_et, self.name)
-        if num_of_processors > 0:
-            self._pool.close()
+                self._process_synced_chunks(
+                    st, et, prev_st, prev_et, self.name)
 
     def _send_result(self):
         while not self._stop_sender:
             try:
-                task, st, et, prev_st, prev_et, name = self._process_tasks.get(block=False, timeout=1)
+                task, st, et, prev_st, prev_et, name = self._process_tasks.get(
+                    block=False, timeout=1)
                 if self._max_processes == 0:
                     result = task
                 else:
@@ -245,7 +251,8 @@ class Pipeline:
                     self._process_tasks.task_done()
                 if self._preserve_status:
                     self._prev_output.put(result)
-                self._put_result_in_queue((result, st, et, prev_st, prev_et, name))
+                self._put_result_in_queue(
+                    (result, st, et, prev_st, prev_et, name))
             except queue.Empty:
                 pass
         self._put_result_in_queue(None)
@@ -256,20 +263,23 @@ class Pipeline:
             # this is the last stream chunk for st
             if self._preserve_status:
                 if prev_st is None:
-                # the first window
+                    # the first window
                     prev_input = None
                     prev_output = None
                 else:
                     prev_input = self._prev_input.get()
                     prev_output = self._prev_output.get()
                 if self._max_processes == 0:
-                    result = self._processor(chunk_list, prev_input, prev_output, **self._processor_kwargs)
+                    result = self._processor(
+                        chunk_list, prev_input, prev_output, **self._processor_kwargs)
                     self._process_tasks.put(result)
                     del self._chunks[st.timestamp()]
                 else:
                     try:
-                        task = self._pool.apipe(self._processor, chunk_list, prev_input, prev_output, **self._processor_kwargs)
-                        self._process_tasks.put((task, st, et, prev_st, prev_et, name))
+                        task = self._pool.apipe(
+                            self._processor, chunk_list, prev_input, prev_output, **self._processor_kwargs)
+                        self._process_tasks.put(
+                            (task, st, et, prev_st, prev_et, name))
                         del self._chunks[st.timestamp()]
                     except ValueError as e:
                         return
@@ -277,14 +287,16 @@ class Pipeline:
                     self._prev_input.put(chunk_list)
             else:
                 if self._max_processes == 0:
-                    result = self._processor(chunk_list, **self._processor_kwargs)
+                    result = self._processor(
+                        chunk_list, **self._processor_kwargs)
                     self._process_tasks.put(result)
                     del self._chunks[st.timestamp()]
-                else:
+                elif self._pool is not None:
                     try:
                         task = self._pool.apipe(self._processor, chunk_list,
                                                 **self._processor_kwargs)
-                        self._process_tasks.put((task, st, et, prev_st, prev_et, name))
+                        self._process_tasks.put(
+                            (task, st, et, prev_st, prev_et, name))
                         del self._chunks[st.timestamp()]
                     except ValueError as e:
                         return

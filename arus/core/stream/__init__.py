@@ -42,6 +42,7 @@ import numpy as np
 import logging
 import time
 
+
 class Stream:
     """The base class for data stream
 
@@ -197,7 +198,8 @@ class SlidingWindowStream(Stream):
         self._stop_time_col = stop_time_col
 
     def load_data_source_(self, data_source):
-        raise NotImplementedError("Sub class should implement this method and yield loaded data")
+        raise NotImplementedError(
+            "Sub class should implement this method and yield loaded data")
 
     def _extract_chunks(self, data):
         if data.empty:
@@ -253,7 +255,7 @@ class SlidingWindowStream(Stream):
                 break
 
     def _send_data(self, current_window, current_clock, current_window_st, current_window_et, previous_window_st, previous_window_et):
-        package = (current_window, current_window_st, current_window_et, 
+        package = (current_window, current_window_st, current_window_et,
                    previous_window_st, previous_window_et, self.name)
         if self._simulate_reality:
             delay = (current_window_st - previous_window_st) / \
