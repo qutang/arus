@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
 <meta name="generator" content="pdoc 0.7.2" />
-<title>arus.core.libs.mhealth_format API documentation</title>
-<meta name="description" content="A set of utility functions to manipulate, load/save, extract information from files stored in mhealth format." />
+<title>arus.core.annotation.generator API documentation</title>
+<meta name="description" content="" />
 <link href='https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.0/normalize.min.css' rel='stylesheet'>
 <link href='https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/8.0.0/sanitize.min.css' rel='stylesheet'>
 <link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github-gist.min.css" rel="stylesheet">
@@ -17,49 +17,77 @@
 <main>
 <article id="content">
 <header>
-<h1 class="title">Module <code>arus.core.libs.mhealth_format</code></h1>
+<h1 class="title">Module <code>arus.core.annotation.generator</code></h1>
 </header>
 <section id="section-intro">
-<p>A set of utility functions to manipulate, load/save, extract information from files stored in mhealth format.</p>
 <details class="source">
 <summary>Source code</summary>
-<pre><code class="python">&#34;&#34;&#34;A set of utility functions to manipulate, load/save, extract information from files stored in mhealth format.
-&#34;&#34;&#34;
-__pdoc__ = {}
+<pre><code class="python">import pandas as pd
+import numpy as np
+from datetime import datetime
+import time
 
-__pdoc__[&#39;tests&#39;] = False
+def _create_dataframe(start_times, stop_times, label_names):
+    result = pd.DataFrame.from_dict({
+        &#39;HEADER_TIME_STAMP&#39;: start_times,
+        &#39;START_TIME&#39;: start_times,
+        &#39;STOP_TIME&#39;: stop_times,
+        &#39;LABEL_NAME&#39;: label_names
+    })
+    return result
 
-from . import data, io, logging, meta, path</code></pre>
+
+def normal_dist(duration_mu=5, duration_sigma=5, start_time=None, num_mu=2, num_sigma=1, labels=[&#39;Sitting&#39;, &#39;Standing&#39;, &#39;Lying&#39;], sleep_interval=0):
+    start_time = pd.Timestamp(datetime.now()) if start_time is None else start_time
+    while True:
+        N = np.random.poisson(lam=num_mu)
+        durations = np.random.standard_normal(size=N) * duration_sigma + duration_mu
+        start_times = [start_time]
+        stop_times = []
+        for duration in durations:
+            new_start_time = start_time + pd.Timedelta(duration, &#39;S&#39;)
+            start_times.append(new_start_time)
+            start_time = new_start_time
+            stop_times.append(new_start_time)
+        start_times = start_times[:-1]
+        label_names = np.random.choice(labels, N)
+        result = _create_dataframe(start_times, stop_times, label_names)
+        yield result</code></pre>
 </details>
 </section>
 <section>
-<h2 class="section-title" id="header-submodules">Sub-modules</h2>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
 <dl>
-<dt><code class="name"><a title="arus.core.libs.mhealth_format.data" href="data.html">arus.core.libs.mhealth_format.data</a></code></dt>
+<dt id="arus.core.annotation.generator.normal_dist"><code class="name flex">
+<span>def <span class="ident">normal_dist</span></span>(<span>duration_mu=5, duration_sigma=5, start_time=None, num_mu=2, num_sigma=1, labels=['Sitting', 'Standing', 'Lying'], sleep_interval=0)</span>
+</code></dt>
 <dd>
 <section class="desc"></section>
-</dd>
-<dt><code class="name"><a title="arus.core.libs.mhealth_format.io" href="io.html">arus.core.libs.mhealth_format.io</a></code></dt>
-<dd>
-<section class="desc"><p>Module to read and write files in mhealth format</p></section>
-</dd>
-<dt><code class="name"><a title="arus.core.libs.mhealth_format.logging" href="logging.html">arus.core.libs.mhealth_format.logging</a></code></dt>
-<dd>
-<section class="desc"></section>
-</dd>
-<dt><code class="name"><a title="arus.core.libs.mhealth_format.meta" href="meta.html">arus.core.libs.mhealth_format.meta</a></code></dt>
-<dd>
-<section class="desc"></section>
-</dd>
-<dt><code class="name"><a title="arus.core.libs.mhealth_format.path" href="path.html">arus.core.libs.mhealth_format.path</a></code></dt>
-<dd>
-<section class="desc"></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def normal_dist(duration_mu=5, duration_sigma=5, start_time=None, num_mu=2, num_sigma=1, labels=[&#39;Sitting&#39;, &#39;Standing&#39;, &#39;Lying&#39;], sleep_interval=0):
+    start_time = pd.Timestamp(datetime.now()) if start_time is None else start_time
+    while True:
+        N = np.random.poisson(lam=num_mu)
+        durations = np.random.standard_normal(size=N) * duration_sigma + duration_mu
+        start_times = [start_time]
+        stop_times = []
+        for duration in durations:
+            new_start_time = start_time + pd.Timedelta(duration, &#39;S&#39;)
+            start_times.append(new_start_time)
+            start_time = new_start_time
+            stop_times.append(new_start_time)
+        start_times = start_times[:-1]
+        label_names = np.random.choice(labels, N)
+        result = _create_dataframe(start_times, stop_times, label_names)
+        yield result</code></pre>
+</details>
 </dd>
 </dl>
-</section>
-<section>
-</section>
-<section>
 </section>
 <section>
 </section>
@@ -72,16 +100,12 @@ from . import data, io, logging, meta, path</code></pre>
 <ul id="index">
 <li><h3>Super-module</h3>
 <ul>
-<li><code><a title="arus.core.libs" href="../index.html">arus.core.libs</a></code></li>
+<li><code><a title="arus.core.annotation" href="index.html">arus.core.annotation</a></code></li>
 </ul>
 </li>
-<li><h3><a href="#header-submodules">Sub-modules</a></h3>
-<ul>
-<li><code><a title="arus.core.libs.mhealth_format.data" href="data.html">arus.core.libs.mhealth_format.data</a></code></li>
-<li><code><a title="arus.core.libs.mhealth_format.io" href="io.html">arus.core.libs.mhealth_format.io</a></code></li>
-<li><code><a title="arus.core.libs.mhealth_format.logging" href="logging.html">arus.core.libs.mhealth_format.logging</a></code></li>
-<li><code><a title="arus.core.libs.mhealth_format.meta" href="meta.html">arus.core.libs.mhealth_format.meta</a></code></li>
-<li><code><a title="arus.core.libs.mhealth_format.path" href="path.html">arus.core.libs.mhealth_format.path</a></code></li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="arus.core.annotation.generator.normal_dist" href="#arus.core.annotation.generator.normal_dist">normal_dist</a></code></li>
 </ul>
 </li>
 </ul>
