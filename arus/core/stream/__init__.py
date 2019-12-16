@@ -42,6 +42,10 @@ import numpy as np
 import logging
 import time
 
+__pdoc__ = {}
+
+__pdoc__['tests'] = False
+
 
 class Stream:
     """The base class for data stream
