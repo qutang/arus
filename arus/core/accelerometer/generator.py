@@ -6,7 +6,7 @@ import time
 
 def _generate_ts(start_time, sr, buffer_size):
     N = buffer_size * sr + 1
-    freq = str(int(1000 / sr)) + 'ms'
+    freq = str(1000 / sr) + 'ms'
     ts = pd.date_range(start=start_time, periods=N, freq=freq)
     return ts[0:-1], ts[-1]
 
