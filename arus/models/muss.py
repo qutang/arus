@@ -32,6 +32,11 @@ class MUSSModel:
     def __init__(self):
         self._saved_featuresets = []
         self._saved_models = []
+        self._FEATURE_NAMES = ['MEAN_0', 'STD_0', 'MAX_0', 'RANGE_0', 'DOM_FREQ_0', 'FREQ_POWER_RATIO_ABOVE_3DOT5_0', 'DOM_FREQ_POWER_RATIO_0', 'ACTIVE_SAMPLES_0', 'ACTIVATIONS_0',
+                               'STD_ACTIVATION_DURATIONS_0', "MEDIAN_G_ANGLE_X", "MEDIAN_G_ANGLE_Y", "MEDIAN_G_ANGLE_Z", "RANGE_G_ANGLE_X", "RANGE_G_ANGLE_Y", "RANGE_G_ANGLE_Z", "STD_G_ANGLE_X", "STD_G_ANGLE_Y", "STD_G_ANGLE_Z"]
+
+    def get_feature_names(self):
+        return self._FEATURE_NAMES
 
     def combine_features(self, *input_features, placement_names=None):
         if placement_names is None:
@@ -79,19 +84,15 @@ class MUSSModel:
         }
         for func in vm_feature_funcs:
             values, names = func(X_vm_filtered)
-            if len(names) > 1:
-                for value, name in zip(values, names):
-                    result[name] = [value]
-            else:
-                result[names] = [values]
+            for value, name in zip(values.transpose(), names):
+                if name in self._FEATURE_NAMES:
+                    result[name] = value.tolist()
 
         for func in axis_feature_funcs:
             values, names = func(X_filtered)
-            if len(names) > 1:
-                for value, name in zip(values, names):
-                    result[name] = [value]
-            else:
-                result[names] = [values]
+            for value, name in zip(values.transpose(), names):
+                if name in self._FEATURE_NAMES:
+                    result[name] = value.tolist()
 
         result = pd.DataFrame.from_dict(result)
         return result
