@@ -47,7 +47,7 @@ class MUSSModel:
         sequence = zip(input_features, placement_names)
 
         def _combine(left, right):
-            return pd.merge(left[0], right[0], on=['START_TIME',
+            return pd.merge(left[0], right[0], on=['HEADER_TIME_STAMP', 'START_TIME',
                                                    'STOP_TIME'], suffixes=('_' + str(left[1]), '_' + str(right[1])))
         return reduce(_combine, sequence)
 
