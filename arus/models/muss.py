@@ -33,7 +33,7 @@ class MUSSModel:
         self._saved_featuresets = []
         self._saved_models = []
         self._FEATURE_NAMES = ['MEAN_0', 'STD_0', 'MAX_0', 'RANGE_0', 'DOM_FREQ_0', 'FREQ_POWER_RATIO_ABOVE_3DOT5_0', 'DOM_FREQ_POWER_RATIO_0', 'ACTIVE_SAMPLES_0', 'ACTIVATIONS_0',
-                               'STD_ACTIVATION_DURATIONS_0', "MEDIAN_G_ANGLE_X", "MEDIAN_G_ANGLE_Y", "MEDIAN_G_ANGLE_Z", "RANGE_G_ANGLE_X", "RANGE_G_ANGLE_Y", "RANGE_G_ANGLE_Z", "STD_G_ANGLE_X", "STD_G_ANGLE_Y", "STD_G_ANGLE_Z"]
+                               'STD_ACTIVATION_DURATIONS_0', "MEDIAN_G_ANGLE_X", "MEDIAN_G_ANGLE_Y", "MEDIAN_G_ANGLE_Z", "RANGE_G_ANGLE_X", "RANGE_G_ANGLE_Y", "RANGE_G_ANGLE_Z"]
 
     def get_feature_names(self):
         return self._FEATURE_NAMES
@@ -51,9 +51,19 @@ class MUSSModel:
                                                    'STOP_TIME'], suffixes=('_' + str(left[1]), '_' + str(right[1])))
         return reduce(_combine, sequence)
 
+    def sync_feature_and_class(self, input_feature, input_class):
+        synced_set = pd.merge(input_feature, input_class,
+                              how='inner',
+                              on=['HEADER_TIME_STAMP',
+                                  'START_TIME', 'STOP_TIME'],
+                              suffixes=('_f', '_c'))
+        synced_feature = synced_set[input_feature.columns]
+        synced_class = synced_set[input_class.columns]
+        return synced_feature, synced_class
+
     def compute_features(self, input_data, sr, st, et, subwin_secs=2, ori_unit='rad', activation_threshold=0.2):
         subwin_samples = subwin_secs * sr
-        X = format_arr(input_data)
+        X = format_arr(input_data.values[:, 1:])
         vm_feature_funcs = [
             accel_stats.mean,
             accel_stats.std,
@@ -97,7 +107,7 @@ class MUSSModel:
         result = pd.DataFrame.from_dict(result)
         return result
 
-    def train_classifier(self, input_features, input_classes, C=16, kernel='rbf', gamma=0.25, tol=0.0001, output_probability=True, class_weight='balanced', verbose=False, save=True):
+    def train_classifier(self, input_feature, input_class, C=16, kernel='rbf', gamma=0.25, tol=0.0001, output_probability=True, class_weight='balanced', verbose=False, save=True):
         """Function to train MUSS classifier given input feature vectors and class labels.
 
         gamma with 5 better than 0.25, especially between ambulation and lying, we should use a larger gamma for higher decaying impact of neighbor samples.
@@ -114,7 +124,16 @@ class MUSSModel:
             verbose (bool, optional): Display training information. Defaults to True.
             save (bool, optional): Save trained model to instance variable. Defaults to True.
         """
-        input_matrix, input_classes = shuffle(input_features, input_classes)
+        input_matrix = input_feature.values[:, 3:]
+        input_classes = input_class.values[:, 3]
+
+        # remove transition and unknown indices
+        is_valid_label = (input_classes != 'Transition') & (
+            input_classes != 'Unknown')
+        input_matrix = input_matrix[is_valid_label, :]
+        input_classes = input_classes[is_valid_label]
+
+        input_matrix, input_classes = shuffle(input_matrix, input_classes)
         classifier = svm.SVC(
             C=C,
             kernel=kernel,
