@@ -3,6 +3,8 @@ from ...core.libs.mhealth_format.io import read_data_csv
 from ..muss import MUSSModel
 import numpy as np
 import pandas as pd
+import sklearn.svm as svm
+from sklearn.preprocessing import MinMaxScaler
 
 
 def test_muss_compute_features():
@@ -13,7 +15,7 @@ def test_muss_compute_features():
     st = df.iloc[0, 0]
     et = df.iloc[-1, 0]
     muss = MUSSModel()
-    feature_vectors = muss.compute_features(data, sr=sr, st=st, et=et)
+    feature_vectors = muss.compute_features(df, sr=sr, st=st, et=et)
     np.testing.assert_array_equal(feature_vectors.columns[0:3], [
                                   'HEADER_TIME_STAMP', 'START_TIME', 'STOP_TIME'])
     np.testing.assert_array_equal(
@@ -27,10 +29,10 @@ def test_muss_compute_features_grouped():
     muss = MUSSModel()
 
     def _compute_features(grouped_df, sr):
-        data = grouped_df.values[:, 1:]
         st = grouped_df.iloc[0, 0]
         et = grouped_df.iloc[-1, 0]
-        feature_vectors = muss.compute_features(data, sr=sr, st=st, et=et)
+        feature_vectors = muss.compute_features(
+            grouped_df, sr=sr, st=st, et=et)
         return feature_vectors
 
     result = df.groupby(pd.Grouper(key='HEADER_TIME_STAMP', freq='12s', closed='left')
@@ -53,10 +55,10 @@ def test_muss_combine_features():
     muss = MUSSModel()
 
     def _compute_features(grouped_df, sr):
-        data = grouped_df.values[:, 1:]
         st = grouped_df.iloc[0, 0]
         et = grouped_df.iloc[-1, 0]
-        feature_vectors = muss.compute_features(data, sr=sr, st=st, et=et)
+        feature_vectors = muss.compute_features(
+            grouped_df, sr=sr, st=st, et=et)
         return feature_vectors
 
     result = df.groupby(pd.Grouper(key='HEADER_TIME_STAMP', freq='12s', closed='left')
@@ -71,3 +73,22 @@ def test_muss_combine_features():
                                   name + '_DW' for name in muss.get_feature_names()] + [name + '_DA' for name in muss.get_feature_names()])
     np.testing.assert_array_equal(
         combined_result.shape, (result.shape[0], 3 + len(muss.get_feature_names()) * 2))
+
+
+def test_muss_train_classifier():
+    feature_filepath, _ = load_test_data(file_type='mhealth', sensor_type='feature',
+                                         file_num='single', exception_type='single_placement')
+    class_filepath, _ = load_test_data(file_type='mhealth', sensor_type='class_labels',
+                                       file_num='single', exception_type='single_task')
+    feature_set = pd.read_csv(
+        feature_filepath, infer_datetime_format=True, parse_dates=[0, 1, 2])
+    class_set = pd.read_csv(
+        class_filepath, infer_datetime_format=True, parse_dates=[0, 1, 2])
+    muss = MUSSModel()
+    input_feature, input_class = muss.sync_feature_and_class(
+        feature_set, class_set)
+    model = muss.train_classifier(input_feature, input_class)
+    assert len(model) == 3
+    assert model[2] > 0.7
+    assert type(model[0]) is svm.SVC
+    assert type(model[1]) is MinMaxScaler
