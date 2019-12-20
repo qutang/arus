@@ -14,10 +14,13 @@ from functools import partial, reduce
 import numpy as np
 import pandas as pd
 import sklearn.svm as svm
-from sklearn.metrics import classification_report, f1_score
+from sklearn.metrics import classification_report, f1_score, confusion_matrix, accuracy_score
 from sklearn.model_selection import LeaveOneGroupOut
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.utils import shuffle
+import matplotlib.pyplot as plt
+from matplotlib import rcParams, rcParamsDefault
+import seaborn as sns
 
 from ..core.accelerometer.features import activation as accel_activation
 from ..core.accelerometer.features import orientation as accel_ori
@@ -38,7 +41,11 @@ class MUSSModel:
     def get_feature_names(self):
         return self._FEATURE_NAMES
 
-    def combine_features(self, *input_features, placement_names=None):
+    def combine_features(self, *input_features, placement_names=None, group_col=None):
+        if group_col is None:
+            group_col = []
+        else:
+            group_col = [group_col]
         if placement_names is None:
             placement_names = range(0, len(input_features))
         if len(placement_names) != len(input_features):
@@ -48,14 +55,18 @@ class MUSSModel:
 
         def _combine(left, right):
             return pd.merge(left[0], right[0], on=['HEADER_TIME_STAMP', 'START_TIME',
-                                                   'STOP_TIME'], suffixes=('_' + str(left[1]), '_' + str(right[1])))
-        return reduce(_combine, sequence)
+                                                   'STOP_TIME'] + group_col, suffixes=('_' + str(left[1]), '_' + str(right[1])))
+        combined_df = reduce(_combine, sequence)
+        combined_feature_names = list(filter(lambda name: name.split('_')
+                                             [-1] in placement_names, combined_df.columns))
+        return combined_df, combined_feature_names
 
-    def sync_feature_and_class(self, input_feature, input_class):
+    def sync_feature_and_class(self, input_feature, input_class, group_col=None):
+        group_col = [] if group_col is None else [group_col]
         synced_set = pd.merge(input_feature, input_class,
                               how='inner',
                               on=['HEADER_TIME_STAMP',
-                                  'START_TIME', 'STOP_TIME'],
+                                  'START_TIME', 'STOP_TIME'] + group_col,
                               suffixes=('_f', '_c'))
         synced_feature = synced_set[input_feature.columns]
         synced_class = synced_set[input_class.columns]
@@ -107,7 +118,38 @@ class MUSSModel:
         result = pd.DataFrame.from_dict(result)
         return result
 
-    def train_classifier(self, input_feature, input_class, C=16, kernel='rbf', gamma=0.25, tol=0.0001, output_probability=True, class_weight='balanced', verbose=False, save=True):
+    def remove_classes(self, input_feature, input_class, class_col, classes_to_remove=['Unknown', 'Transition']):
+        # remove transition and unknown indices
+        is_valid_label = ~input_class[class_col].isin(classes_to_remove).values
+        filtered_feature = input_feature.loc[is_valid_label, :]
+        filtered_class = input_class[is_valid_label]
+        return filtered_feature, filtered_class
+
+    def remove_groups(self, input_feature, input_class, group_col, groups_to_remove=[]):
+        is_valid_groups = ~input_class[group_col].isin(groups_to_remove)
+        filtered_feature = input_feature.loc[is_valid_groups, :]
+        filtered_class = input_class[is_valid_groups]
+        return filtered_feature, filtered_class
+
+    def _train_classifier(self, input_feature_arr, input_class_vec, C=16, kernel='rbf', gamma=0.25, tol=0.0001, output_probability=True, class_weight='balanced', verbose=False):
+        input_matrix, input_classes = shuffle(
+            input_feature_arr, input_class_vec)
+        classifier = svm.SVC(
+            C=C,
+            kernel=kernel,
+            gamma=gamma,
+            tol=tol,
+            probability=output_probability,
+            class_weight=class_weight,
+            verbose=verbose)
+        scaler = MinMaxScaler((-1, 1))
+        scaled_X = scaler.fit_transform(input_matrix)
+        model = classifier.fit(scaled_X, input_classes)
+        train_accuracy = model.score(scaled_X, input_classes)
+        result = (model, scaler, train_accuracy)
+        return result
+
+    def train_classifier(self, input_feature, input_class, class_col, feature_names, save=True, **kwargs):
         """Function to train MUSS classifier given input feature vectors and class labels.
 
         gamma with 5 better than 0.25, especially between ambulation and lying, we should use a larger gamma for higher decaying impact of neighbor samples.
@@ -124,32 +166,17 @@ class MUSSModel:
             verbose (bool, optional): Display training information. Defaults to True.
             save (bool, optional): Save trained model to instance variable. Defaults to True.
         """
-        input_matrix = input_feature.values[:, 3:]
-        input_classes = input_class.values[:, 3]
-
-        # remove transition and unknown indices
-        is_valid_label = (input_classes != 'Transition') & (
-            input_classes != 'Unknown')
-        input_matrix = input_matrix[is_valid_label, :]
-        input_classes = input_classes[is_valid_label]
-
-        input_matrix, input_classes = shuffle(input_matrix, input_classes)
-        classifier = svm.SVC(
-            C=C,
-            kernel=kernel,
-            gamma=gamma,
-            tol=tol,
-            probability=output_probability,
-            class_weight=class_weight,
-            verbose=verbose)
-        scaler = MinMaxScaler((-1, 1))
-        scaled_X = scaler.fit_transform(input_matrix)
-        model = classifier.fit(scaled_X, input_classes)
-        train_accuracy = model.score(scaled_X, input_classes)
-        result = (model, scaler, train_accuracy)
+        input_matrix = input_feature[feature_names].values
+        input_classes = input_class[class_col].values
+        result = self._train_classifier(input_matrix, input_classes, **kwargs)
         if save:
             self._saved_models.append(result)
         return result
+
+    def _predict(self, test_feature, classifier, scaler):
+        scaled_X = scaler.transform(test_feature)
+        predicted_classes = classifier.predict(scaled_X)
+        return predicted_classes
 
     def predict(self, test_features, model=-1):
         if type(model) is tuple:
@@ -158,6 +185,53 @@ class MUSSModel:
         elif type(model) is int:
             scaler = self._saved_models[model][1]
             classifier = self._saved_models[model][0]
-        scaled_X = scaler.transform(test_features)
-        predicted_classes = classifier.predict(scaled_X)
-        return predicted_classes
+        test_feature = test_features.values[:, 3:]
+        return self._predict(test_feature, classifier, scaler)
+
+    def validate_classifier(self, input_feature, input_class, class_col, feature_names, group_col, **train_kwargs):
+        input_feature_arr = input_feature[feature_names].values
+        input_class_vec = input_class[class_col].values
+        groups = input_class[group_col].values
+        logo = LeaveOneGroupOut()
+        output_class_vec = input_class_vec.copy()
+        for train_split, test_split in logo.split(input_feature_arr, input_class_vec, groups):
+            train_feature = input_feature_arr[train_split, :]
+            train_class = input_class_vec[train_split]
+            test_feature = input_feature_arr[test_split, :]
+            model = self._train_classifier(
+                train_feature, train_class, **train_kwargs)
+            predict_class = self._predict(
+                test_feature, classifier=model[0], scaler=model[1])
+            output_class_vec[test_split] = predict_class
+        acc = accuracy_score(input_class_vec, output_class_vec)
+        return input_class_vec, output_class_vec, acc
+
+    def _plot_confusion_matrix(self, conf_matrix, size):
+        # plot confusion matrix
+        rcParams['font.family'] = 'serif'
+        rcParams['font.size'] = 8
+        rcParams['font.serif'] = ['Times New Roman']
+        plt.subplots(figsize=(4, 4))
+        sns.set_style({
+            'font.family': 'serif',
+            'font.size': 8
+        })
+        g = sns.heatmap(conf_matrix, annot=True, cmap="Greys",
+                        cbar=False, fmt='d', robust=True, linewidths=0.2)
+        g.set(xlabel="Prediction", ylabel="Ground truth")
+        plt.tight_layout()
+        return plt.gcf()
+
+    def get_confusion_matrix(self, input_class, predict_class, labels, graph=False):
+        conf_mat = confusion_matrix(input_class, predict_class, labels=labels)
+        conf_df = pd.DataFrame(conf_mat, columns=labels, index=labels)
+        conf_df.index.rename(name='Ground Truth')
+        if graph:
+            result = self._plot_confusion_matrix(
+                conf_df, size=(len(labels), len(labels)))
+        else:
+            result = conf_df
+        return result
+
+    def get_classification_report(self, input_class, predict_class, labels):
+        return classification_report(input_class, predict_class, labels=labels)
