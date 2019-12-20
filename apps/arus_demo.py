@@ -5,9 +5,10 @@ from arus.models.muss import MUSSModel
 import pandas as pd
 import pathos.pools as pools
 import time
+import numpy as np
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 
-# Backend handler functions
 class ArusDemo:
     def __init__(self, title):
         self._title = title
@@ -36,8 +37,8 @@ class ArusDemo:
         da_features = feature_set.loc[feature_set['SENSOR_PLACEMENT'] == 'DA', [
             'HEADER_TIME_STAMP', 'START_TIME', 'STOP_TIME'] + muss.get_feature_names()]
         yield 'Combining training data together...', 3
-        combined_feature_set = muss.combine_features(dw_features, da_features,
-                                                     placement_names=['DW', 'DA'])
+        combined_feature_set, combined_feature_names = muss.combine_features(
+            dw_features, da_features, placement_names=['DW', 'DA'])
         cleared_class_set = class_set[['HEADER_TIME_STAMP',
                                        'START_TIME', 'STOP_TIME', 'MUSS_22_ACTIVITY_ABBRS']]
         yield 'Synchronizing training data and class labels...', 4
@@ -49,9 +50,11 @@ class ArusDemo:
             training_labels)
         input_feature = synced_feature.loc[filter_condition, :]
         input_class = synced_class.loc[filter_condition, :]
+
         yield 'Training SVM classifier...', 6
         pool = pools.ProcessPool(nodes=1)
-        task = pool.apipe(muss.train_classifier, input_feature, input_class)
+        task = pool.apipe(muss.train_classifier, input_feature,
+                          input_class, class_col='MUSS_22_ACTIVITY_ABBRS', feature_names=combined_feature_names)
         i = 7
         while not task.ready() and self._global_data['TRAIN_MODEL_RUNNING']:
             yield 'Training SVM classifier...', min((i, 9))
@@ -63,13 +66,55 @@ class ArusDemo:
         else:
             return
 
+    def validate_initial_model(self):
+        muss = MUSSModel()
+        feature_set = self._global_data['INITIAL_FEATURE_DF']
+        class_set = self._global_data['INITIAL_CLASS_DF']
+        yield 'Extracting validation data for DW...', 1
+        dw_features = feature_set.loc[feature_set['SENSOR_PLACEMENT'] == 'DW', [
+            'HEADER_TIME_STAMP', 'START_TIME', 'STOP_TIME', 'PID'] + muss.get_feature_names()]
+        yield 'Extracting validation data for DA...', 2
+        da_features = feature_set.loc[feature_set['SENSOR_PLACEMENT'] == 'DA', [
+            'HEADER_TIME_STAMP', 'START_TIME', 'STOP_TIME', 'PID'] + muss.get_feature_names()]
+        yield 'Combining validation data together...', 3
+        combined_feature_set, combined_feature_names = muss.combine_features(
+            dw_features, da_features, placement_names=['DW', 'DA'], group_col='PID')
+        cleared_class_set = class_set[['HEADER_TIME_STAMP',
+                                       'START_TIME', 'STOP_TIME', 'PID', 'MUSS_22_ACTIVITY_ABBRS']]
+        yield 'Synchronizing training data and class labels...', 4
+        synced_feature, synced_class = muss.sync_feature_and_class(
+            combined_feature_set, cleared_class_set, group_col='PID')
+        # only use training labels
+        yield 'Filtering out unused class labels...', 5
+        training_labels = self._global_data['INITIAL_MODEL'][0].classes_
+        filter_condition = synced_class['MUSS_22_ACTIVITY_ABBRS'].isin(
+            training_labels)
+        input_feature = synced_feature.loc[filter_condition, :]
+        input_class = synced_class.loc[filter_condition, :]
+
+        yield 'Validating SVM classifier...', 6
+        pool = pools.ProcessPool(nodes=1)
+        task = pool.apipe(muss.validate_classifier, input_feature,
+                          input_class, class_col='MUSS_22_ACTIVITY_ABBRS', feature_names=combined_feature_names, group_col='PID')
+        i = 7
+        while not task.ready() and self._global_data['VALIDATE_MODEL_RUNNING']:
+            yield 'Validating SVM classifier...', min((i, 99))
+            i = i + 1
+        if task.ready():
+            result = task.get()
+            yield 'Completed. Validation accuracy: ' + str(result[2]), 100
+            self._global_data['INITIAL_MODEL_VALIDATION'] = result + \
+                (training_labels, )
+        else:
+            return
+
     def _get_initial_class_labels(self):
         class_df = self._global_data['INITIAL_CLASS_DF']
         return class_df['MUSS_22_ACTIVITY_ABBRS'].unique().tolist()
 
     def _init_dashboard_model_training(self, class_labels=[]):
         heading = 'Step 1 - Train initial model'
-        button_texts = ['Train model', 'Validate model']
+        button_texts = ['Train model', 'Validate model', 'Test model']
 
         header = [[sg.Text(text=heading, relief=sg.RELIEF_FLAT,
                            font=('Helvetica', 12, 'bold'), size=(20, 1))]]
@@ -78,9 +123,11 @@ class ArusDemo:
         class_label_list = [[sg.Listbox(
             values=class_labels, select_mode=sg.LISTBOX_SELECT_MODE_EXTENDED, font=('Helvetica', 10), size=(27, 20), key='_TRAINING_CLASS_LABELS_', enable_events=True)]]
         buttons = [[sg.Button(button_text=text,
-                              font=('Helvetica', 11), auto_size_button=True, size=(20, None), key="_" + text.upper().replace(' ', '_') + '_', disabled=True)] for text in button_texts]
+                              font=('Helvetica', 11), auto_size_button=True, size=(20, None), key="_" + text.upper().replace(' ', '_') + '_INITIAL_', disabled=True)] for text in button_texts]
+        info = [
+            [sg.Text(text="No model available", font=('Helvetica', 10), size=(20, None), key='_INITIAL_MODEL_INFO_')]]
 
-        return sg.Column(layout=header + description + class_label_list + buttons, scrollable=False)
+        return sg.Column(layout=header + description + class_label_list + buttons + info, scrollable=False)
 
     def _init_dashboard_new_activities(self, class_labels=[]):
         heading = 'Step 2 - Add new activities'
@@ -148,17 +195,24 @@ class ArusDemo:
                               finalize=True)
         return dashboard
 
-    def popup_model_training(self, training_labels):
+    def _display_model_info(self, model, textElement):
+        name = ','.join(model[0].classes_)
+        acc = model[2]
+        info = 'Model:\n' + name + '\nTraining accuracy: ' + str(acc)[:5]
+        textElement.Update(
+            value=info)
+
+    def popup_init_model_training(self, training_labels):
         layout = [[sg.Text('Initializing training data...', key='_TRAIN_MODEL_MESSAGE_', size=(40, 1))],
                   [sg.ProgressBar(10, orientation='h', size=(
                       40, 20), key='_TRAIN_MODEL_PROGRESS_BAR_')],
                   [sg.Button(button_text='Cancel', key='_TRAIN_MODEL_CLOSE_')]]
-        popup = sg.Window('Training initial model...', layout)
+        popup = sg.Window('Training initial model...', layout, finalize=True)
         progress_bar = popup['_TRAIN_MODEL_PROGRESS_BAR_']
         message_bar = popup['_TRAIN_MODEL_MESSAGE_']
         self._global_data['TRAIN_MODEL_RUNNING'] = True
         for message, progress in self.train_initial_model(training_labels):
-            event, values = popup.read(timeout=500)
+            event, _ = popup.read(timeout=500)
             if event == '_TRAIN_MODEL_CLOSE_' or event == '_TRAIN_MODEL_CLOSE_' or event is None:
                 break
             progress_bar.UpdateBar(progress)
@@ -166,22 +220,97 @@ class ArusDemo:
         self._global_data['TRAIN_MODEL_RUNNING'] = False
         if progress == 10:
             popup['_TRAIN_MODEL_CLOSE_'].Update(text='Close')
-            event, values = popup.read()
+            event, _ = popup.read()
+        popup.close()
+
+    def _display_cm_figure(self, validation_result, canvasElement):
+        muss = MUSSModel()
+        labels = validation_result[-1]
+        fig = muss.get_confusion_matrix(
+            validation_result[0], validation_result[1], labels=labels, graph=True)
+        _, _, figure_w, figure_h = fig.bbox.bounds
+        canvasElement.set_size((figure_w, figure_h))
+        figure_canvas_agg = FigureCanvasTkAgg(fig, canvasElement.TKCanvas)
+        figure_canvas_agg.draw()
+        figure_canvas_agg.get_tk_widget().pack(side='top', fill='both', expand=1)
+        return figure_canvas_agg
+
+    def _display_classification_report(self, validation_result, textElement):
+        muss = MUSSModel()
+        report = muss.get_classification_report(
+            validation_result[0], validation_result[1], labels=validation_result[-1])
+        textElement.Update(value=report, visible=True)
+
+    def popup_init_model_validation(self, run=True):
+        layout = [[sg.Text('Initializing validation data...' if run else 'Already validated.', key='_VALIDATE_MODEL_MESSAGE_', size=(40, 1))],
+                  [sg.ProgressBar(100, orientation='h', size=(
+                      40, 20), key='_VALIDATE_MODEL_PROGRESS_BAR_')],
+                  [sg.Canvas(size=(3, 3),
+                             key='_VALIDATE_MODEL_CM_FIG_')],
+                  [sg.Text(size=(50, None),
+                           key='_VALIDATE_MODEL_REPORT_')],
+                  [sg.Button(button_text='Cancel', key='_VALIDATE_MODEL_CLOSE_')]]
+        popup = sg.Window('Validating initial model...', layout, finalize=True)
+        progress_bar = popup['_VALIDATE_MODEL_PROGRESS_BAR_']
+        message_bar = popup['_VALIDATE_MODEL_MESSAGE_']
+        cm_canvas = popup['_VALIDATE_MODEL_CM_FIG_']
+        report_text = popup['_VALIDATE_MODEL_REPORT_']
+        if run:
+            self._global_data['VALIDATE_MODEL_RUNNING'] = True
+            for message, progress in self.validate_initial_model():
+                event, _ = popup.read(timeout=500)
+                if event == '_VALIDATE_MODEL_CLOSE_' or event == '_VALIDATE_MODEL_CLOSE_' or event is None:
+                    break
+                progress_bar.UpdateBar(progress)
+                message_bar.Update(value=message)
+            self._global_data['VALIDATE_MODEL_RUNNING'] = False
+            if progress == 100:
+                popup['_VALIDATE_MODEL_CLOSE_'].Update(text='Close')
+                self._display_cm_figure(
+                    self._global_data['INITIAL_MODEL_VALIDATION'], cm_canvas)
+                self._display_classification_report(
+                    self._global_data['INITIAL_MODEL_VALIDATION'], report_text)
+                report_text.Update(visible=True)
+                event, _ = popup.read()
+        else:
+            popup['_VALIDATE_MODEL_CLOSE_'].Update(text='Close')
+            self._display_cm_figure(
+                self._global_data['INITIAL_MODEL_VALIDATION'], cm_canvas)
+            self._display_classification_report(
+                self._global_data['INITIAL_MODEL_VALIDATION'], report_text)
+            while True:
+                event, _ = popup.read(timeout=500)
+                if event == '_VALIDATE_MODEL_CLOSE_' or event == '_VALIDATE_MODEL_CLOSE_' or event is None:
+                    break
         popup.close()
 
     def handle_dashboard(self, event, values, dashboard):
-        if event == "_TRAIN_MODEL_":  # Train model
+        if event == "_TRAIN_MODEL_INITIAL_":  # Train model
             training_labels = values['_TRAINING_CLASS_LABELS_']
-            self.popup_model_training(training_labels)
+            if 'INITIAL_MODEL' in self._global_data and np.array_equal(sorted(training_labels), sorted(self._global_data['INITIAL_MODEL'][0].classes_)):
+                sg.Popup('Already trained.')
+            else:
+                self.popup_init_model_training(training_labels)
+            if 'INITIAL_MODEL' in self._global_data:
+                model = self._global_data['INITIAL_MODEL']
+                textElement = dashboard['_INITIAL_MODEL_INFO_']
+                self._display_model_info(model, textElement)
+                dashboard['_TEST_MODEL_INITIAL_'].Update(disabled=False)
+                dashboard['_VALIDATE_MODEL_INITIAL_'].Update(disabled=False)
+        elif event == '_VALIDATE_MODEL_INITIAL_':
+            training_labels = values['_TRAINING_CLASS_LABELS_']
+            if 'INITIAL_MODEL_VALIDATION' in self._global_data and np.array_equal(sorted(self._global_data['INITIAL_MODEL_VALIDATION'][-1]), sorted(self._global_data['INITIAL_MODEL'][0].classes_)):
+                self.popup_init_model_validation(run=False)
+            else:
+                self.popup_init_model_validation(run=True)
+            # if self._global_data['INITIAL_MODEL_VALIDATION'] is not None:
 
         elif event == "_TRAINING_CLASS_LABELS_":  # Only enable buttons when there are two or more classes selected
             num_classes = len(values['_TRAINING_CLASS_LABELS_'])
             if num_classes > 1:
-                dashboard['_TRAIN_MODEL_'].Update(disabled=False)
-                dashboard['_VALIDATE_MODEL_'].Update(disabled=False)
+                dashboard['_TRAIN_MODEL_INITIAL_'].Update(disabled=False)
             else:
-                dashboard['_TRAIN_MODEL_'].Update(disabled=True)
-                dashboard['_VALIDATE_MODEL_'].Update(disabled=True)
+                dashboard['_TRAIN_MODEL_INITIAL_'].Update(disabled=True)
 
     def start(self):
         self.load_initial_data()
