@@ -690,6 +690,20 @@ version = "1.4.0"
 numpy = ">=1.13.3"
 
 [[package]]
+category = "main"
+description = "seaborn: statistical data visualization"
+name = "seaborn"
+optional = false
+python-versions = "*"
+version = "0.9.0"
+
+[package.dependencies]
+matplotlib = ">=1.4.3"
+numpy = ">=1.9.3"
+pandas = ">=0.15.2"
+scipy = ">=0.14.0"
+
+[[package]]
 category = "dev"
 description = "Python helper for Semantic Versioning (http://semver.org/)"
 name = "semver"
@@ -826,7 +840,7 @@ docs = ["sphinx", "jaraco.packaging (>=3.2)", "rst.linker (>=1.9)"]
 testing = ["pathlib2", "contextlib2", "unittest2"]
 
 [metadata]
-content-hash = "11aa1ab88dceb414be24a2bb750d409871254d2b3ead803197720a0f0a231c60"
+content-hash = "6f341f47fe20138de6ec86dcd58764fb7ef9c2fc18464b70fb71584a7b6bb34c"
 python-versions = "^3.6"
 
 [metadata.files]
@@ -1257,6 +1271,10 @@ scipy = [
     {file = "scipy-1.4.0-cp38-cp38-win32.whl", hash = "sha256:461ca398ac6cb46bc89bdbc9f6a81c0302ee370cebe8be682c84a51977e21ded"},
     {file = "scipy-1.4.0-cp38-cp38-win_amd64.whl", hash = "sha256:e588454fd6899d93b73d648d4d90d3d1285c91d08530a6ab94826676c862cabc"},
     {file = "scipy-1.4.0.tar.gz", hash = "sha256:31f7cfa93b01507c935c12b535e24812594002a02a56803d7cd063e9920d25e8"},
+]
+seaborn = [
+    {file = "seaborn-0.9.0-py3-none-any.whl", hash = "sha256:42e627b24e849c2d3bbfd059e00005f6afbc4a76e4895baf44ae23fe8a4b09a5"},
+    {file = "seaborn-0.9.0.tar.gz", hash = "sha256:76c83f794ca320fb6b23a7c6192d5e185a5fcf4758966a0c0a54baee46d41e2f"},
 ]
 semver = [
     {file = "semver-2.9.0-py2.py3-none-any.whl", hash = "sha256:aa1c6be3bf23e346e00c509a7ee87735a7e0fd6b404cf066037cfeab2c770320"},
