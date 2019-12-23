@@ -236,7 +236,7 @@ class MUSSModel:
         test_feature = test_features[model[-1]].values
         return self._predict(test_feature, classifier, scaler, output_prob=output_prob)
 
-    def validate_classifier(self, input_feature, input_class, class_col, feature_names, group_col, **train_kwargs):
+    def validate_classifier(self, input_feature, input_class, class_col, feature_names, placement_names, group_col, **train_kwargs):
         input_feature_arr = input_feature[feature_names].values
         input_class_vec = input_class[class_col].values
         groups = input_class[group_col].values
@@ -247,7 +247,7 @@ class MUSSModel:
             train_class = input_class_vec[train_split]
             test_feature = input_feature_arr[test_split, :]
             model = self._train_classifier(
-                train_feature, train_class, **train_kwargs)
+                train_feature, train_class, feature_names=feature_names, placement_names=placement_names, ** train_kwargs)
             predict_class = self._predict(
                 test_feature, classifier=model[0], scaler=model[1])
             output_class_vec[test_split] = predict_class
