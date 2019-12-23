@@ -1,9 +1,12 @@
 import PySimpleGUI as sg
 import sys
+import os
 from arus.testing import load_test_data
 from arus.models.muss import MUSSModel
+from arus.plugins.metawear.scanner import MetaWearScanner
 import pandas as pd
 import pathos.pools as pools
+import threading
 import time
 import numpy as np
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
@@ -54,7 +57,7 @@ class ArusDemo:
         yield 'Training SVM classifier...', 6
         pool = pools.ProcessPool(nodes=1)
         task = pool.apipe(muss.train_classifier, input_feature,
-                          input_class, class_col='MUSS_22_ACTIVITY_ABBRS', feature_names=combined_feature_names)
+                          input_class, class_col='MUSS_22_ACTIVITY_ABBRS', feature_names=combined_feature_names, placement_names=['DW', 'DA'])
         i = 7
         while not task.ready() and self._global_data['TRAIN_MODEL_RUNNING']:
             yield 'Training SVM classifier...', min((i, 9))
@@ -95,7 +98,7 @@ class ArusDemo:
         yield 'Validating SVM classifier...', 6
         pool = pools.ProcessPool(nodes=1)
         task = pool.apipe(muss.validate_classifier, input_feature,
-                          input_class, class_col='MUSS_22_ACTIVITY_ABBRS', feature_names=combined_feature_names, group_col='PID')
+                          input_class, class_col='MUSS_22_ACTIVITY_ABBRS', feature_names=combined_feature_names, placement_names=['DW', 'DA'], group_col='PID')
         i = 7
         while not task.ready() and self._global_data['VALIDATE_MODEL_RUNNING']:
             yield 'Validating SVM classifier...', min((i, 99))
@@ -107,6 +110,19 @@ class ArusDemo:
                 (training_labels, )
         else:
             return
+
+    def test_initial_model(self):
+        pass
+
+    def get_nearby_devices(self):
+        scanner = MetaWearScanner()
+        pool = pools.ThreadPool(nodes=1)
+        task = pool.apipe(scanner.get_nearby_devices, max_devices=2)
+        while not task.ready():
+            yield False
+        self._global_data['NEARBY_DEVICES'] = task.get()[:2]
+        yield True
+        return
 
     def _get_initial_class_labels(self):
         class_df = self._global_data['INITIAL_CLASS_DF']
@@ -213,7 +229,7 @@ class ArusDemo:
         self._global_data['TRAIN_MODEL_RUNNING'] = True
         for message, progress in self.train_initial_model(training_labels):
             event, _ = popup.read(timeout=500)
-            if event == '_TRAIN_MODEL_CLOSE_' or event == '_TRAIN_MODEL_CLOSE_' or event is None:
+            if event == '_TRAIN_MODEL_CLOSE_' or event is None:
                 break
             progress_bar.UpdateBar(progress)
             message_bar.Update(value=message)
@@ -259,7 +275,7 @@ class ArusDemo:
             self._global_data['VALIDATE_MODEL_RUNNING'] = True
             for message, progress in self.validate_initial_model():
                 event, _ = popup.read(timeout=500)
-                if event == '_VALIDATE_MODEL_CLOSE_' or event == '_VALIDATE_MODEL_CLOSE_' or event is None:
+                if event == '_VALIDATE_MODEL_CLOSE_' or event is None:
                     break
                 progress_bar.UpdateBar(progress)
                 message_bar.Update(value=message)
@@ -280,8 +296,74 @@ class ArusDemo:
                 self._global_data['INITIAL_MODEL_VALIDATION'], report_text)
             while True:
                 event, _ = popup.read(timeout=500)
-                if event == '_VALIDATE_MODEL_CLOSE_' or event == '_VALIDATE_MODEL_CLOSE_' or event is None:
+                if event == '_VALIDATE_MODEL_CLOSE_' or event is None:
                     break
+        popup.close()
+
+    def popup_init_model_testing(self):
+        labels = list(self._global_data['INITIAL_MODEL'][0].classes_)
+        layout = [
+            [sg.Button(button_text='Scan nearby devices',
+                       key='_TEST_MODEL_SCAN_'),
+             sg.VerticalSeparator(pad=None),
+             sg.Column([
+                 [sg.Text('Dom Wrist')],
+                 [sg.Image('./dom_wrist.png', size=(None, None))],
+                 [sg.Text(text='',
+                          key='_TEST_MODEL_WRIST_', size=(20, None))],
+             ]),
+             sg.VerticalSeparator(pad=None),
+             sg.Column([
+                 [sg.Text('Right Ankle')],
+                 [sg.Image('./right_ankle.png', size=(None, None))],
+                 [sg.Text(text='',
+                          key='_TEST_MODEL_ANKLE_', size=(20, None))],
+             ])
+             ],
+            [sg.Text('Please put on the corresponding devices on body at places shown by the pictures.\nMake sure the sensor ID matches the placement you put on.')],
+            [
+                sg.Listbox(
+                    values=labels + ['Any'], default_values=['Any'], select_mode=sg.LISTBOX_SELECT_MODE_BROWSE, enable_events=True, auto_size_text=True, size=(None, min(10, len(labels) + 1)), key='_TEST_MODEL_LABELS_'),
+                sg.VerticalSeparator(pad=None),
+                sg.Column(layout=[
+                          [sg.Text(label, font=('Helvetica', 13), size=(15, None), background_color='green', text_color='white')] for label in labels])
+            ],
+            [
+                sg.Text('Current window: not started')
+            ],
+            [
+                sg.Button(button_text='Start testing',
+                          disabled=True, key='_TEST_MODEL_START_')
+            ],
+            [sg.Button(button_text='Close', key='_TEST_MODEL_CLOSE_')]
+        ]
+        popup = sg.Window('Testing initial model',
+                          layout=layout, finalize=True)
+
+        device_elements = [popup['_TEST_MODEL_WRIST_'],
+                           popup['_TEST_MODEL_ANKLE_']]
+        scan_button = popup['_TEST_MODEL_SCAN_']
+        start_button = popup['_TEST_MODEL_START_']
+        while True:
+            event, values = popup.read(timeout=200)
+            if event == '_TEST_MODEL_SCAN_':
+                scan_button.Update(
+                    text='Scanning...', disabled=True)
+                for ready in self.get_nearby_devices():
+                    event, _ = popup.read(timeout=200)
+                    if event == '_TEST_MODEL_CLOSE_' or event is None or ready:
+                        break
+                device_addrs = self._global_data['NEARBY_DEVICES']
+                for el, addr in zip(device_elements, device_addrs):
+                    el.Update(value=addr)
+                scan_button.Update(
+                    text='Scan nearby devices', disabled=False)
+                if 'NEARBY_DEVICES' in self._global_data:
+                    start_button.Update(disabled=False)
+            elif event == '_TEST_MODEL_CLOSE_' or event is None:
+                break
+            elif event == '_TEST_MODEL_LABELS':
+                self._global_data['INITIAL_MODEL_TEST_LABEL'] = values['_TEST_MODEL_LABELS_']
         popup.close()
 
     def handle_dashboard(self, event, values, dashboard):
@@ -304,7 +386,8 @@ class ArusDemo:
             else:
                 self.popup_init_model_validation(run=True)
             # if self._global_data['INITIAL_MODEL_VALIDATION'] is not None:
-
+        elif event == '_TEST_MODEL_INITIAL_':
+            self.popup_init_model_testing()
         elif event == "_TRAINING_CLASS_LABELS_":  # Only enable buttons when there are two or more classes selected
             num_classes = len(values['_TRAINING_CLASS_LABELS_'])
             if num_classes > 1:
@@ -327,5 +410,6 @@ class ArusDemo:
 
 
 if __name__ == "__main__":
+    os.chdir(os.path.dirname(os.path.realpath(__file__)))
     demo = ArusDemo(title='Arus active training demo')
     demo.start()
