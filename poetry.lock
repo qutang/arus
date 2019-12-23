@@ -76,7 +76,7 @@ six = ">=1.9.0"
 webencodings = "*"
 
 [[package]]
-category = "dev"
+category = "main"
 description = "Python package for providing Mozilla's CA Bundle."
 name = "certifi"
 optional = false
@@ -84,7 +84,7 @@ python-versions = "*"
 version = "2019.11.28"
 
 [[package]]
-category = "dev"
+category = "main"
 description = "Universal encoding detector for Python 2 and 3"
 name = "chardet"
 optional = false
@@ -191,7 +191,7 @@ version = "2.1.14"
 gitdb2 = ">=2.0.0"
 
 [[package]]
-category = "dev"
+category = "main"
 description = "Internationalized Domain Names in Applications (IDNA)"
 name = "idna"
 optional = false
@@ -332,6 +332,18 @@ name = "mccabe"
 optional = false
 python-versions = "*"
 version = "0.6.1"
+
+[[package]]
+category = "main"
+description = "Python bindings for the MetaWear C++ SDK by MbientLab"
+name = "metawear"
+optional = false
+python-versions = ">=2.7"
+version = "0.7.0"
+
+[package.dependencies]
+requests = "*"
+warble = ">=1.1,<2.0"
 
 [[package]]
 category = "dev"
@@ -511,6 +523,18 @@ mccabe = ">=0.6,<0.7"
 
 [[package]]
 category = "main"
+description = "Python client for connecting to MbientLab's MetaWear boards"
+name = "pymetawear"
+optional = false
+python-versions = "*"
+version = "0.12.0"
+
+[package.dependencies]
+metawear = "0.7.0"
+tqdm = "*"
+
+[[package]]
+category = "main"
 description = "Python parsing module"
 name = "pyparsing"
 optional = false
@@ -634,7 +658,7 @@ six = "*"
 md = ["cmarkgfm (>=0.2.0)"]
 
 [[package]]
-category = "dev"
+category = "main"
 description = "Python HTTP for Humans."
 name = "requests"
 optional = false
@@ -736,7 +760,7 @@ python-versions = "*"
 version = "0.10.0"
 
 [[package]]
-category = "dev"
+category = "main"
 description = "Fast, Extensible Progress Meter"
 name = "tqdm"
 optional = false
@@ -776,7 +800,7 @@ python-versions = "*"
 version = "1.4.0"
 
 [[package]]
-category = "dev"
+category = "main"
 description = "HTTP library with thread-safe connection pooling, file post, and more."
 name = "urllib3"
 optional = false
@@ -787,6 +811,14 @@ version = "1.25.7"
 brotli = ["brotlipy (>=0.6.0)"]
 secure = ["pyOpenSSL (>=0.14)", "cryptography (>=1.3.4)", "idna (>=2.0.0)", "certifi", "ipaddress"]
 socks = ["PySocks (>=1.5.6,<1.5.7 || >1.5.7,<2.0)"]
+
+[[package]]
+category = "main"
+description = "Python bindings for MbientLab's Warble library"
+name = "warble"
+optional = false
+python-versions = ">=2.7"
+version = "1.2.0"
 
 [[package]]
 category = "dev"
@@ -840,7 +872,7 @@ docs = ["sphinx", "jaraco.packaging (>=3.2)", "rst.linker (>=1.9)"]
 testing = ["pathlib2", "contextlib2", "unittest2"]
 
 [metadata]
-content-hash = "6f341f47fe20138de6ec86dcd58764fb7ef9c2fc18464b70fb71584a7b6bb34c"
+content-hash = "563e17e252997f663e15568a87438ec309e02c39e14993f1eab74fd26ef790ba"
 python-versions = "^3.6"
 
 [metadata.files]
@@ -1085,6 +1117,9 @@ mccabe = [
     {file = "mccabe-0.6.1-py2.py3-none-any.whl", hash = "sha256:ab8a6258860da4b6677da4bd2fe5dc2c659cff31b3ee4f7f5d64e79735b80d42"},
     {file = "mccabe-0.6.1.tar.gz", hash = "sha256:dd8d182285a0fe56bace7f45b5e7d1a6ebcbf524e8f3bd87eb0f125271b8831f"},
 ]
+metawear = [
+    {file = "metawear-0.7.0.tar.gz", hash = "sha256:5796f7b6c27f1bff71eb26d27c44e47a2cc9ae143af947b6a2e237d139eb2e8e"},
+]
 more-itertools = [
     {file = "more-itertools-8.0.2.tar.gz", hash = "sha256:b84b238cce0d9adad5ed87e745778d20a3f8487d0f0cb8b8a586816c7496458d"},
     {file = "more_itertools-8.0.2-py3-none-any.whl", hash = "sha256:c833ef592a0324bcc6a60e48440da07645063c453880c9477ceb22490aec1564"},
@@ -1181,6 +1216,10 @@ pygments = [
 pylint = [
     {file = "pylint-2.4.4-py3-none-any.whl", hash = "sha256:886e6afc935ea2590b462664b161ca9a5e40168ea99e5300935f6591ad467df4"},
     {file = "pylint-2.4.4.tar.gz", hash = "sha256:3db5468ad013380e987410a8d6956226963aed94ecb5f9d3a28acca6d9ac36cd"},
+]
+pymetawear = [
+    {file = "pymetawear-0.12.0-py3-none-any.whl", hash = "sha256:49e8efe13288489e5b949576717d2966ca5ed61166147f991ce300bbb697acef"},
+    {file = "pymetawear-0.12.0.tar.gz", hash = "sha256:9ae2436fd8055d7e47c79a6695813816c83140b61a4e8aab8a24c52ea339259c"},
 ]
 pyparsing = [
     {file = "pyparsing-2.4.5-py2.py3-none-any.whl", hash = "sha256:20f995ecd72f2a1f4bf6b072b63b22e2eb457836601e76d6e5dfcd75436acc1f"},
@@ -1326,6 +1365,9 @@ typed-ast = [
 urllib3 = [
     {file = "urllib3-1.25.7-py2.py3-none-any.whl", hash = "sha256:a8a318824cc77d1fd4b2bec2ded92646630d7fe8619497b142c84a9e6f5a7293"},
     {file = "urllib3-1.25.7.tar.gz", hash = "sha256:f3c5fd51747d450d4dcf6f923c81f78f811aab8205fda64b0aba34a4e48b0745"},
+]
+warble = [
+    {file = "warble-1.2.0.tar.gz", hash = "sha256:e831ca465f1a6ff60a071f707fd847c282248d7268795816e121d530d52b3ebe"},
 ]
 wcwidth = [
     {file = "wcwidth-0.1.7-py2.py3-none-any.whl", hash = "sha256:f4ebe71925af7b40a864553f761ed559b43544f8f71746c2d756c7fe788ade7c"},

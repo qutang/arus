@@ -33,6 +33,7 @@ matplotlib = "^3.1"
 scikit-learn = "^0.22"
 pysimplegui = "^4.13.0"
 seaborn = "^0.9.0"
+pymetawear = "^0.12.0"
 
 [tool.poetry.dev-dependencies]
 pylint = "^2.4"
