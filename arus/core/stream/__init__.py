@@ -184,19 +184,17 @@ class SlidingWindowStream(Stream):
         ```
     """
 
-    def __init__(self, data_source, window_size, start_time=None, buffer_size=1800, simulate_reality=False, start_time_col=0, stop_time_col=0, name='mhealth-stream'):
+    def __init__(self, data_source, window_size, start_time_col, stop_time_col, start_time=None, simulate_reality=False, name='sliding-window-stream'):
         """
         Args:
             data_source (str or list): filepath or list of filepaths of mhealth sensor data
-            buffer_size (float, optional): the buffer size for file reader in seconds
-            simulate_reality (bool, optional): simulate real world time delay if `True`.
-            start_time_col (int, optional): the start time column index of the data. Defaults to 0.
-            stop_time_col (int, optional): the stop time column index of the data. Defaults to 0.
+            start_time_col (int): the start time column index of the data.
+            stop_time_col (int): the stop time column index of the data.
+            start_time (str or datetime or datetime64 or pandas.Timestamp, optional): The start time of data source. This is used to sync between multiple streams. Default is `None`, the default value would be extracted from the first sample of the loaded data.
             name (str, optional): see `Stream.name`.
         """
         super().__init__(data_source=data_source,
                          window_size=window_size, start_time=start_time, name=name)
-        self._buffer_size = buffer_size
         self._simulate_reality = simulate_reality
         self._start_time_col = start_time_col
         self._stop_time_col = stop_time_col

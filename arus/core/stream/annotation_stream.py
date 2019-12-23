@@ -1,6 +1,7 @@
 from . import SlidingWindowStream
 from ..libs import mhealth_format as mh
 
+
 class AnnotationFileSlidingWindowStream(SlidingWindowStream):
     """Stream to syncly or asyncly load annotation file or files.
 
@@ -24,8 +25,8 @@ class AnnotationFileSlidingWindowStream(SlidingWindowStream):
             simulate_reality (bool, optional): simulate real world time delay if `True`.
             name (str, optional): see `Stream.name`.
         """
-        super().__init__(data_source=data_source, 
-                         window_size=window_size, start_time=start_time, buffer_size=None, simulate_reality=simulate_reality, start_time_col=1, stop_time_col=2, name=name)
+        super().__init__(data_source=data_source,
+                         window_size=window_size, start_time=start_time, simulate_reality=simulate_reality, start_time_col=1, stop_time_col=2, name=name)
         self._storage_format = storage_format
 
     def load_data_source_(self, data_source):
