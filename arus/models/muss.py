@@ -29,6 +29,38 @@ from ..core.accelerometer.features import stats as accel_stats
 from ..core.accelerometer.transformation import vector_magnitude
 from ..core.libs.dsp.filtering import butterworth
 from ..core.libs.num import format_arr
+from ..core.pipeline import Pipeline
+
+
+def muss_inference_processor(chunk_list, **kwargs):
+    import pandas as pd
+    from .muss import MUSSModel
+    model = kwargs['model']
+    muss = MUSSModel()
+    feature_dfs = []
+    placement_names = []
+    for df, st, et, prev_st, prev_et, name in chunk_list:
+        feature_df = muss.compute_features(df, sr=kwargs['sr'], st=st, et=et)
+        feature_dfs.append(feature_df)
+        placement_names.append(name)
+    sorted_feature_dfs = []
+    try:
+        for p in model[-2]:
+            i = placement_names.index(p)
+            sorted_feature_dfs.append(feature_dfs[i])
+    except:
+        print(
+            'Make sure the placements between your data and the trained model are the same.')
+    if len(sorted_feature_dfs) == 1:
+        combined_df = sorted_feature_dfs[0]
+    else:
+        combined_df = muss.combine_features(
+            *sorted_feature_dfs, placement_names=model[-2])
+    filtered_combined_df = muss.select_features(
+        combined_df, feature_names=model[-1])
+    predicted_probs = muss.predict(
+        filtered_combined_df, model=model, output_prob=True)
+    return predicted_probs
 
 
 class MUSSModel:
@@ -61,6 +93,18 @@ class MUSSModel:
                                              [-1] in placement_names, combined_df.columns))
         return combined_df, combined_feature_names
 
+    def select_features(self, input_feature, feature_names='All', group_col=None):
+        if group_col is None:
+            group_col = []
+        else:
+            group_col = [group_col]
+        if feature_names == 'All':
+            return input_feature
+        else:
+            selected_cols = ['HEADER_TIME_STAMP', 'START_TIME', 'STOP_TIME'] + \
+                group_col + feature_names
+            return input_feature[selected_cols]
+
     def sync_feature_and_class(self, input_feature, input_class, group_col=None):
         group_col = [] if group_col is None else [group_col]
         synced_set = pd.merge(input_feature, input_class,
@@ -74,7 +118,7 @@ class MUSSModel:
 
     def compute_features(self, input_data, sr, st, et, subwin_secs=2, ori_unit='rad', activation_threshold=0.2):
         subwin_samples = subwin_secs * sr
-        X = format_arr(input_data.values[:, 1:])
+        X = format_arr(input_data.values[:, 1:4])
         vm_feature_funcs = [
             accel_stats.mean,
             accel_stats.std,
@@ -131,7 +175,7 @@ class MUSSModel:
         filtered_class = input_class[is_valid_groups]
         return filtered_feature, filtered_class
 
-    def _train_classifier(self, input_feature_arr, input_class_vec, C=16, kernel='rbf', gamma=0.25, tol=0.0001, output_probability=True, class_weight='balanced', verbose=False):
+    def _train_classifier(self, input_feature_arr, input_class_vec, placement_names, feature_names, C=16, kernel='rbf', gamma=0.25, tol=0.0001, output_probability=True, class_weight='balanced', verbose=False):
         input_matrix, input_classes = shuffle(
             input_feature_arr, input_class_vec)
         classifier = svm.SVC(
@@ -146,10 +190,11 @@ class MUSSModel:
         scaled_X = scaler.fit_transform(input_matrix)
         model = classifier.fit(scaled_X, input_classes)
         train_accuracy = model.score(scaled_X, input_classes)
-        result = (model, scaler, train_accuracy)
+        result = (model, scaler, train_accuracy,
+                  placement_names, feature_names)
         return result
 
-    def train_classifier(self, input_feature, input_class, class_col, feature_names, save=True, **kwargs):
+    def train_classifier(self, input_feature, input_class, class_col, feature_names, placement_names, save=True, **kwargs):
         """Function to train MUSS classifier given input feature vectors and class labels.
 
         gamma with 5 better than 0.25, especially between ambulation and lying, we should use a larger gamma for higher decaying impact of neighbor samples.
@@ -168,25 +213,28 @@ class MUSSModel:
         """
         input_matrix = input_feature[feature_names].values
         input_classes = input_class[class_col].values
-        result = self._train_classifier(input_matrix, input_classes, **kwargs)
+        result = self._train_classifier(
+            input_matrix, input_classes, placement_names=placement_names, feature_names=feature_names, **kwargs)
         if save:
             self._saved_models.append(result)
         return result
 
-    def _predict(self, test_feature, classifier, scaler):
+    def _predict(self, test_feature, classifier, scaler, output_prob=False):
         scaled_X = scaler.transform(test_feature)
-        predicted_classes = classifier.predict(scaled_X)
-        return predicted_classes
+        if output_prob:
+            return classifier.predict_proba(scaled_X)
+        else:
+            return classifier.predict(scaled_X)
 
-    def predict(self, test_features, model=-1):
+    def predict(self, test_features, model=-1, output_prob=False):
         if type(model) is tuple:
             scaler = model[1]
             classifier = model[0]
         elif type(model) is int:
             scaler = self._saved_models[model][1]
             classifier = self._saved_models[model][0]
-        test_feature = test_features.values[:, 3:]
-        return self._predict(test_feature, classifier, scaler)
+        test_feature = test_features[model[-1]].values
+        return self._predict(test_feature, classifier, scaler, output_prob=output_prob)
 
     def validate_classifier(self, input_feature, input_class, class_col, feature_names, group_col, **train_kwargs):
         input_feature_arr = input_feature[feature_names].values
@@ -235,3 +283,13 @@ class MUSSModel:
 
     def get_classification_report(self, input_class, predict_class, labels):
         return classification_report(input_class, predict_class, labels=labels)
+
+    @staticmethod
+    def get_inference_pipeline(*streams, name='muss-pipeline', model=-1, sr=100, max_processes=2, scheduler='processes'):
+        pipeline = Pipeline(
+            max_processes=max_processes, scheduler=scheduler, name=name)
+        for stream in streams:
+            pipeline.add_stream(stream)
+        pipeline.set_processor(muss_inference_processor,
+                               model=model, sr=sr)
+        return pipeline
