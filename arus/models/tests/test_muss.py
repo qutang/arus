@@ -93,8 +93,8 @@ def test_muss_train_classifier():
     filtered_feature, filtered_class = muss.remove_classes(
         input_feature, input_class, class_col='MUSS_3_POSTURES', classes_to_remove=['Unknown', 'Transition'])
     model = muss.train_classifier(
-        filtered_feature, filtered_class, class_col='MUSS_3_POSTURES', feature_names=muss.get_feature_names())
-    assert len(model) == 3
+        filtered_feature, filtered_class, class_col='MUSS_3_POSTURES', feature_names=muss.get_feature_names(), placement_names=['DW'])
+    assert len(model) == 5
     assert model[2] > 0.7
     assert type(model[0]) is svm.SVC
     assert type(model[1]) is MinMaxScaler
@@ -126,7 +126,7 @@ def test_muss_validate_classifier():
         filtered_feature, filtered_class, group_col='PID', groups_to_remove=groups_to_remove)
 
     test_class, pred_class, acc = muss.validate_classifier(
-        filtered_feature, filtered_class, class_col='MUSS_3_POSTURES', feature_names=muss.get_feature_names(), group_col='PID')
+        filtered_feature, filtered_class, class_col='MUSS_3_POSTURES', feature_names=muss.get_feature_names(), placement_names=['DW'], group_col='PID')
     np.testing.assert_array_equal(test_class.shape, pred_class.shape)
     assert acc > 0.7
 
