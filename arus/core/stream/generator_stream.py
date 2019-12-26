@@ -30,4 +30,4 @@ class GeneratorSlidingWindowStream(SlidingWindowStream):
         generator = config['generator']
         kwargs = config['kwargs']
         for data in generator(**kwargs):
-            yield data
+            self._buffer_data_source(data)

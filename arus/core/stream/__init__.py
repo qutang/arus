@@ -1,26 +1,26 @@
 """Module includes classes that loads external data sources (e.g., file, network port, socket, user inputs and etc.) into a data queue using a separate thread.
 
-## Usage of `arus.core.stream.SensorFileStream` 
+# Usage of `arus.core.stream.SensorFileStream`
 
-### On mhealth sensor files
+# On mhealth sensor files
 
 ```python
 .. include:: ../../../examples/mhealth_stream.py
 ```
 
-### On an Actigraph sensor file
+# On an Actigraph sensor file
 
 ```python
 .. include:: ../../../examples/actigraph_stream.py
 ```
 
-### On mhealth sensor files with real-time delay
+# On mhealth sensor files with real-time delay
 
 ```python
 .. include:: ../../../examples/sensor_stream_simulated_reality.py
 ```
 
-## Usage of `arus.core.stream.AnnotationFileStream`
+# Usage of `arus.core.stream.AnnotationFileStream`
 
 ```python
 .. include:: ../../../examples/annotation_stream.py
@@ -69,6 +69,7 @@ class Stream:
             scheduler (str, optional): The scheduler used to load the data source. It can be either 'thread' or 'sync'. Defaults to 'thread'.
         """
         self._queue = queue.Queue()
+        self._buffer = queue.Queue()
         self._data_source = data_source
         self._window_size = window_size
         self._start_time = parse_timestamp(start_time)
@@ -144,21 +145,31 @@ class Stream:
         self._loading_thread = self._get_thread_for_loading(
             self._data_source)
         self._loading_thread.daemon = True
+        self._chunking_thread = self._get_thread_for_chunking()
+        self._chunking_thread.daemon = True
         self._loading_thread.start()
+        self._chunking_thread.start()
 
     def _get_thread_for_loading(self, data_source):
         return threading.Thread(
-            target=self.load_, name=self.name, args=(data_source,))
+            target=self.load_data_source_, name=self.name + '-loading', args=(data_source,))
+
+    def _get_thread_for_chunking(self):
+        return threading.Thread(
+            target=self.chunk_, name=self.name + '-chunking')
 
     def _put_data_in_queue(self, data):
         self._queue.put(data)
+
+    def _buffer_data_source(self, data):
+        self._buffer.put(data)
 
     def stop(self):
         """Method to stop the loading process
         """
         self.started = False
 
-    def load_(self, data_source):
+    def load_data_source_(self, data_source):
         """Implement this in the sub class.
 
         You may use `Stream._put_data_in_queue` method to put the loaded data into the queue. Must use `None` as stop signal for the data queue iterator.
@@ -167,6 +178,12 @@ class Stream:
             NotImplementedError: Must implement in subclass.
         """
         raise NotImplementedError('Sub class must implement this method')
+
+    def chunk_(self):
+        """By default, this function just transfers data in the buffer to the result queue
+        """
+        for data in self._buffer.get():
+            self._put_data_in_queue(data)
 
 
 class SlidingWindowStream(Stream):
@@ -225,38 +242,39 @@ class SlidingWindowStream(Stream):
                 chunks.append((chunk, window_st, window_et))
         return chunks
 
-    def _load_data_source_into_chunks(self, data_source):
+    def _chunk_loaded_data(self):
         current_window = []
         current_window_st = None
         current_window_et = None
         current_clock = time.time()
         previous_window_st = None
         previous_window_et = None
-        for data in self.load_data_source_(data_source):
-            if self.started:
-                chunks = self._extract_chunks(
-                    data)
-                for chunk, window_st, window_et in chunks:
-                    current_window_st = window_st if current_window_st is None else current_window_st
-                    current_window_et = window_et if current_window_et is None else current_window_et
-                    previous_window_st = None if previous_window_st is None else previous_window_st
-                    previous_window_et = None if previous_window_et is None else previous_window_et
-                    if current_window_st == window_st and current_window_et == window_et:
-                        current_window.append(chunk)
-                    else:
-                        current_window = pd.concat(
-                            current_window, axis=0, sort=False)
-                        current_clock = self._send_data(
-                            current_window, current_clock, current_window_st, current_window_et, previous_window_st, previous_window_et)
-                        current_window = [chunk]
-                        previous_window_st = current_window_st
-                        previous_window_et = current_window_et
-                        current_window_st = window_st
-                        current_window_et = window_et
-            else:
+        while self.started:
+            data = self._buffer.get()
+            if data is None:
                 break
+            chunks = self._extract_chunks(
+                data)
+            for chunk, window_st, window_et in chunks:
+                current_window_st = window_st if current_window_st is None else current_window_st
+                current_window_et = window_et if current_window_et is None else current_window_et
+                previous_window_st = None if previous_window_st is None else previous_window_st
+                previous_window_et = None if previous_window_et is None else previous_window_et
+                if current_window_st == window_st and current_window_et == window_et:
+                    current_window.append(chunk)
+                else:
+                    current_window = pd.concat(
+                        current_window, axis=0, sort=False)
+                    current_clock = self._send_data(
+                        current_window, current_clock, current_window_st, current_window_et, previous_window_st, previous_window_et)
+                    current_window = [chunk]
+                    previous_window_st = current_window_st
+                    previous_window_et = current_window_et
+                    current_window_st = window_st
+                    current_window_et = window_et
 
     def _send_data(self, current_window, current_clock, current_window_st, current_window_et, previous_window_st, previous_window_et):
+        logging.debug('Sending stream data to queue...')
         package = (current_window, current_window_st, current_window_et,
                    previous_window_st, previous_window_et, self.name)
         if self._simulate_reality:
@@ -271,6 +289,6 @@ class SlidingWindowStream(Stream):
             self._put_data_in_queue(package)
             return current_clock
 
-    def load_(self, obj_toload):
-        self._load_data_source_into_chunks(obj_toload)
+    def chunk_(self):
+        self._chunk_loaded_data()
         self._put_data_in_queue(None)

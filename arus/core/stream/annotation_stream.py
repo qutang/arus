@@ -36,7 +36,8 @@ class AnnotationFileSlidingWindowStream(SlidingWindowStream):
             if self._storage_format == 'mhealth':
                 data = mh.io.read_data_csv(
                     filepath, chunksize=None, iterator=False)
-                yield data
+                self._buffer_data_source(data)
             else:
                 raise NotImplementedError(
                     'The given storage format argument is not supported')
+        self._buffer_data_source(None)

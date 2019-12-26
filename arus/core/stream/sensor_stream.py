@@ -44,13 +44,14 @@ class SensorFileSlidingWindowStream(SlidingWindowStream):
                 reader = mh.io.read_data_csv(
                     filepath, chunksize=chunksize, iterator=True)
                 for data in reader:
-                    yield data
+                    self._buffer_data_source(data)
             elif self._storage_format == 'actigraph':
                 reader, format_as_mhealth = mh.io.read_actigraph_csv(
                     filepath, chunksize=chunksize, iterator=True)
                 for data in reader:
                     data = format_as_mhealth(data)
-                    yield data
+                    self._buffer_data_source(data)
             else:
                 raise NotImplementedError(
                     'The given storage format argument is not supported')
+        self._buffer_data_source(None)
