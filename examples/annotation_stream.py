@@ -14,7 +14,7 @@ if __name__ == "__main__":
         data_source=files, window_size=window_size, start_time=None, storage_format='mhealth', name='annotation-stream')
     stream.start()
     chunk_sizes = []
-    for data,_,_,_,_,name in stream.get_iterator():
+    for data, _, _, _, _, name in stream.get_iterator():
         if not data.empty:
             chunk_sizes.append(
                 (data.iloc[-1, 2] - data.iloc[0, 1]) / pd.Timedelta(1, 's'))
