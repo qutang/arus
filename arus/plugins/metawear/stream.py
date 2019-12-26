@@ -26,7 +26,7 @@ class MetaWearSlidingWindowStream(SlidingWindowStream):
         ```
     """
 
-    def __init__(self, data_source, window_size, sr, grange, start_time=None, name='metawear-stream'):
+    def __init__(self, data_source, window_size, sr, grange, start_time=None, max_retries=3, name='metawear-stream'):
         """
         Args:
             data_source (str or list): filepath or list of filepaths of mhealth sensor data
@@ -41,8 +41,9 @@ class MetaWearSlidingWindowStream(SlidingWindowStream):
         self._sr = sr
         self._grange = grange
         self._device = None
-        self._callback_buffer = queue.Queue()
         self._corrector = MetawearTimestampCorrector(sr)
+        self._max_retries = max_retries
+        self._input_count = 0
 
     def get_device_name(self):
         model_code = libmetawear.mbl_mw_metawearboard_get_model(
@@ -56,13 +57,19 @@ class MetaWearSlidingWindowStream(SlidingWindowStream):
         return 'NA'
 
     def _setup_metawear(self, addr):
-        try:
-            self._device = MetaWearClient(addr, connect=True, debug=False)
-            self._device_name = self.get_device_name()
-        except Exception as e:
-            logging.error(str(e))
-            logging.info('Retry connect to ' + addr)
-            time.sleep(1)
+        count_retry = 0
+        while self._device is None:
+            try:
+                self._device = MetaWearClient(addr, connect=True, debug=False)
+                self._device_name = self.get_device_name()
+            except Exception as e:
+                if count_retry == self._max_retries:
+                    raise Exception(
+                        "Max retry reaches, still cannot connect to device: " + addr)
+                logging.error(str(e))
+                logging.info(str(count_retry) + ' retry connect to ' + addr)
+                count_retry = count_retry + 1
+                time.sleep(2)
         logging.info("New metawear connected: {0}".format(
             self._device))
         # high frequency throughput connection setup
@@ -92,15 +99,32 @@ class MetaWearSlidingWindowStream(SlidingWindowStream):
         }
         return pd.DataFrame.from_dict(formatted)
 
+    def stop(self):
+        self._device.led.stop_and_clear()
+        time.sleep(0.5)
+        self._device.accelerometer.notifications(callback=None)
+        self._device.disconnect()
+        super().stop()
+
     def _start_metawear(self):
         def _callback(data):
+            if self._input_count == 0:
+                logging.debug('Accelerometer callback starts running...')
+            self._input_count = self._input_count + 1
             formatted = self._format_data_as_mhealth(data)
-            self._callback_buffer.put(formatted)
+            self._buffer_data_source(formatted)
+            if self._input_count == self._sr:
+                logging.debug('Received data for one second')
+                self._input_count = 1
 
         def _start():
             logging.info('starting accelerometer module...')
             self._device.accelerometer.notifications(
                 callback=_callback)
+            pattern = self._device.led.load_preset_pattern(
+                'solid', repeat_count=0xff)
+            self._device.led.write_pattern(pattern, 'g')
+            self._device.led.play()
         _start()
         return self
 
@@ -121,17 +145,11 @@ class MetaWearSlidingWindowStream(SlidingWindowStream):
             calibrated_z = z
         return (calibrated_x, calibrated_y, calibrated_z)
 
-    def _load_metawear(self, addr):
-        self._setup_metawear(addr)
-        self._start_metawear()
-
     def load_data_source_(self, data_source):
         if isinstance(data_source, str):
             addr = data_source
-            self._load_metawear(addr)
-            while self._started:
-                data = self._callback_buffer.get()
-                yield data
+            self._setup_metawear(addr)
+            self._start_metawear()
         else:
             raise RuntimeError(
                 "Data source should be the mac address of the metawear device")
