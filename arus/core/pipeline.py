@@ -353,7 +353,6 @@ class Pipeline:
                     if data is None:
                         # end of the stream, stop
                         raise StopIteration
-                    print(data)
                     return data
                 except queue.Empty:
                     return None, None, None, None, None, None

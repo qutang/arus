@@ -37,7 +37,7 @@ def prepare_streams():
     start_time = datetime.now()
     stream1 = MetaWearSlidingWindowStream("D2:C6:AF:2B:DB:22", sr=50, grange=8,
                                           window_size=12.8, start_time=start_time, name='DW')
-    stream2 = MetaWearSlidingWindowStream("FF:EE:B8:99:0C:64", sr=50, grange=8,
+    stream2 = MetaWearSlidingWindowStream("FF:EE:B8:99:0C:64", sr=100, grange=8,
                                           window_size=12.8, start_time=start_time, name='DA')
     return stream1, stream2
 
@@ -48,11 +48,25 @@ if __name__ == "__main__":
     muss = MUSSModel()
     model = train_test_classifier(muss)
     stream1, stream2 = prepare_streams()
+    kwargs = {
+        'DW': {
+            'sr': 50
+        },
+        'DA': {
+            'sr': 100
+        },
+        'model': model,
+        'scheduler': 'processes',
+        'max_processes': 2
+    }
     muss_pipeline = muss.get_inference_pipeline(
-        stream1, stream2, model=model, sr=50, scheduler='processes', max_processes=2)
+        stream1, stream2, name='muss-pipeline', **kwargs)
     muss_pipeline.start()
     i = 0
-    for data, _, _, _, _, name in muss_pipeline.get_iterator():
+    for data, _, _, _, _, name in muss_pipeline.get_iterator(timeout=0.2):
+        if data is None:
+            print(data)
+            continue
         i = i + 1
         print(model[0].classes_)
         print(data)

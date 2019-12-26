@@ -40,7 +40,8 @@ def muss_inference_processor(chunk_list, **kwargs):
     feature_dfs = []
     placement_names = []
     for df, st, et, prev_st, prev_et, name in chunk_list:
-        feature_df = muss.compute_features(df, sr=kwargs['sr'], st=st, et=et)
+        feature_df = muss.compute_features(
+            df, sr=kwargs[name]['sr'], st=st, et=et)
         feature_dfs.append(feature_df)
         placement_names.append(name)
     sorted_feature_dfs = []
@@ -285,11 +286,10 @@ class MUSSModel:
         return classification_report(input_class, predict_class, labels=labels)
 
     @staticmethod
-    def get_inference_pipeline(*streams, name='muss-pipeline', model=-1, sr=100, max_processes=2, scheduler='processes'):
+    def get_inference_pipeline(*streams, name='muss-pipeline', **kwargs):
         pipeline = Pipeline(
-            max_processes=max_processes, scheduler=scheduler, name=name)
+            max_processes=kwargs['max_processes'], scheduler=kwargs['scheduler'], name=name)
         for stream in streams:
             pipeline.add_stream(stream)
-        pipeline.set_processor(muss_inference_processor,
-                               model=model, sr=sr)
+        pipeline.set_processor(muss_inference_processor, **kwargs)
         return pipeline
