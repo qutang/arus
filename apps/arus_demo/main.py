@@ -1,21 +1,28 @@
-import PySimpleGUI as sg
-import sys
+import logging
 import os
-from arus.testing import load_test_data
-from arus.models.muss import MUSSModel
-from arus.plugins.metawear.scanner import MetaWearScanner
-import pandas as pd
-import pathos.pools as pools
+import sys
 import threading
 import time
+from datetime import datetime
+
 import numpy as np
+import pandas as pd
+import pathos.pools as pools
+import PySimpleGUI as sg
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+
+from arus.core.pipeline import Pipeline
+from arus.models.muss import MUSSModel
+from arus.plugins.metawear.scanner import MetaWearScanner
+from arus.plugins.metawear.stream import MetaWearSlidingWindowStream
+from arus.testing import load_test_data
 
 
 class ArusDemo:
     def __init__(self, title):
         self._title = title
         self._global_data = {'TRAIN_MODEL_RUNNING': False}
+        sg.ChangeLookAndFeel('Reddit')
 
     def load_initial_data(self):
         class_filepath, _ = load_test_data(file_type='mhealth', sensor_type='class_labels',
@@ -112,7 +119,20 @@ class ArusDemo:
             return
 
     def test_initial_model(self):
-        pass
+        muss = MUSSModel()
+        device_addrs = self._global_data['NEARBY_DEVICES']
+        streams = []
+        start_time = datetime.now()
+        for addr, placement in zip(device_addrs, ['DW', 'DA']):
+            stream = MetaWearSlidingWindowStream(
+                addr, window_size=4, sr=50, grange=8, start_time=start_time, name=placement)
+            streams.append(stream)
+        pipeline = muss.get_inference_pipeline(
+            *streams, name='muss-pipeline', model=self._global_data['INITIAL_MODEL'], DA={'sr': 50}, DW={'sr': 50}, max_processes=2, scheduler='processes')
+        self._global_data['INITIAL_MODEL_PIPELINE'] = pipeline
+        pipeline.start()
+        for data, st, et, _, _, name in pipeline.get_iterator(timeout=0.1):
+            yield data, st, et
 
     def get_nearby_devices(self):
         scanner = MetaWearScanner()
@@ -300,8 +320,20 @@ class ArusDemo:
                     break
         popup.close()
 
+    def _display_prediction_panel(self, labels, elements=[]):
+        if len(elements) == 0:
+            for label in labels:
+                elements.append(sg.Text(label, font=('Helvetica', 13), size=(
+                    15, None), background_color='green', text_color='white'))
+            return elements
+        else:
+            for label, el in zip(labels, elements):
+                el.Update(value=label)
+
     def popup_init_model_testing(self):
         labels = list(self._global_data['INITIAL_MODEL'][0].classes_)
+        prediction_panel_elements = self._display_prediction_panel(
+            labels, elements=[])
         layout = [
             [sg.Button(button_text='Scan nearby devices',
                        key='_TEST_MODEL_SCAN_'),
@@ -325,8 +357,7 @@ class ArusDemo:
                 sg.Listbox(
                     values=labels + ['Any'], default_values=['Any'], select_mode=sg.LISTBOX_SELECT_MODE_BROWSE, enable_events=True, auto_size_text=True, size=(None, min(10, len(labels) + 1)), key='_TEST_MODEL_LABELS_'),
                 sg.VerticalSeparator(pad=None),
-                sg.Column(layout=[
-                          [sg.Text(label, font=('Helvetica', 13), size=(15, None), background_color='green', text_color='white')] for label in labels])
+                sg.Column(layout=[prediction_panel_elements])
             ],
             [
                 sg.Text('Current window: not started')
@@ -344,6 +375,7 @@ class ArusDemo:
                            popup['_TEST_MODEL_ANKLE_']]
         scan_button = popup['_TEST_MODEL_SCAN_']
         start_button = popup['_TEST_MODEL_START_']
+
         while True:
             event, values = popup.read(timeout=200)
             if event == '_TEST_MODEL_SCAN_':
@@ -360,10 +392,22 @@ class ArusDemo:
                     text='Scan nearby devices', disabled=False)
                 if 'NEARBY_DEVICES' in self._global_data:
                     start_button.Update(disabled=False)
-            elif event == '_TEST_MODEL_CLOSE_' or event is None:
-                break
-            elif event == '_TEST_MODEL_LABELS':
+            elif event == '_TEST_MODEL_LABELS_':
                 self._global_data['INITIAL_MODEL_TEST_LABEL'] = values['_TEST_MODEL_LABELS_']
+            elif event == '_TEST_MODEL_START_':
+                classes = self._global_data['INITIAL_MODEL'][0].classes_
+                for predictions, st, et in self.test_initial_model():
+                    event, _ = popup.read(timeout=200)
+                    if event == '_TEST_MODEL_CLOSE_' or event is None:
+                        break
+                    print(predictions)
+                    if predictions is not None:
+                        self._display_prediction_panel(
+                            predictions[0].tolist(), elements=prediction_panel_elements)
+                p = self._global_data['INITIAL_MODEL_PIPELINE']
+                print(p.stop())
+            if event == '_TEST_MODEL_CLOSE_' or event is None:
+                break
         popup.close()
 
     def handle_dashboard(self, event, values, dashboard):
@@ -410,6 +454,8 @@ class ArusDemo:
 
 
 if __name__ == "__main__":
+    logging.basicConfig(
+        level=logging.DEBUG, format='[%(levelname)s]%(asctime)s <P%(process)d-%(threadName)s> %(message)s')
     os.chdir(os.path.dirname(os.path.realpath(__file__)))
     demo = ArusDemo(title='Arus active training demo')
     demo.start()
