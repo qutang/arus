@@ -54,7 +54,7 @@ def muss_inference_processor(chunk_list, **kwargs):
     if len(sorted_feature_dfs) == 1:
         combined_df = sorted_feature_dfs[0]
     else:
-        combined_df = muss.combine_features(
+        combined_df, feature_names = muss.combine_features(
             *sorted_feature_dfs, placement_names=model[-2])
     filtered_combined_df = muss.select_features(
         combined_df, feature_names=model[-1])
