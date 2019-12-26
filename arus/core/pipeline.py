@@ -111,7 +111,7 @@ class Pipeline:
         self._started = value
 
     def stop(self):
-        self.finish_tasks_and_stop()
+        return self.finish_tasks_and_stop()
 
     def finish_tasks_and_stop(self):
         """Gracefully shutdown the pipeline using the following procedure.
@@ -130,12 +130,16 @@ class Pipeline:
         """
         try:
             self.started = False
+            time.sleep(0.2)
             self._process_tasks.join()
+            time.sleep(0.2)
             self._stop_sender = True
+            time.sleep(0.2)
             if self._pool is not None:
                 self._pool.close()
                 self._pool.join()
                 self._pool = None
+            time.sleep(0.2)
             for stream in self._streams:
                 stream.stop()
         except Exception as e:
@@ -243,7 +247,7 @@ class Pipeline:
         while not self._stop_sender:
             try:
                 task, st, et, prev_st, prev_et, name = self._process_tasks.get(
-                    block=False, timeout=1)
+                    block=True, timeout=0.1)
                 if self._max_processes == 0:
                     result = task
                 else:
@@ -258,6 +262,8 @@ class Pipeline:
         self._put_result_in_queue(None)
 
     def _process_synced_chunks(self, st, et, prev_st, prev_et, name):
+        if st.timestamp() not in self._chunks:
+            return
         chunk_list = self._chunks[st.timestamp()]
         if len(chunk_list) == len(self._streams):
             # this is the last stream chunk for st
@@ -326,7 +332,7 @@ class Pipeline:
             stream.start()
         self.started = True
 
-    def get_iterator(self):
+    def get_iterator(self, timeout=None):
         """Iterator for the processed results
 
         Raises:
@@ -342,9 +348,13 @@ class Pipeline:
                 return self
 
             def __next__(self):
-                data = data_queue.get()
-                if data is None:
-                    # end of the stream, stop
-                    raise StopIteration
-                return data
+                try:
+                    data = data_queue.get(timeout=timeout)
+                    if data is None:
+                        # end of the stream, stop
+                        raise StopIteration
+                    print(data)
+                    return data
+                except queue.Empty:
+                    return None, None, None, None, None, None
         return _result_iterator()
