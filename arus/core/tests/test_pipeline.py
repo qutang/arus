@@ -27,7 +27,6 @@ def test_Pipeline():
         "generator": generator.normal_dist,
         'kwargs': {
             "grange": 8,
-            "start_time": None,
             "buffer_size": 100,
             "sleep_interval": 0,
             "sigma": 1,
@@ -38,7 +37,7 @@ def test_Pipeline():
     window_size = 12.8
     start_time = datetime.now()
     stream = GeneratorSlidingWindowStream(
-        stream_config, window_size=window_size, start_time=start_time, name='stream-1')
+        stream_config, window_size=window_size, name='stream-1')
 
     pipeline = Pipeline(max_processes=2, scheduler='threads',
                         name='single-stream-pipeline')
@@ -56,7 +55,7 @@ def test_Pipeline():
         results.append(result)
         if len(results) == 5:
             break
-    pipeline.finish_tasks_and_stop()
+    pipeline.stop()
     results = pd.concat(results, axis=0, sort=False)
     durations = (results['WINDOW_ET'] -
                  results['WINDOW_ST']) / pd.Timedelta(1, unit='S')
@@ -67,7 +66,6 @@ def test_Pipeline():
         "generator": generator.normal_dist,
         'kwargs': {
             "grange": 4,
-            "start_time": None,
             "buffer_size": 400,
             "sleep_interval": 1,
             "sigma": 2,
@@ -75,27 +73,11 @@ def test_Pipeline():
         }
     }
 
-    stream3_config = {
-        "generator": generator.normal_dist,
-        'kwargs': {
-            "grange": 4,
-            "start_time": None,
-            "buffer_size": 800,
-            "sleep_interval": 1,
-            "sigma": 2,
-            "sr": 80
-        }
-    }
-
     start_time = datetime.now()
     stream2 = GeneratorSlidingWindowStream(
-        stream2_config, window_size=window_size, start_time=start_time, name='stream-2')
-    stream3 = GeneratorSlidingWindowStream(
-        stream3_config, window_size=window_size, start_time=start_time, name='stream-3')
-    pipeline.get_stream('stream-1')._start_time = start_time
+        stream2_config, window_size=window_size, name='stream-2')
     pipeline.add_stream(stream2)
-    pipeline.add_stream(stream3)
-    pipeline.start()
+    pipeline.start(start_time=start_time)
 
     results = []
     for result, st, et, prev_st, prev_et, name in pipeline.get_iterator():
@@ -109,7 +91,7 @@ def test_Pipeline():
         results.append(result)
         if len(results) == 5:
             break
-    pipeline.finish_tasks_and_stop()
+    pipeline.stop()
     results = pd.concat(results, axis=0, sort=False)
     durations = (results['WINDOW_ET'] -
                  results['WINDOW_ST']) / pd.Timedelta(1, unit='S')
