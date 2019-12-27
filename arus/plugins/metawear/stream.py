@@ -26,7 +26,7 @@ class MetaWearSlidingWindowStream(SlidingWindowStream):
         ```
     """
 
-    def __init__(self, data_source, window_size, sr, grange, start_time=None, max_retries=3, name='metawear-stream'):
+    def __init__(self, data_source, window_size, sr, grange, max_retries=3, name='metawear-stream'):
         """
         Args:
             data_source (str or list): filepath or list of filepaths of mhealth sensor data
@@ -37,13 +37,14 @@ class MetaWearSlidingWindowStream(SlidingWindowStream):
             name (str, optional): see `Stream.name`.
         """
         super().__init__(data_source=data_source,
-                         window_size=window_size, start_time=start_time, simulate_reality=False, start_time_col=0, stop_time_col=0, name=name)
+                         window_size=window_size, simulate_reality=False, start_time_col=0, stop_time_col=0, name=name)
         self._sr = sr
         self._grange = grange
         self._device = None
         self._corrector = MetawearTimestampCorrector(sr)
         self._max_retries = max_retries
         self._input_count = 0
+        self._callback_started = False
 
     def get_device_name(self):
         model_code = libmetawear.mbl_mw_metawearboard_get_model(
@@ -72,6 +73,8 @@ class MetaWearSlidingWindowStream(SlidingWindowStream):
                 time.sleep(2)
         logging.info("New metawear connected: {0}".format(
             self._device))
+        libmetawear.mbl_mw_metawearboard_set_time_for_response(
+            self._device.mw.board, 4000)
         # high frequency throughput connection setup
         self._device.settings.set_connection_parameters(
             7.5, 7.5, 0, 6000)
@@ -103,13 +106,20 @@ class MetaWearSlidingWindowStream(SlidingWindowStream):
         self._device.led.stop_and_clear()
         time.sleep(0.5)
         self._device.accelerometer.notifications(callback=None)
+        time.sleep(0.5)
         self._device.disconnect()
+        logging.debug('Disconnected.')
+        self._callback_started = False
+        self._buffer_data_source(None)
         super().stop()
 
     def _start_metawear(self):
+        self._input_count = 0
+
         def _callback(data):
             if self._input_count == 0:
                 logging.debug('Accelerometer callback starts running...')
+                self._callback_started = True
             self._input_count = self._input_count + 1
             formatted = self._format_data_as_mhealth(data)
             self._buffer_data_source(formatted)
@@ -121,12 +131,16 @@ class MetaWearSlidingWindowStream(SlidingWindowStream):
             logging.info('starting accelerometer module...')
             self._device.accelerometer.notifications(
                 callback=_callback)
-            pattern = self._device.led.load_preset_pattern(
-                'solid', repeat_count=0xff)
-            self._device.led.write_pattern(pattern, 'g')
-            self._device.led.play()
-        _start()
-        return self
+            time.sleep(2)
+            if not self._callback_started:
+                return False
+            else:
+                pattern = self._device.led.load_preset_pattern(
+                    'solid', repeat_count=0xff)
+                self._device.led.write_pattern(pattern, 'g')
+                self._device.led.play()
+                return True
+        return _start()
 
     def _calibrate_coord_system(self, data):
         # axis values are calibrated according to the coordinate system of Actigraph GT9X
