@@ -6,7 +6,7 @@ if __name__ == "__main__":
     logging.basicConfig(
         level=logging.DEBUG, format='[%(levelname)s]%(asctime)s <P%(process)d-%(threadName)s> %(message)s')
     stream = MetaWearSlidingWindowStream("FF:EE:B8:99:0C:64", sr=50, grange=8,
-                                         window_size=4, start_time=datetime.now(), max_retries=10, name='metawear-stream')
+                                         window_size=4, max_retries=10, name='metawear-stream')
     stream.start()
     i = 0
     for data, _, _, _, _, _ in stream.get_iterator():

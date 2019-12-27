@@ -74,7 +74,12 @@ if __name__ == "__main__":
     model = train_test_classifier(muss)
     stream1, stream2 = prepare_streams()
     muss_pipeline = muss.get_inference_pipeline(
-        stream1, stream2, model=model, sr=50, scheduler='processes', max_processes=2)
+        stream1, stream2, model=model, scheduler='processes', max_processes=2, DW={'sr': 50}, DA={'sr': 50})
     muss_pipeline.start()
+    i = 0
     for data, _, _, _, _, name in muss_pipeline.get_iterator():
+        i = i + 1
         print(data)
+        if i == 5:
+            break
+    muss_pipeline.stop()

@@ -5,6 +5,7 @@ from arus.core.annotation import generator as annot_generator
 from datetime import datetime
 import pandas as pd
 import numpy as np
+import logging
 
 
 def _pipeline_test_processor(chunk_list, **kwargs):
@@ -28,12 +29,13 @@ def _pipeline_test_processor(chunk_list, **kwargs):
 
 
 if __name__ == "__main__":
+    logging.basicConfig(
+        level=logging.DEBUG, format='[%(levelname)s]%(asctime)s <P%(process)d-%(threadName)s> %(message)s')
     # test on multiple streams
     stream1_config = {
         "generator": accel_generator.normal_dist,
         'kwargs': {
             "grange": 8,
-            "start_time": None,
             "buffer_size": 100,
             "sleep_interval": 0,
             "sigma": 1,
@@ -45,7 +47,6 @@ if __name__ == "__main__":
         "generator": annot_generator.normal_dist,
         'kwargs': {
             "duration_mu": 8,
-            "start_time": None,
             "duration_sigma": 2,
             "sleep_interval": 1,
             "num_mu": 3,
@@ -57,17 +58,18 @@ if __name__ == "__main__":
     sr = 80
     start_time = datetime.now()
     stream1 = GeneratorSlidingWindowStream(
-        stream1_config, window_size=window_size, start_time=start_time, start_time_col=0, stop_time_col=0, name='sensor-stream')
+        stream1_config, window_size=window_size, start_time_col=0, stop_time_col=0, name='sensor-stream')
     stream2 = GeneratorSlidingWindowStream(
-        stream2_config, window_size=window_size, start_time=start_time, buffer_size=None, start_time_col=1, stop_time_col=2, name='annotation-stream')
+        stream2_config, window_size=window_size, start_time_col=1, stop_time_col=2, name='annotation-stream')
 
     pipeline = Pipeline(max_processes=2)
     pipeline.add_stream(stream1)
     pipeline.add_stream(stream2)
     pipeline.set_processor(_pipeline_test_processor)
-    pipeline.start()
+    pipeline.start(start_time=start_time)
     results = []
     for result, st, et, prev_st, prev_et, name in pipeline.get_iterator():
+        print(st)
         result['WINDOW_ST'] = st
         result['WINDOW_ET'] = et
         result['PREV_WINDOW_ST'] = prev_st
@@ -76,5 +78,5 @@ if __name__ == "__main__":
         results.append(result)
         if len(results) == 10:
             break
-    pipeline.finish_tasks_and_stop()
+    pipeline.stop()
     print(pd.concat(results, axis=0, sort=False))

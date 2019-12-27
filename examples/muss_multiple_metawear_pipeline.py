@@ -63,11 +63,11 @@ if __name__ == "__main__":
         stream1, stream2, name='muss-pipeline', **kwargs)
     muss_pipeline.start()
     i = 0
-    for data, _, _, _, _, name in muss_pipeline.get_iterator(timeout=0.2):
+    for data, st, et, _, _, name in muss_pipeline.get_iterator(timeout=0.2):
         if data is None:
-            print(data)
             continue
         i = i + 1
+        print(str(st) + ' - ' + str(et))
         print(model[0].classes_)
         print(data)
         if i == 5:

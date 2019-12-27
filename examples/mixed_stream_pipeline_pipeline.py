@@ -50,7 +50,6 @@ if __name__ == "__main__":
         "generator": accel_generator.normal_dist,
         'kwargs': {
             "grange": 8,
-            "start_time": None,
             "buffer_size": 100,
             "sleep_interval": 0,
             "sigma": 1,
@@ -62,7 +61,6 @@ if __name__ == "__main__":
         "generator": annot_generator.normal_dist,
         'kwargs': {
             "duration_mu": 8,
-            "start_time": None,
             "duration_sigma": 2,
             "sleep_interval": 1,
             "num_mu": 3,
@@ -74,9 +72,9 @@ if __name__ == "__main__":
     sr = 80
     start_time = datetime.now()
     stream1 = GeneratorSlidingWindowStream(
-        stream1_config, window_size=window_size, start_time=start_time, start_time_col=0, stop_time_col=0, name='sensor-stream')
+        stream1_config, window_size=window_size, start_time_col=0, stop_time_col=0, name='sensor-stream')
     stream2 = GeneratorSlidingWindowStream(
-        stream2_config, window_size=window_size, start_time=start_time, buffer_size=None, start_time_col=1, stop_time_col=2, name='annotation-stream')
+        stream2_config, window_size=window_size, start_time_col=1, stop_time_col=2, name='annotation-stream')
 
     feat_pipeline = Pipeline(
         max_processes=2, scheduler='processes', name='feature-pipeline')
@@ -87,12 +85,12 @@ if __name__ == "__main__":
     master_pipeline.add_stream(stream2)
     master_pipeline.add_stream(feat_pipeline)
     master_pipeline.set_processor(_master_pipeline_processor)
-    master_pipeline.start()
+    master_pipeline.start(start_time=start_time)
     results = []
     for result, st, et, prev_st, prev_et, name in master_pipeline.get_iterator():
         results.append(result)
         if len(results) == 10:
             break
         print(len(results))
-    print(master_pipeline.finish_tasks_and_stop())
+    print(master_pipeline.stop())
     print(pd.concat(results, axis=0, sort=False))
