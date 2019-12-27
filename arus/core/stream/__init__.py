@@ -58,13 +58,12 @@ class Stream:
         stream (Stream): an instance object of type `Stream`.
     """
 
-    def __init__(self, data_source, window_size, start_time=None, name='default-stream', scheduler='thread'):
+    def __init__(self, data_source, window_size, name='default-stream', scheduler='thread'):
         """
 
         Args:
             data_source (object): An object that may be loaded into memory. The type of the object is decided by the implementation of subclass.
             window_size (float): Number of seconds. Each data in the queue would be a short chunk of data lasting `window_size` seconds loaded from the `data_source`.
-            start_time (str or datetime or datetime64 or pandas.Timestamp, optional): The start time of data source. This is used to sync between multiple streams. If it is `None`, the default value would be extracted from the first sample of the loaded data.
             name (str, optional): The name of the data stream will also be used as the name of the sub-thread that is used to load data. Defaults to 'default-stream'.
             scheduler (str, optional): The scheduler used to load the data source. It can be either 'thread' or 'sync'. Defaults to 'thread'.
         """
@@ -72,7 +71,6 @@ class Stream:
         self._buffer = queue.Queue()
         self._data_source = data_source
         self._window_size = window_size
-        self._start_time = parse_timestamp(start_time)
         self.started = False
         self.name = name
         self._scheduler = scheduler
@@ -138,9 +136,12 @@ class Stream:
             self.stop()
         return data
 
-    def start(self):
+    def start(self, start_time=None):
         """Method to start loading data from the provided data source.
+
+        start_time (str or datetime or datetime64 or pandas.Timestamp, optional): The start time of data source. This is used to sync between multiple streams. If it is `None`, the default value would be extracted from the first sample of the loaded data.
         """
+        self._start_time = parse_timestamp(start_time)
         self.started = True
         self._loading_thread = self._get_thread_for_loading(
             self._data_source)
@@ -168,6 +169,13 @@ class Stream:
         """Method to stop the loading process
         """
         self.started = False
+        self._chunking_thread.join()
+        self._loading_thread.join()
+        with self._queue.mutex:
+            self._queue.queue.clear()
+        with self._buffer.mutex:
+            self._buffer.queue.clear()
+        self._start_time = None
 
     def load_data_source_(self, data_source):
         """Implement this in the sub class.
@@ -201,17 +209,16 @@ class SlidingWindowStream(Stream):
         ```
     """
 
-    def __init__(self, data_source, window_size, start_time_col, stop_time_col, start_time=None, simulate_reality=False, name='sliding-window-stream'):
+    def __init__(self, data_source, window_size, start_time_col, stop_time_col,  simulate_reality=False, name='sliding-window-stream'):
         """
         Args:
             data_source (str or list): filepath or list of filepaths of mhealth sensor data
             start_time_col (int): the start time column index of the data.
             stop_time_col (int): the stop time column index of the data.
-            start_time (str or datetime or datetime64 or pandas.Timestamp, optional): The start time of data source. This is used to sync between multiple streams. Default is `None`, the default value would be extracted from the first sample of the loaded data.
             name (str, optional): see `Stream.name`.
         """
         super().__init__(data_source=data_source,
-                         window_size=window_size, start_time=start_time, name=name)
+                         window_size=window_size, name=name)
         self._simulate_reality = simulate_reality
         self._start_time_col = start_time_col
         self._stop_time_col = stop_time_col
@@ -252,10 +259,13 @@ class SlidingWindowStream(Stream):
         while self.started:
             data = self._buffer.get()
             if data is None:
+                self._put_data_in_queue(None)
                 break
             chunks = self._extract_chunks(
                 data)
             for chunk, window_st, window_et in chunks:
+                if not self.started:
+                    break
                 current_window_st = window_st if current_window_st is None else current_window_st
                 current_window_et = window_et if current_window_et is None else current_window_et
                 previous_window_st = None if previous_window_st is None else previous_window_st
@@ -278,11 +288,12 @@ class SlidingWindowStream(Stream):
         package = (current_window, current_window_st, current_window_et,
                    previous_window_st, previous_window_et, self.name)
         if self._simulate_reality:
-            delay = (current_window_st - previous_window_st) / \
-                np.timedelta64(1, 's')
-            logging.debug('Delay for ' + str(delay) +
-                          ' seconds to simulate reality')
-            time.sleep(max(current_clock + delay - time.time(), 0))
+            if previous_window_st is not None:
+                delay = (current_window_st - previous_window_st) / \
+                    np.timedelta64(1, 's')
+                logging.debug('Delay for ' + str(delay) +
+                              ' seconds to simulate reality')
+                time.sleep(max(current_clock + delay - time.time(), 0))
             self._put_data_in_queue(package)
             return time.time()
         else:
@@ -291,4 +302,3 @@ class SlidingWindowStream(Stream):
 
     def chunk_(self):
         self._chunk_loaded_data()
-        self._put_data_in_queue(None)

@@ -19,7 +19,7 @@ class SensorFileSlidingWindowStream(SlidingWindowStream):
         ```
     """
 
-    def __init__(self, data_source, window_size, sr, start_time=None, buffer_size=1800, storage_format='mhealth', simulate_reality=False, name='mhealth-stream'):
+    def __init__(self, data_source, window_size, sr, buffer_size=1800, storage_format='mhealth', simulate_reality=False, name='mhealth-stream'):
         """
         Args:
             data_source (str or list): filepath or list of filepaths of mhealth sensor data
@@ -30,7 +30,7 @@ class SensorFileSlidingWindowStream(SlidingWindowStream):
             name (str, optional): see `Stream.name`.
         """
         super().__init__(data_source=data_source,
-                         window_size=window_size, start_time=start_time, simulate_reality=simulate_reality, start_time_col=0, stop_time_col=0, name=name)
+                         window_size=window_size, simulate_reality=simulate_reality, start_time_col=0, stop_time_col=0, name=name)
         self._buffer_size = buffer_size
         self._storage_format = storage_format
         self._sr = sr
@@ -54,4 +54,5 @@ class SensorFileSlidingWindowStream(SlidingWindowStream):
             else:
                 raise NotImplementedError(
                     'The given storage format argument is not supported')
+        logging.debug('Stoploading thread')
         self._buffer_data_source(None)
