@@ -1,3 +1,9 @@
+"""
+Demonstration of the usage of pipeline
+================================================================================
+
+"""
+
 from arus.models.muss import MUSSModel
 from arus.testing import load_test_data
 import pandas as pd

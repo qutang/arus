@@ -1,3 +1,7 @@
+"""
+Demonstration of the usage of MetaWearScanner
+====================================================
+"""
 from arus.plugins.metawear.scanner import MetaWearScanner
 
 

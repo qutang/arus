@@ -1,3 +1,8 @@
+"""
+Stream using annotation generator
+=================================
+"""
+
 from arus.core.annotation.generator import normal_dist
 from arus.core.stream.generator_stream import GeneratorSlidingWindowStream
 

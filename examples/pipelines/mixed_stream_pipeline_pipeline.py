@@ -1,3 +1,10 @@
+"""
+Demonstration of the usage of arus.core.Pipeline (2)
+====================================================
+
+The pipeline uses one annotation stream and one sensor stream as input.
+"""
+
 from arus.core.pipeline import Pipeline
 from arus.core.stream.generator_stream import GeneratorSlidingWindowStream
 from arus.core.accelerometer import generator as accel_generator

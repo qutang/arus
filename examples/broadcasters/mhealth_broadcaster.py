@@ -1,3 +1,8 @@
+"""
+Demonstration of the usage of MhealthFileBroadcaster
+====================================================
+"""
+
 from arus.core.broadcaster import MhealthFileBroadcaster
 from arus.core.stream import SensorFileStream
 from arus.core.libs.mhealth_format.logging import display_start_and_stop_time

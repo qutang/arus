@@ -1,3 +1,9 @@
+"""
+Demonstration of the usage of arus.core.stream.GeneratorSlidingWindowStream
+================================================================================
+
+"""
+
 from arus.core.stream.generator_stream import GeneratorSlidingWindowStream
 from arus.core.accelerometer.generator import normal_dist
 

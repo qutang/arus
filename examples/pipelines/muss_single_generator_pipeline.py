@@ -1,3 +1,10 @@
+"""
+Demonstration of the usage of arus.models.muss.get_inference_pipeline
+=====================================================================
+
+The pipeline uses a single sensor generator stream.
+"""
+
 from arus.models.muss import MUSSModel
 from arus.testing import load_test_data
 import pandas as pd

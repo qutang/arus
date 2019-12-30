@@ -1,3 +1,10 @@
+"""
+Demonstration of the usage of arus.core.pipeline
+=====================================================================
+
+This example shows how to start, stop, pause a pipeline.
+"""
+
 from arus.core.pipeline import Pipeline
 from arus.core.stream.generator_stream import GeneratorSlidingWindowStream
 from arus.core.accelerometer import generator

@@ -5,6 +5,7 @@ import os
 print('remove old')
 shutil.rmtree('./docs/build', ignore_errors=True)
 shutil.rmtree('./docs/source/generated', ignore_errors=True)
+shutil.rmtree('./docs/source/examples', ignore_errors=True)
 
 print('building documentations')
 # build docs

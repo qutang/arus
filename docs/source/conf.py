@@ -14,6 +14,8 @@
 # import sys
 # sys.path.insert(0, os.path.abspath('../..'))
 import sphinx_bootstrap_theme
+import re
+import os
 from arus import __version__
 
 # -- Project information -----------------------------------------------------
@@ -34,12 +36,19 @@ release = version
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
+    'sphinx_gallery.gen_gallery',
     'sphinx.ext.autosummary',
     'sphinx.ext.coverage', 
     'sphinx.ext.napoleon',
     'sphinx.ext.viewcode',
     'm2r',
 ]
+
+sphinx_gallery_conf = {
+     'examples_dirs': '../../examples',   # path to your example scripts
+     'gallery_dirs': 'examples',  # path to where to save gallery generated output
+     'filename_pattern': r'((plot)|(run))_'
+}
 
 autosummary_generate = True
 autosummary_generate_overwrite = True
@@ -90,6 +99,7 @@ html_theme_options = {
     # Note the "1" or "True" value above as the third argument to indicate
     # an arbitrary url.
     'navbar_links': [
+        ('Examples', "examples/index"),
         ('References', "references"),
         ("Changelog", "news"),
     ],

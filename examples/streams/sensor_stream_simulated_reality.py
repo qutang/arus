@@ -1,3 +1,9 @@
+"""
+Demonstration of the usage of arus.core.stream.GeneratorSlidingWindowStream
+================================================================================
+
+"""
+
 from arus.core.stream.sensor_stream import SensorFileSlidingWindowStream
 from arus.testing import load_test_data
 from glob import glob

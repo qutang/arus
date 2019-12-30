@@ -1,7 +1,14 @@
+"""
+Demonstration of the usage of arus.models.muss.get_inference_pipeline
+=====================================================================
+
+The pipeline uses multiple sensor generator streams.
+"""
+
 from arus.models.muss import MUSSModel
 from arus.testing import load_test_data
 import pandas as pd
-from arus.plugins.metawear.stream import MetaWearSlidingWindowStream
+from arus.core.stream.generator_stream import GeneratorSlidingWindowStream
 from arus.core.accelerometer import generator
 from datetime import datetime
 import logging
@@ -34,11 +41,36 @@ def train_test_classifier(muss):
 
 
 def prepare_streams():
+    stream1_config = {
+        "generator": generator.normal_dist,
+        'kwargs': {
+            "grange": 8,
+            "start_time": None,
+            "buffer_size": 100,
+            "sleep_interval": 0,
+            "sigma": 1,
+            "sr": 50
+        }
+    }
+
+    stream2_config = {
+        "generator": generator.normal_dist,
+        'kwargs': {
+            "grange": 4,
+            "start_time": None,
+            "buffer_size": 100,
+            "sleep_interval": 0,
+            "sigma": 2,
+            "sr": 50
+        }
+    }
+
+    window_size = 12.8
     start_time = datetime.now()
-    stream1 = MetaWearSlidingWindowStream("D2:C6:AF:2B:DB:22", sr=50, grange=8,
-                                          window_size=12.8, start_time=start_time, name='DW')
-    stream2 = MetaWearSlidingWindowStream("FF:EE:B8:99:0C:64", sr=100, grange=8,
-                                          window_size=12.8, start_time=start_time, name='DA')
+    stream1 = GeneratorSlidingWindowStream(
+        stream1_config, window_size=window_size, start_time_col=0, stop_time_col=0, name='DW')
+    stream2 = GeneratorSlidingWindowStream(
+        stream2_config, window_size=window_size, start_time_col=0, stop_time_col=0, name='DA')
     return stream1, stream2
 
 
@@ -48,27 +80,12 @@ if __name__ == "__main__":
     muss = MUSSModel()
     model = train_test_classifier(muss)
     stream1, stream2 = prepare_streams()
-    kwargs = {
-        'DW': {
-            'sr': 50
-        },
-        'DA': {
-            'sr': 100
-        },
-        'model': model,
-        'scheduler': 'processes',
-        'max_processes': 2
-    }
     muss_pipeline = muss.get_inference_pipeline(
-        stream1, stream2, name='muss-pipeline', **kwargs)
+        stream1, stream2, model=model, scheduler='processes', max_processes=2, DW={'sr': 50}, DA={'sr': 50})
     muss_pipeline.start()
     i = 0
-    for data, st, et, _, _, name in muss_pipeline.get_iterator(timeout=0.2):
-        if data is None:
-            continue
+    for data, _, _, _, _, name in muss_pipeline.get_iterator():
         i = i + 1
-        print(str(st) + ' - ' + str(et))
-        print(model[0].classes_)
         print(data)
         if i == 5:
             break

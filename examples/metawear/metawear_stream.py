@@ -1,3 +1,9 @@
+"""
+Demonstration of the usage of arus.plugins.metawear.stream.MetaWearSlidingWindowStream
+================================================================================
+
+"""
+
 from arus.plugins.metawear.stream import MetaWearSlidingWindowStream
 import logging
 from datetime import datetime

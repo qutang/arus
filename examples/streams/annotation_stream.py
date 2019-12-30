@@ -1,3 +1,9 @@
+"""
+Demonstration of the usage of arus.core.stream.AnnotationFileSlidingWindowStream
+================================================================================
+
+"""
+
 from arus.core.stream.annotation_stream import AnnotationFileSlidingWindowStream
 from arus.testing import load_test_data
 from glob import glob
