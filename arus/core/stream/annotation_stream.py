@@ -1,6 +1,7 @@
 from . import SlidingWindowStream
 from ..libs import mhealth_format as mh
 
+
 class AnnotationFileSlidingWindowStream(SlidingWindowStream):
     """Stream to syncly or asyncly load annotation file or files.
 
@@ -16,7 +17,7 @@ class AnnotationFileSlidingWindowStream(SlidingWindowStream):
         ```
     """
 
-    def __init__(self, data_source, window_size, start_time=None, storage_format='mhealth', simulate_reality=False, name='mhealth-annotation-stream'):
+    def __init__(self, data_source, window_size, storage_format='mhealth', simulate_reality=False, name='mhealth-annotation-stream'):
         """
         Args:
             data_source (str or list): filepath or list of filepaths of mhealth annotation data
@@ -24,8 +25,8 @@ class AnnotationFileSlidingWindowStream(SlidingWindowStream):
             simulate_reality (bool, optional): simulate real world time delay if `True`.
             name (str, optional): see `Stream.name`.
         """
-        super().__init__(data_source=data_source, 
-                         window_size=window_size, start_time=start_time, buffer_size=None, simulate_reality=simulate_reality, start_time_col=1, stop_time_col=2, name=name)
+        super().__init__(data_source=data_source,
+                         window_size=window_size, simulate_reality=simulate_reality, start_time_col=1, stop_time_col=2, name=name)
         self._storage_format = storage_format
 
     def load_data_source_(self, data_source):
@@ -35,7 +36,8 @@ class AnnotationFileSlidingWindowStream(SlidingWindowStream):
             if self._storage_format == 'mhealth':
                 data = mh.io.read_data_csv(
                     filepath, chunksize=None, iterator=False)
-                yield data
+                self._buffer_data_source(data)
             else:
                 raise NotImplementedError(
                     'The given storage format argument is not supported')
+        self._buffer_data_source(None)

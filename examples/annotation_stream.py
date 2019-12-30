@@ -11,14 +11,14 @@ if __name__ == "__main__":
     files, sr = load_test_data(file_type='mhealth', sensor_type='annotation',
                                file_num='multiple', exception_type='no_missing')
     stream = AnnotationFileSlidingWindowStream(
-        data_source=files, window_size=window_size, start_time=None, storage_format='mhealth', name='annotation-stream')
+        data_source=files, window_size=window_size, storage_format='mhealth', name='annotation-stream')
     stream.start()
     chunk_sizes = []
-    for data,_,_,_,_,name in stream.get_iterator():
+    for data, _, _, _, _, name in stream.get_iterator():
         if not data.empty:
             chunk_sizes.append(
                 (data.iloc[-1, 2] - data.iloc[0, 1]) / pd.Timedelta(1, 's'))
-    chunk_sizes
+    stream.stop()
     pd.Series(chunk_sizes).plot(
         title='chunk sizes of the given stream with \nwindow size of ' + str(window_size) + ' seconds')
     plt.hlines(y=window_size, xmin=0,

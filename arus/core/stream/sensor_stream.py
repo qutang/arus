@@ -3,6 +3,7 @@ from ..libs import mhealth_format as mh
 import time
 import logging
 
+
 class SensorFileSlidingWindowStream(SlidingWindowStream):
     """Data stream to syncly or asyncly load sensor file or files with different storage formats.
 
@@ -18,7 +19,7 @@ class SensorFileSlidingWindowStream(SlidingWindowStream):
         ```
     """
 
-    def __init__(self, data_source, window_size, sr, start_time=None, buffer_size=1800, storage_format='mhealth', simulate_reality=False, name='mhealth-stream'):
+    def __init__(self, data_source, window_size, sr, buffer_size=1800, storage_format='mhealth', simulate_reality=False, name='mhealth-stream'):
         """
         Args:
             data_source (str or list): filepath or list of filepaths of mhealth sensor data
@@ -29,11 +30,10 @@ class SensorFileSlidingWindowStream(SlidingWindowStream):
             name (str, optional): see `Stream.name`.
         """
         super().__init__(data_source=data_source,
-                         window_size=window_size, start_time=start_time, buffer_size=buffer_size, simulate_reality=simulate_reality, start_time_col=0, stop_time_col=0, name=name)
+                         window_size=window_size, simulate_reality=simulate_reality, start_time_col=0, stop_time_col=0, name=name)
+        self._buffer_size = buffer_size
         self._storage_format = storage_format
         self._sr = sr
-
-
 
     def load_data_source_(self, data_source):
         if isinstance(data_source, str):
@@ -44,13 +44,15 @@ class SensorFileSlidingWindowStream(SlidingWindowStream):
                 reader = mh.io.read_data_csv(
                     filepath, chunksize=chunksize, iterator=True)
                 for data in reader:
-                    yield data
+                    self._buffer_data_source(data)
             elif self._storage_format == 'actigraph':
                 reader, format_as_mhealth = mh.io.read_actigraph_csv(
                     filepath, chunksize=chunksize, iterator=True)
                 for data in reader:
                     data = format_as_mhealth(data)
-                    yield data
+                    self._buffer_data_source(data)
             else:
                 raise NotImplementedError(
                     'The given storage format argument is not supported')
+        logging.debug('Stoploading thread')
+        self._buffer_data_source(None)

@@ -1,20 +1,12 @@
-name: Test
+name: unittest and build test
 
 on:
+  push: 
+    branches:
+      - "**"
   pull_request:
     branches:
-    - master
-  push:
-    branches:
-    - "feat/**"
-    - "dependabot/**"
-    - "fix/**"
-    - "build/**"
-    - "docs/**"
-    - "refactor/**"
-    - "test/**"
-    - "!master"
-
+      - "**"
 
 jobs:
   test:
@@ -31,6 +23,13 @@ jobs:
         python-version: '3.7.x' # Version range or exact version of a Python version to use, using semvers version range syntax.
         architecture: 'x64' # (x64 or x86)
 
+    - name: Setup system dependencies
+      run: | 
+        sudo apt update
+        sudo apt install bluez
+        sudo apt install libboost-all-dev
+        sudo apt install libbluetooth-dev
+
     - name: Setup python dev environment
       run: |
         pip install --upgrade pip
@@ -40,7 +39,7 @@ jobs:
     - name: Run tests
       run: poetry run pytest --cov --cov-report=xml arus
 
-    - name: Test building
+    - name: Test building package
       run: poetry build
 
     - name: Test building website

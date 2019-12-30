@@ -52,9 +52,8 @@ def spectrum_features(X, sr, n=1, freq_range=None, prev_spectrum_features=None, 
     f10_names = ['SPECTRAL_ENTROPY_' +
                  str(i) for i in range(X.shape[1])]
     if preset == 'muss':
-        result = np.concatenate([f1, f2, f3, f4, f5, f6, f7, f8], axis=1)
-        names = f1_names + f2_names + f3_names + f4_names + \
-            f5_names + f6_names + f7_names + f8_names
+        result = np.concatenate([f1, f5, f6], axis=1)
+        names = f1_names + f5_names + f6_names
     else:
         result = np.concatenate(
             [f1, f2, f3, f4, f5, f6, f7, f8, f9, f10], axis=1)

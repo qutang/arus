@@ -23,6 +23,7 @@ License: see LICENSE file
 """
 
 from .stream import Stream
+from ..core.libs.date import parse_timestamp
 from pathos.pools import ThreadPool, ProcessPool
 from pathos.helpers import cpu_count
 import numpy as np
@@ -31,6 +32,7 @@ import pandas as pd
 import logging
 import threading
 import time
+from datetime import datetime
 
 
 class Pipeline:
@@ -70,9 +72,12 @@ class Pipeline:
         self._streams = []
         self._chunks = dict()
         self._stream_pointer = dict()
-        self.started = False
+        self._started = False
+        self._connected = False
         self._stop_sender = False
         self._preserve_status = preserve_status
+        self._process_start_time = None
+        self._pool = None
 
     @property
     def name(self):
@@ -111,7 +116,7 @@ class Pipeline:
         self._started = value
 
     def stop(self):
-        self.finish_tasks_and_stop()
+        return self.finish_tasks_and_stop()
 
     def finish_tasks_and_stop(self):
         """Gracefully shutdown the pipeline using the following procedure.
@@ -129,19 +134,36 @@ class Pipeline:
             bool: `True` if the pipeline is shut down correctly.
         """
         try:
-            self.started = False
+            logging.debug('Stop pipeline...')
+            self._connected = False
+            time.sleep(0.2)
             self._process_tasks.join()
+            self._process_tasks.queue.clear()
+            time.sleep(0.2)
+            self._started = False
             self._stop_sender = True
+            time.sleep(0.2)
             if self._pool is not None:
                 self._pool.close()
                 self._pool.join()
-                self._pool = None
+            time.sleep(0.2)
             for stream in self._streams:
                 stream.stop()
+            with self._queue.mutex:
+                self._queue.queue.clear()
+            logging.debug('Stopped.')
         except Exception as e:
             print(e)
             return False
         return True
+
+    def pause(self):
+        """Pause processing the incoming streams, yet pipeline can still receive data from streams. Data will be ignored and not stored. 
+        """
+        self._started = False
+        self._process_start_time = None
+        with self._queue.mutex:
+            self._queue.queue.clear()
 
     def _is_running(self):
         if self.started:
@@ -220,44 +242,63 @@ class Pipeline:
         if num_of_processors == 0:
             self._pool = None
         else:
-            if self._scheduler == 'processes':
-                self._pool = ProcessPool(nodes=num_of_processors)
-            elif self._scheduler == 'threads':
-                self._pool = ThreadPool(nodes=num_of_processors)
+            if self._pool is None:
+                if self._scheduler == 'processes':
+                    self._pool = ProcessPool(nodes=num_of_processors)
+                elif self._scheduler == 'threads':
+                    self._pool = ThreadPool(nodes=num_of_processors)
+                else:
+                    raise NotImplementedError(
+                        'This scheduler is not supported: {}'.format(self._scheduler))
             else:
-                raise NotImplementedError(
-                    'This scheduler is not supported: {}'.format(self._scheduler))
-        while self.started:
-            for stream in self._streams:
-                for data, st, et, prev_st, prev_et, name in stream.get_iterator():
-                    self._chunks[st.timestamp()] = [] if st.timestamp(
-                    ) not in self._chunks else self._chunks[st.timestamp()]
-                    self._chunks[st.timestamp()].append(
-                        (data, st, et, prev_st, prev_et, name))
-                    self._stream_pointer[name] = st.timestamp()
-                    break
-                self._process_synced_chunks(
-                    st, et, prev_st, prev_et, self.name)
+                self._pool.restart()
+        while self._connected:
+            if self._started:
+                for stream in self._streams:
+                    for data, st, et, prev_st, prev_et, name in stream.get_iterator():
+                        if self._is_data_after_start_time(st):
+                            self._chunks[st.timestamp()] = [] if st.timestamp(
+                            ) not in self._chunks else self._chunks[st.timestamp()]
+                            self._chunks[st.timestamp()].append(
+                                (data, st, et, prev_st, prev_et, name))
+                            self._stream_pointer[name] = st.timestamp()
+                            break
+                        else:
+                            pass
+                    if self._is_data_after_start_time(st):
+                        self._process_synced_chunks(
+                            st, et, prev_st, prev_et, self.name)
+                    else:
+                        logging.debug('Discard one stream window' + str(
+                            st) + 'coming before process start time: ' + str(self._process_start_time))
+            else:
+                # ignore the incoming stream data, the thread will stand by
+                pass
 
     def _send_result(self):
         while not self._stop_sender:
-            try:
-                task, st, et, prev_st, prev_et, name = self._process_tasks.get(
-                    block=False, timeout=1)
-                if self._max_processes == 0:
-                    result = task
-                else:
-                    result = task.get()
-                    self._process_tasks.task_done()
-                if self._preserve_status:
-                    self._prev_output.put(result)
-                self._put_result_in_queue(
-                    (result, st, et, prev_st, prev_et, name))
-            except queue.Empty:
+            if self._started:
+                try:
+                    task, st, et, prev_st, prev_et, name = self._process_tasks.get(
+                        block=True, timeout=0.1)
+                    if self._max_processes == 0:
+                        result = task
+                    else:
+                        result = task.get()
+                        self._process_tasks.task_done()
+                    if self._preserve_status:
+                        self._prev_output.put(result)
+                    self._put_result_in_queue(
+                        (result, st, et, prev_st, prev_et, name))
+                except queue.Empty:
+                    pass
+            else:
+                # ignore if the pipeline is just connected but not started
                 pass
-        self._put_result_in_queue(None)
 
     def _process_synced_chunks(self, st, et, prev_st, prev_et, name):
+        if st.timestamp() not in self._chunks:
+            return
         chunk_list = self._chunks[st.timestamp()]
         if len(chunk_list) == len(self._streams):
             # this is the last stream chunk for st
@@ -282,6 +323,7 @@ class Pipeline:
                             (task, st, et, prev_st, prev_et, name))
                         del self._chunks[st.timestamp()]
                     except ValueError as e:
+                        logging.error(e)
                         return
                 if self._preserve_status:
                     self._prev_input.put(chunk_list)
@@ -304,16 +346,21 @@ class Pipeline:
     def _put_result_in_queue(self, result):
         self._queue.put(result)
 
-    def start(self):
-        """Start the pipeline
+    def _is_data_after_start_time(self, st):
+        if self._process_start_time is not None:
+            return st.timestamp() >= self._process_start_time.timestamp()
+        else:
+            return True
 
-        Implementation details:
-            The start procedure is as below,
-                1. Start a thread for syncing stream chunks as daemon
-                2. Start a thread for sending processed results as daemon
-                3. Start streams one by one as daemon threads
-                3. Set `started` being True
+    def connect(self, start_time=None):
+        """Connect and start the streams but not processing them.
+
+        This function will start the streams one by one on daemon threads, and will start the syncing thread and sender thread as daemons in stand-by status.
+
+        The streams will output data but data will be ignored by the pipeline until `Pipeline.process` got called.
         """
+        self._stop_sender = False
+        self._connected = True
         self._sync_thread = threading.Thread(
             target=self._sync_streams, name=self._name + '-sync-streams')
         self._sync_thread.daemon = True
@@ -323,10 +370,29 @@ class Pipeline:
         self._sync_thread.start()
         self._sender_thread.start()
         for stream in self._streams:
-            stream.start()
-        self.started = True
+            stream.start(start_time=start_time)
 
-    def get_iterator(self):
+    def process(self, start_time=None):
+        """Start processing the connected incoming stream data.
+
+        Args:
+            start_time (str or datetime or np.datetime64 or pd.Timestamp, optional): The start time to start accepting the incoming stream windows. If it is `None`, the pipeline will always output any incoming data without checking `start_time`.
+        """
+        self._process_start_time = start_time
+        self._process_start_time = parse_timestamp(self._process_start_time)
+        self._started = True
+
+    def start(self, start_time=None, process_start_time=None):
+        """Connect and process the incoming streams in a row together.
+
+        Args:
+            start_time (str or datetime or np.datetime64 or pd.Timestamp, optional): When multiple streams are provided, users must provide a valid start_time as a reference to sync between streams. If it is `None`, it will use the first timestamp from the stream data as start_time. Default is None. 
+            process_start_time (str or datetime or np.datetime64 or pd.Timestamp, optional): Any stream windows coming before this time will be ignored. If it is `None`, nothing will be ignored. Defaults to None.
+        """
+        self.connect(start_time=start_time)
+        self.process(start_time=process_start_time)
+
+    def get_iterator(self, timeout=None):
         """Iterator for the processed results
 
         Raises:
@@ -342,9 +408,12 @@ class Pipeline:
                 return self
 
             def __next__(self):
-                data = data_queue.get()
-                if data is None:
-                    # end of the stream, stop
-                    raise StopIteration
-                return data
+                try:
+                    data = data_queue.get(timeout=timeout)
+                    if data is None:
+                        # end of the stream, stop
+                        raise StopIteration
+                    return data
+                except queue.Empty:
+                    return None, None, None, None, None, None
         return _result_iterator()
