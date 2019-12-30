@@ -28,6 +28,14 @@ Activity recognition models
 
    arus.models.muss
 
+Plugins
+---------------
+
+.. autosummary::
+   :toctree: generated
+
+   arus.plugins.metawear
+
 Utilities
 ------------
 

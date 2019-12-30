@@ -1,5 +1,5 @@
 import logging
-from pymetawear.discover import discover_devices
+from pymetawear import discover as mw_discover
 
 
 class MetaWearScanner():
@@ -11,7 +11,7 @@ class MetaWearScanner():
             logging.info('Scanning metawear devices nearby...')
             try:
                 retries += 1
-                candidates = discover_devices(timeout=1)
+                candidates = mw_discover.discover_devices(timeout=1)
                 metawears |= set(
                     map(lambda d: d[0],
                         filter(lambda d: d[1] == 'MetaWear', candidates)))

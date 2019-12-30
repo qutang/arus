@@ -4,14 +4,14 @@ import queue
 
 import pandas as pd
 import numpy as np
-from arus.core.stream import Stream, SlidingWindowStream
-from mbientlab.metawear import cbindings, libmetawear
-from pymetawear.client import MetaWearClient
+from arus.core import stream as arus_stream
+from mbientlab import metawear
+from pymetawear import client as mw_client
 
-from .corrector import MetawearTimestampCorrector
+from . import corrector as arus_mw_corrector
 
 
-class MetaWearSlidingWindowStream(SlidingWindowStream):
+class MetaWearSlidingWindowStream(arus_stream.SlidingWindowStream):
     """Data stream to syncly or asyncly read metawear device sensor stream in real-time.
 
     This class inherits `SlidingWindowStream` class to load metawear device data into sliding windows.
@@ -41,15 +41,15 @@ class MetaWearSlidingWindowStream(SlidingWindowStream):
         self._sr = sr
         self._grange = grange
         self._device = None
-        self._corrector = MetawearTimestampCorrector(sr)
+        self._corrector = arus_mw_corrector.MetawearTimestampCorrector(sr)
         self._max_retries = max_retries
         self._input_count = 0
         self._callback_started = False
 
     def get_device_name(self):
-        model_code = libmetawear.mbl_mw_metawearboard_get_model(
+        model_code = metawear.libmetawear.mbl_mw_metawearboard_get_model(
             self._device.mw.board)
-        metawear_models = cbindings.Model()
+        metawear_models = metawear.cbindings.Model()
         model_names = list(
             filter(lambda attr: '__' not in attr, dir(metawear_models)))
         for name in model_names:
@@ -61,7 +61,7 @@ class MetaWearSlidingWindowStream(SlidingWindowStream):
         count_retry = 0
         while self._device is None:
             try:
-                self._device = MetaWearClient(addr, connect=True, debug=False)
+                self._device = mw_client.MetaWearClient(addr, connect=True, debug=False)
                 self._device_name = self.get_device_name()
             except Exception as e:
                 if count_retry == self._max_retries:
@@ -73,7 +73,7 @@ class MetaWearSlidingWindowStream(SlidingWindowStream):
                 time.sleep(2)
         logging.info("New metawear connected: {0}".format(
             self._device))
-        libmetawear.mbl_mw_metawearboard_set_time_for_response(
+        metawear.libmetawear.mbl_mw_metawearboard_set_time_for_response(
             self._device.mw.board, 4000)
         # high frequency throughput connection setup
         self._device.settings.set_connection_parameters(
