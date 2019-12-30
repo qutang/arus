@@ -7,3 +7,4 @@
 ## Documentation
 
 * Discard pdoc3, use sphinx instead.
+* Add examples using `sphinx_gallery`.
