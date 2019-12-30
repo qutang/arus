@@ -37,6 +37,7 @@ extensions = [
     'sphinx.ext.autosummary',
     'sphinx.ext.coverage', 
     'sphinx.ext.napoleon',
+    'sphinx.ext.viewcode',
     'm2r',
 ]
 
