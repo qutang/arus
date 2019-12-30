@@ -1,0 +1,6 @@
+arus.models.muss.MUSSModel.predict
+==================================
+
+.. currentmodule:: arus.models.muss
+
+.. automethod:: MUSSModel.predict

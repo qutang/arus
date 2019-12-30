@@ -1,0 +1,6 @@
+arus.core.libs.mhealth\_format.extract\_file\_timestamp
+=======================================================
+
+.. currentmodule:: arus.core.libs.mhealth_format
+
+.. autofunction:: extract_file_timestamp

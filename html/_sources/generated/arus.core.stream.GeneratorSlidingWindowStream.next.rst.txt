@@ -1,0 +1,6 @@
+arus.core.stream.GeneratorSlidingWindowStream.next
+==================================================
+
+.. currentmodule:: arus.core.stream
+
+.. automethod:: GeneratorSlidingWindowStream.next

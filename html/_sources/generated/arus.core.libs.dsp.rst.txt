@@ -1,0 +1,35 @@
+arus.core.libs.dsp
+==================
+
+-----------
+Description
+-----------
+
+.. automodule:: arus.core.libs.dsp
+
+.. currentmodule:: arus.core.libs.dsp
+
+
+
+
+
+---------
+Functions
+---------
+
+.. autosummary::
+    :toctree: .
+    
+    apply_over_subwins
+    
+    butterworth
+    
+    detect_peaks
+    
+    fill_nan
+    
+    resample
+    
+    resample_timestamps
+    
+

@@ -1,0 +1,6 @@
+arus.plugins.metawear.MetaWearSlidingWindowStream.load\_data\_source\_
+======================================================================
+
+.. currentmodule:: arus.plugins.metawear
+
+.. automethod:: MetaWearSlidingWindowStream.load_data_source_

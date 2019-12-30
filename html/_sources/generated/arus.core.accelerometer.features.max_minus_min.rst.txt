@@ -1,0 +1,6 @@
+arus.core.accelerometer.features.max\_minus\_min
+================================================
+
+.. currentmodule:: arus.core.accelerometer.features
+
+.. autofunction:: max_minus_min

@@ -1,0 +1,6 @@
+arus.core.libs.mhealth\_format.is\_annotation\_data
+===================================================
+
+.. currentmodule:: arus.core.libs.mhealth_format
+
+.. autofunction:: is_annotation_data

@@ -1,0 +1,6 @@
+arus.core.stream.SlidingWindowStream.load\_data\_source\_
+=========================================================
+
+.. currentmodule:: arus.core.stream
+
+.. automethod:: SlidingWindowStream.load_data_source_

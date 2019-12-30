@@ -1,0 +1,6 @@
+arus.plugins.metawear.MetawearTimestampCorrector.correct
+========================================================
+
+.. currentmodule:: arus.plugins.metawear
+
+.. automethod:: MetawearTimestampCorrector.correct

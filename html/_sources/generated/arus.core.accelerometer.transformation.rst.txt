@@ -1,0 +1,27 @@
+arus.core.accelerometer.transformation
+======================================
+
+-----------
+Description
+-----------
+
+.. automodule:: arus.core.accelerometer.transformation
+
+.. currentmodule:: arus.core.accelerometer.transformation
+
+
+
+
+
+---------
+Functions
+---------
+
+.. autosummary::
+    :toctree: .
+    
+    flip_and_swap
+    
+    vector_magnitude
+    
+

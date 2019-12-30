@@ -1,0 +1,6 @@
+arus.core.accelerometer.features.stats\_active\_samples
+=======================================================
+
+.. currentmodule:: arus.core.accelerometer.features
+
+.. autofunction:: stats_active_samples

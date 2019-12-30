@@ -1,0 +1,6 @@
+arus.core.libs.mhealth\_format.extract\_offset\_mapping\_filepath
+=================================================================
+
+.. currentmodule:: arus.core.libs.mhealth_format
+
+.. autofunction:: extract_offset_mapping_filepath

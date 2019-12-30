@@ -1,0 +1,6 @@
+arus.core.pipeline.Pipeline.connect
+===================================
+
+.. currentmodule:: arus.core.pipeline
+
+.. automethod:: Pipeline.connect

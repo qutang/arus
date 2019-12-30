@@ -1,0 +1,42 @@
+arus.core.stream.AnnotationFileSlidingWindowStream
+==================================================
+
+.. currentmodule:: arus.core.stream
+
+.. autoclass:: AnnotationFileSlidingWindowStream
+
+   
+   
+   
+
+----------
+Attributes
+----------
+
+.. autosummary::
+   :toctree:
+
+   AnnotationFileSlidingWindowStream.name
+   AnnotationFileSlidingWindowStream.started
+
+   
+   
+
+   
+
+----------
+Methods
+----------
+
+.. autosummary::
+   :toctree:
+
+   AnnotationFileSlidingWindowStream.chunk_
+   AnnotationFileSlidingWindowStream.get_iterator
+   AnnotationFileSlidingWindowStream.load_data_source_
+   AnnotationFileSlidingWindowStream.next
+   AnnotationFileSlidingWindowStream.start
+   AnnotationFileSlidingWindowStream.stop
+
+   
+   

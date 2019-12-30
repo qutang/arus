@@ -1,0 +1,6 @@
+arus.core.stream.SensorFileSlidingWindowStream.next
+===================================================
+
+.. currentmodule:: arus.core.stream
+
+.. automethod:: SensorFileSlidingWindowStream.next

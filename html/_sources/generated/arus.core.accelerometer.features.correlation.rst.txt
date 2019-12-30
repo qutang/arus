@@ -1,0 +1,6 @@
+arus.core.accelerometer.features.correlation
+============================================
+
+.. currentmodule:: arus.core.accelerometer.features
+
+.. autofunction:: correlation

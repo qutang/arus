@@ -1,0 +1,6 @@
+arus.plugins.metawear.MetaWearSlidingWindowStream.stop
+======================================================
+
+.. currentmodule:: arus.plugins.metawear
+
+.. automethod:: MetaWearSlidingWindowStream.stop

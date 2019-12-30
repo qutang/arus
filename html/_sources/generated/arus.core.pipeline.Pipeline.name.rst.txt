@@ -1,0 +1,6 @@
+arus.core.pipeline.Pipeline.name
+================================
+
+.. currentmodule:: arus.core.pipeline
+
+.. autoproperty:: Pipeline.name

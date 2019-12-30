@@ -1,0 +1,6 @@
+arus.models.muss.MUSSModel.get\_classification\_report
+======================================================
+
+.. currentmodule:: arus.models.muss
+
+.. automethod:: MUSSModel.get_classification_report

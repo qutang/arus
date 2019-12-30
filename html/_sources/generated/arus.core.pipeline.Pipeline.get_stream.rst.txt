@@ -1,0 +1,6 @@
+arus.core.pipeline.Pipeline.get\_stream
+=======================================
+
+.. currentmodule:: arus.core.pipeline
+
+.. automethod:: Pipeline.get_stream

@@ -1,0 +1,6 @@
+arus.core.libs.mhealth\_format.rename\_columns
+==============================================
+
+.. currentmodule:: arus.core.libs.mhealth_format
+
+.. autofunction:: rename_columns

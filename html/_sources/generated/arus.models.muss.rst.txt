@@ -1,0 +1,39 @@
+arus.models.muss
+================
+
+-----------
+Description
+-----------
+
+.. automodule:: arus.models.muss
+
+.. currentmodule:: arus.models.muss
+
+
+
+-------
+Classes
+-------
+
+.. autosummary::
+    :toctree: .
+    
+
+    MUSSModel
+
+    
+
+
+
+
+
+---------
+Functions
+---------
+
+.. autosummary::
+    :toctree: .
+    
+    muss_inference_processor
+    
+

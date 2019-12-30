@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8" />
+    <title>arus.core.stream &#8212; arus 0.6.0 documentation</title>
+    <link rel="stylesheet" href="../../../_static/bootstrap-sphinx.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/gallery.css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../_static/language_data.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+<meta charset='utf-8'>
+<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<script type="text/javascript" src="../../../_static/js/jquery-1.11.0.min.js "></script>
+<script type="text/javascript" src="../../../_static/js/jquery-fix.js "></script>
+<script type="text/javascript" src="../../../_static/bootstrap-3.3.7/js/bootstrap.min.js "></script>
+<script type="text/javascript" src="../../../_static/bootstrap-sphinx.js "></script>
+
+  </head><body>
+
+  <div id="navbar" class="navbar navbar-inverse navbar-default navbar-fixed-top">
+    <div class="container">
+      <div class="navbar-header">
+        <!-- .btn-navbar is used as the toggle for collapsed navbar content -->
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".nav-collapse">
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="../../../index.html">
+          arus</a>
+        <span class="navbar-text navbar-version pull-left"><b>0.6.0</b></span>
+      </div>
+
+        <div class="collapse navbar-collapse nav-collapse">
+          <ul class="nav navbar-nav">
+            
+                <li><a href="../../../examples/index.html">Examples</a></li>
+                <li><a href="../../../references.html">References</a></li>
+                <li><a href="../../../news.html">Changelog</a></li>
+            
+            
+              <li class="dropdown globaltoc-container">
+  <a role="button"
+     id="dLabelGlobalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="../../../index.html">arus <b class="caret"></b></a>
+  <ul class="dropdown-menu globaltoc"
+      role="menu"
+      aria-labelledby="dLabelGlobalToc"></ul>
+</li>
+              
+            
+            
+              
+                
+              
+            
+            
+            
+            
+          </ul>
+
+          
+            
+<form class="navbar-form navbar-right" action="../../../search.html" method="get">
+ <div class="form-group">
+  <input type="text" name="q" class="form-control" placeholder="Search" />
+ </div>
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+          
+        </div>
+    </div>
+  </div>
+
+<div class="container">
+  <div class="row">
+      <div class="col-md-3">
+        <div id="sidebar" class="bs-sidenav" role="complementary">
+<form action="../../../search.html" method="get">
+ <div class="form-group">
+  <input type="text" name="q" class="form-control" placeholder="Search" />
+ </div>
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+        </div>
+      </div>
+    <div class="body col-md-9 content" role="main">
+      
+  <h1>Source code for arus.core.stream</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Module includes classes that loads external data sources (e.g., file, network port, socket, user inputs and etc.) into a data queue using a separate thread.</span>
+
+<span class="sd"># Usage of `arus.core.stream.SensorFileStream`</span>
+
+<span class="sd"># On mhealth sensor files</span>
+
+<span class="sd">```python</span>
+<span class="sd">.. include:: ../../../examples/mhealth_stream.py</span>
+<span class="sd">```</span>
+
+<span class="sd"># On an Actigraph sensor file</span>
+
+<span class="sd">```python</span>
+<span class="sd">.. include:: ../../../examples/actigraph_stream.py</span>
+<span class="sd">```</span>
+
+<span class="sd"># On mhealth sensor files with real-time delay</span>
+
+<span class="sd">```python</span>
+<span class="sd">.. include:: ../../../examples/sensor_stream_simulated_reality.py</span>
+<span class="sd">```</span>
+
+<span class="sd"># Usage of `arus.core.stream.AnnotationFileStream`</span>
+
+<span class="sd">```python</span>
+<span class="sd">.. include:: ../../../examples/annotation_stream.py</span>
+<span class="sd">```</span>
+
+<span class="sd">Author: Qu Tang</span>
+
+<span class="sd">Date: 2019-11-15</span>
+
+<span class="sd">License: see LICENSE file</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">queue</span>
+<span class="kn">import</span> <span class="nn">threading</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">from</span> <span class="nn">..libs</span> <span class="kn">import</span> <span class="n">date</span> <span class="k">as</span> <span class="n">arus_date</span>
+<span class="kn">from</span> <span class="nn">..libs</span> <span class="kn">import</span> <span class="n">mhealth_format</span> <span class="k">as</span> <span class="n">mh</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">time</span>
+
+<span class="n">__pdoc__</span> <span class="o">=</span> <span class="p">{}</span>
+
+<span class="n">__pdoc__</span><span class="p">[</span><span class="s1">&#39;tests&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+
+
+<div class="viewcode-block" id="Stream"><a class="viewcode-back" href="../../../generated/arus.core.stream.Stream.html#arus.core.stream.Stream">[docs]</a><span class="k">class</span> <span class="nc">Stream</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;The base class for data stream</span>
+
+<span class="sd">    Stream class is an abstraction of any data source that can be loaded into memory in arbitrary chunk size either asynchronously (currently only support threading) or synchronously.</span>
+
+<span class="sd">    Subclass may implement loading mechanisms for different data sources. Such as files, large file, socket device, bluetooth device, remote server, and database.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        stream (Stream): an instance object of type `Stream`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_source</span><span class="p">,</span> <span class="n">window_size</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;default-stream&#39;</span><span class="p">,</span> <span class="n">scheduler</span><span class="o">=</span><span class="s1">&#39;thread&#39;</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            data_source (object): An object that may be loaded into memory. The type of the object is decided by the implementation of subclass.</span>
+<span class="sd">            window_size (float): Number of seconds. Each data in the queue would be a short chunk of data lasting `window_size` seconds loaded from the `data_source`.</span>
+<span class="sd">            name (str, optional): The name of the data stream will also be used as the name of the sub-thread that is used to load data. Defaults to &#39;default-stream&#39;.</span>
+<span class="sd">            scheduler (str, optional): The scheduler used to load the data source. It can be either &#39;thread&#39; or &#39;sync&#39;. Defaults to &#39;thread&#39;.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_queue</span> <span class="o">=</span> <span class="n">queue</span><span class="o">.</span><span class="n">Queue</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_buffer</span> <span class="o">=</span> <span class="n">queue</span><span class="o">.</span><span class="n">Queue</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_data_source</span> <span class="o">=</span> <span class="n">data_source</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_window_size</span> <span class="o">=</span> <span class="n">window_size</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">started</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_scheduler</span> <span class="o">=</span> <span class="n">scheduler</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">started</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Status of the stream</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            started (bool): `True` if stream is running.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_started</span>
+
+    <span class="nd">@started</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">started</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_started</span> <span class="o">=</span> <span class="n">value</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The name of the data stream</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            name (str): the name of the data stream</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_name</span>
+
+    <span class="nd">@name</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">name</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_name</span> <span class="o">=</span> <span class="n">value</span>
+
+<div class="viewcode-block" id="Stream.get_iterator"><a class="viewcode-back" href="../../../generated/arus.core.stream.Stream.get_iterator.html#arus.core.stream.Stream.get_iterator">[docs]</a>    <span class="k">def</span> <span class="nf">get_iterator</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Get a python iterator for the loaded data queue.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            data_queue (iterator): the iterator that can be looped to read loaded data.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">stop_fun</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">stop</span>
+        <span class="n">q</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_queue</span>
+
+        <span class="k">class</span> <span class="nc">_data_iter</span><span class="p">:</span>
+            <span class="k">def</span> <span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+                <span class="k">return</span> <span class="bp">self</span>
+
+            <span class="k">def</span> <span class="fm">__next__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+                <span class="n">data</span> <span class="o">=</span> <span class="n">q</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+                <span class="k">if</span> <span class="n">data</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="c1"># end of the stream, stop</span>
+                    <span class="n">stop_fun</span><span class="p">()</span>
+                    <span class="k">raise</span> <span class="ne">StopIteration</span>
+                <span class="k">return</span> <span class="n">data</span>
+
+        <span class="k">return</span> <span class="n">_data_iter</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="Stream.next"><a class="viewcode-back" href="../../../generated/arus.core.stream.Stream.next.html#arus.core.stream.Stream.next">[docs]</a>    <span class="k">def</span> <span class="nf">next</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Manually get the next loaded data in data queue. Rarely used. Recommend to use the `Stream.get_iterator` method.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            data (object): the loaded data.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_queue</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">data</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># end of the stream, stop</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">stop</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">data</span></div>
+
+<div class="viewcode-block" id="Stream.start"><a class="viewcode-back" href="../../../generated/arus.core.stream.Stream.start.html#arus.core.stream.Stream.start">[docs]</a>    <span class="k">def</span> <span class="nf">start</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start_time</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Method to start loading data from the provided data source.</span>
+
+<span class="sd">        start_time (str or datetime or datetime64 or pandas.Timestamp, optional): The start time of data source. This is used to sync between multiple streams. If it is `None`, the default value would be extracted from the first sample of the loaded data.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_start_time</span> <span class="o">=</span> <span class="n">arus_date</span><span class="o">.</span><span class="n">parse_timestamp</span><span class="p">(</span><span class="n">start_time</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">started</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_loading_thread</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_thread_for_loading</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_data_source</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_loading_thread</span><span class="o">.</span><span class="n">daemon</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_chunking_thread</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_thread_for_chunking</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_chunking_thread</span><span class="o">.</span><span class="n">daemon</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_loading_thread</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_chunking_thread</span><span class="o">.</span><span class="n">start</span><span class="p">()</span></div>
+
+    <span class="k">def</span> <span class="nf">_get_thread_for_loading</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_source</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">threading</span><span class="o">.</span><span class="n">Thread</span><span class="p">(</span>
+            <span class="n">target</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">load_data_source_</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s1">&#39;-loading&#39;</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="n">data_source</span><span class="p">,))</span>
+
+    <span class="k">def</span> <span class="nf">_get_thread_for_chunking</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">threading</span><span class="o">.</span><span class="n">Thread</span><span class="p">(</span>
+            <span class="n">target</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">chunk_</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s1">&#39;-chunking&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_put_data_in_queue</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_queue</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_buffer_data_source</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_buffer</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Stream.stop"><a class="viewcode-back" href="../../../generated/arus.core.stream.Stream.stop.html#arus.core.stream.Stream.stop">[docs]</a>    <span class="k">def</span> <span class="nf">stop</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Method to stop the loading process</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">started</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_chunking_thread</span><span class="o">.</span><span class="n">join</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_loading_thread</span><span class="o">.</span><span class="n">join</span><span class="p">()</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_queue</span><span class="o">.</span><span class="n">mutex</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_queue</span><span class="o">.</span><span class="n">queue</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_buffer</span><span class="o">.</span><span class="n">mutex</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_buffer</span><span class="o">.</span><span class="n">queue</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_start_time</span> <span class="o">=</span> <span class="kc">None</span></div>
+
+<div class="viewcode-block" id="Stream.load_data_source_"><a class="viewcode-back" href="../../../generated/arus.core.stream.Stream.load_data_source_.html#arus.core.stream.Stream.load_data_source_">[docs]</a>    <span class="k">def</span> <span class="nf">load_data_source_</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_source</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Implement this in the sub class.</span>
+
+<span class="sd">        You may use `Stream._put_data_in_queue` method to put the loaded data into the queue. Must use `None` as stop signal for the data queue iterator.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            NotImplementedError: Must implement in subclass.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s1">&#39;Sub class must implement this method&#39;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Stream.chunk_"><a class="viewcode-back" href="../../../generated/arus.core.stream.Stream.chunk_.html#arus.core.stream.Stream.chunk_">[docs]</a>    <span class="k">def</span> <span class="nf">chunk_</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;By default, this function just transfers data in the buffer to the result queue</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">data</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_buffer</span><span class="o">.</span><span class="n">get</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_put_data_in_queue</span><span class="p">(</span><span class="n">data</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="SlidingWindowStream"><a class="viewcode-back" href="../../../generated/arus.core.stream.SlidingWindowStream.html#arus.core.stream.SlidingWindowStream">[docs]</a><span class="k">class</span> <span class="nc">SlidingWindowStream</span><span class="p">(</span><span class="n">Stream</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Data stream to syncly or asyncly load sensor file or files with different storage formats.</span>
+
+<span class="sd">    This class inherits `Stream` class to load data files.</span>
+
+<span class="sd">    The stream will load a file or files in the `data_source` and separate them into chunks specified by `window_size` to be loaded in the data queue.</span>
+
+<span class="sd">    Examples:</span>
+<span class="sd">        1. Loading a list of files as 12.8s chunks asynchronously.</span>
+
+<span class="sd">        ```python</span>
+<span class="sd">        .. include:: ../../../examples/mhealth_stream.py</span>
+<span class="sd">        ```</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_source</span><span class="p">,</span> <span class="n">window_size</span><span class="p">,</span> <span class="n">start_time_col</span><span class="p">,</span> <span class="n">stop_time_col</span><span class="p">,</span>  <span class="n">simulate_reality</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;sliding-window-stream&#39;</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Args:</span>
+<span class="sd">            data_source (str or list): filepath or list of filepaths of mhealth sensor data</span>
+<span class="sd">            start_time_col (int): the start time column index of the data.</span>
+<span class="sd">            stop_time_col (int): the stop time column index of the data.</span>
+<span class="sd">            name (str, optional): see `Stream.name`.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">data_source</span><span class="o">=</span><span class="n">data_source</span><span class="p">,</span>
+                         <span class="n">window_size</span><span class="o">=</span><span class="n">window_size</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_simulate_reality</span> <span class="o">=</span> <span class="n">simulate_reality</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_start_time_col</span> <span class="o">=</span> <span class="n">start_time_col</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_stop_time_col</span> <span class="o">=</span> <span class="n">stop_time_col</span>
+
+<div class="viewcode-block" id="SlidingWindowStream.load_data_source_"><a class="viewcode-back" href="../../../generated/arus.core.stream.SlidingWindowStream.load_data_source_.html#arus.core.stream.SlidingWindowStream.load_data_source_">[docs]</a>    <span class="k">def</span> <span class="nf">load_data_source_</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_source</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
+            <span class="s2">&quot;Sub class should implement this method and yield loaded data&quot;</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">_extract_chunks</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">data</span><span class="o">.</span><span class="n">empty</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">[]</span>
+        <span class="n">data_et</span> <span class="o">=</span> <span class="n">mh</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">get_end_time</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_stop_time_col</span><span class="p">)</span>
+        <span class="n">data_st</span> <span class="o">=</span> <span class="n">mh</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">get_start_time</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_start_time_col</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_start_time</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_start_time</span> <span class="o">=</span> <span class="n">data_st</span>
+        <span class="n">window_ts_marks</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">date_range</span><span class="p">(</span><span class="n">start</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_start_time</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="n">data_et</span><span class="p">,</span>
+                                        <span class="n">freq</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_window_size</span> <span class="o">*</span> <span class="mi">1000</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;ms&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_start_time</span> <span class="o">=</span> <span class="n">window_ts_marks</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">chunks</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">window_st</span> <span class="ow">in</span> <span class="n">window_ts_marks</span><span class="p">:</span>
+            <span class="n">window_et</span> <span class="o">=</span> <span class="n">window_st</span> <span class="o">+</span> \
+                <span class="n">pd</span><span class="o">.</span><span class="n">Timedelta</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_window_size</span> <span class="o">*</span> <span class="mi">1000</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;ms&#39;</span><span class="p">)</span>
+            <span class="n">chunk</span> <span class="o">=</span> <span class="n">mh</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">segment</span><span class="p">(</span>
+                <span class="n">data</span><span class="p">,</span> <span class="n">start_time</span><span class="o">=</span><span class="n">window_st</span><span class="p">,</span> <span class="n">stop_time</span><span class="o">=</span><span class="n">window_et</span><span class="p">,</span> <span class="n">start_time_col</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_start_time_col</span><span class="p">,</span> <span class="n">stop_time_col</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_stop_time_col</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">chunk</span><span class="o">.</span><span class="n">empty</span><span class="p">:</span>
+                <span class="n">chunks</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">chunk</span><span class="p">,</span> <span class="n">window_st</span><span class="p">,</span> <span class="n">window_et</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">chunks</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">chunk</span><span class="p">,</span> <span class="n">window_st</span><span class="p">,</span> <span class="n">window_et</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">chunks</span>
+
+    <span class="k">def</span> <span class="nf">_chunk_loaded_data</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">current_window</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">current_window_st</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">current_window_et</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">current_clock</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+        <span class="n">previous_window_st</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">previous_window_et</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">while</span> <span class="bp">self</span><span class="o">.</span><span class="n">started</span><span class="p">:</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_buffer</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">data</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_put_data_in_queue</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
+                <span class="k">break</span>
+            <span class="n">chunks</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_extract_chunks</span><span class="p">(</span>
+                <span class="n">data</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">chunk</span><span class="p">,</span> <span class="n">window_st</span><span class="p">,</span> <span class="n">window_et</span> <span class="ow">in</span> <span class="n">chunks</span><span class="p">:</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">started</span><span class="p">:</span>
+                    <span class="k">break</span>
+                <span class="n">current_window_st</span> <span class="o">=</span> <span class="n">window_st</span> <span class="k">if</span> <span class="n">current_window_st</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">current_window_st</span>
+                <span class="n">current_window_et</span> <span class="o">=</span> <span class="n">window_et</span> <span class="k">if</span> <span class="n">current_window_et</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">current_window_et</span>
+                <span class="n">previous_window_st</span> <span class="o">=</span> <span class="kc">None</span> <span class="k">if</span> <span class="n">previous_window_st</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">previous_window_st</span>
+                <span class="n">previous_window_et</span> <span class="o">=</span> <span class="kc">None</span> <span class="k">if</span> <span class="n">previous_window_et</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">previous_window_et</span>
+                <span class="k">if</span> <span class="n">current_window_st</span> <span class="o">==</span> <span class="n">window_st</span> <span class="ow">and</span> <span class="n">current_window_et</span> <span class="o">==</span> <span class="n">window_et</span><span class="p">:</span>
+                    <span class="n">current_window</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">chunk</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">current_window</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span>
+                        <span class="n">current_window</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">sort</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+                    <span class="n">current_clock</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_send_data</span><span class="p">(</span>
+                        <span class="n">current_window</span><span class="p">,</span> <span class="n">current_clock</span><span class="p">,</span> <span class="n">current_window_st</span><span class="p">,</span> <span class="n">current_window_et</span><span class="p">,</span> <span class="n">previous_window_st</span><span class="p">,</span> <span class="n">previous_window_et</span><span class="p">)</span>
+                    <span class="n">current_window</span> <span class="o">=</span> <span class="p">[</span><span class="n">chunk</span><span class="p">]</span>
+                    <span class="n">previous_window_st</span> <span class="o">=</span> <span class="n">current_window_st</span>
+                    <span class="n">previous_window_et</span> <span class="o">=</span> <span class="n">current_window_et</span>
+                    <span class="n">current_window_st</span> <span class="o">=</span> <span class="n">window_st</span>
+                    <span class="n">current_window_et</span> <span class="o">=</span> <span class="n">window_et</span>
+
+    <span class="k">def</span> <span class="nf">_send_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">current_window</span><span class="p">,</span> <span class="n">current_clock</span><span class="p">,</span> <span class="n">current_window_st</span><span class="p">,</span> <span class="n">current_window_et</span><span class="p">,</span> <span class="n">previous_window_st</span><span class="p">,</span> <span class="n">previous_window_et</span><span class="p">):</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Sending stream data to queue...&#39;</span><span class="p">)</span>
+        <span class="n">package</span> <span class="o">=</span> <span class="p">(</span><span class="n">current_window</span><span class="p">,</span> <span class="n">current_window_st</span><span class="p">,</span> <span class="n">current_window_et</span><span class="p">,</span>
+                   <span class="n">previous_window_st</span><span class="p">,</span> <span class="n">previous_window_et</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_simulate_reality</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">previous_window_st</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">delay</span> <span class="o">=</span> <span class="p">(</span><span class="n">current_window_st</span> <span class="o">-</span> <span class="n">previous_window_st</span><span class="p">)</span> <span class="o">/</span> \
+                    <span class="n">np</span><span class="o">.</span><span class="n">timedelta64</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;s&#39;</span><span class="p">)</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Delay for &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">delay</span><span class="p">)</span> <span class="o">+</span>
+                              <span class="s1">&#39; seconds to simulate reality&#39;</span><span class="p">)</span>
+                <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="n">current_clock</span> <span class="o">+</span> <span class="n">delay</span> <span class="o">-</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">(),</span> <span class="mi">0</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_put_data_in_queue</span><span class="p">(</span><span class="n">package</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_put_data_in_queue</span><span class="p">(</span><span class="n">package</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">current_clock</span>
+
+<div class="viewcode-block" id="SlidingWindowStream.chunk_"><a class="viewcode-back" href="../../../generated/arus.core.stream.SlidingWindowStream.chunk_.html#arus.core.stream.SlidingWindowStream.chunk_">[docs]</a>    <span class="k">def</span> <span class="nf">chunk_</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_chunk_loaded_data</span><span class="p">()</span></div></div>
+
+
+<span class="kn">from</span> <span class="nn">.sensor_stream</span> <span class="kn">import</span> <span class="n">SensorFileSlidingWindowStream</span>
+<span class="kn">from</span> <span class="nn">.generator_stream</span> <span class="kn">import</span> <span class="n">GeneratorSlidingWindowStream</span>
+<span class="kn">from</span> <span class="nn">.annotation_stream</span> <span class="kn">import</span> <span class="n">AnnotationFileSlidingWindowStream</span>
+</pre></div>
+
+    </div>
+      
+  </div>
+</div>
+<footer class="footer">
+  <div class="container">
+    <p class="pull-right">
+      <a href="#">Back to top</a>
+      
+        <br/>
+        
+      
+    </p>
+    <p>
+        &copy; Copyright 2019, Qu Tang.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 2.3.1.<br/>
+    </p>
+  </div>
+</footer>
+  </body>
+</html>

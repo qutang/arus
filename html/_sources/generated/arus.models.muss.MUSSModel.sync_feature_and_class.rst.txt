@@ -1,0 +1,6 @@
+arus.models.muss.MUSSModel.sync\_feature\_and\_class
+====================================================
+
+.. currentmodule:: arus.models.muss
+
+.. automethod:: MUSSModel.sync_feature_and_class

@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8" />
+    <title>arus.models.muss &#8212; arus 0.6.0 documentation</title>
+    <link rel="stylesheet" href="../../../_static/bootstrap-sphinx.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/gallery.css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../_static/language_data.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+<meta charset='utf-8'>
+<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<script type="text/javascript" src="../../../_static/js/jquery-1.11.0.min.js "></script>
+<script type="text/javascript" src="../../../_static/js/jquery-fix.js "></script>
+<script type="text/javascript" src="../../../_static/bootstrap-3.3.7/js/bootstrap.min.js "></script>
+<script type="text/javascript" src="../../../_static/bootstrap-sphinx.js "></script>
+
+  </head><body>
+
+  <div id="navbar" class="navbar navbar-inverse navbar-default navbar-fixed-top">
+    <div class="container">
+      <div class="navbar-header">
+        <!-- .btn-navbar is used as the toggle for collapsed navbar content -->
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".nav-collapse">
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="../../../index.html">
+          arus</a>
+        <span class="navbar-text navbar-version pull-left"><b>0.6.0</b></span>
+      </div>
+
+        <div class="collapse navbar-collapse nav-collapse">
+          <ul class="nav navbar-nav">
+            
+                <li><a href="../../../examples/index.html">Examples</a></li>
+                <li><a href="../../../references.html">References</a></li>
+                <li><a href="../../../news.html">Changelog</a></li>
+            
+            
+              <li class="dropdown globaltoc-container">
+  <a role="button"
+     id="dLabelGlobalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="../../../index.html">arus <b class="caret"></b></a>
+  <ul class="dropdown-menu globaltoc"
+      role="menu"
+      aria-labelledby="dLabelGlobalToc"></ul>
+</li>
+              
+            
+            
+              
+                
+              
+            
+            
+            
+            
+          </ul>
+
+          
+            
+<form class="navbar-form navbar-right" action="../../../search.html" method="get">
+ <div class="form-group">
+  <input type="text" name="q" class="form-control" placeholder="Search" />
+ </div>
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+          
+        </div>
+    </div>
+  </div>
+
+<div class="container">
+  <div class="row">
+      <div class="col-md-3">
+        <div id="sidebar" class="bs-sidenav" role="complementary">
+<form action="../../../search.html" method="get">
+ <div class="form-group">
+  <input type="text" name="q" class="form-control" placeholder="Search" />
+ </div>
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+        </div>
+      </div>
+    <div class="body col-md-9 content" role="main">
+      
+  <h1>Source code for arus.models.muss</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Module of functions and classes to run MUSS model.</span>
+
+<span class="sd">This module includes functions to preprocess raw accelerometer data, compute features, train MUSS classifier and test with it based on the procedure described in the published manuscript.</span>
+
+<span class="sd">Citation: Posture and Physical Activity Detection: Impact of Number of Sensors and Feature Type (MSSE accepted)</span>
+
+<span class="sd">Author: Qu Tang</span>
+<span class="sd">Date: 2019-12-16</span>
+<span class="sd">License: see LICENSE file</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span> <span class="nn">functools</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">sklearn.svm</span> <span class="k">as</span> <span class="nn">svm</span>
+<span class="kn">from</span> <span class="nn">sklearn</span> <span class="kn">import</span> <span class="n">metrics</span> <span class="k">as</span> <span class="n">sk_metrics</span>
+<span class="kn">from</span> <span class="nn">sklearn</span> <span class="kn">import</span> <span class="n">model_selection</span> <span class="k">as</span> <span class="n">sk_model_selection</span>
+<span class="kn">from</span> <span class="nn">sklearn</span> <span class="kn">import</span> <span class="n">preprocessing</span> <span class="k">as</span> <span class="n">sk_preprocessing</span>
+<span class="kn">from</span> <span class="nn">sklearn</span> <span class="kn">import</span> <span class="n">utils</span> <span class="k">as</span> <span class="n">sk_utils</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="kn">import</span> <span class="nn">matplotlib</span> <span class="k">as</span> <span class="nn">mpl</span>
+<span class="kn">import</span> <span class="nn">seaborn</span> <span class="k">as</span> <span class="nn">sns</span>
+
+<span class="kn">from</span> <span class="nn">..core.accelerometer.features</span> <span class="kn">import</span> <span class="n">activation</span> <span class="k">as</span> <span class="n">accel_activation</span>
+<span class="kn">from</span> <span class="nn">..core.accelerometer.features</span> <span class="kn">import</span> <span class="n">orientation</span> <span class="k">as</span> <span class="n">accel_ori</span>
+<span class="kn">from</span> <span class="nn">..core.accelerometer.features</span> <span class="kn">import</span> <span class="n">spectrum</span> <span class="k">as</span> <span class="n">accel_spectrum</span>
+<span class="kn">from</span> <span class="nn">..core.accelerometer.features</span> <span class="kn">import</span> <span class="n">stats</span> <span class="k">as</span> <span class="n">accel_stats</span>
+<span class="kn">from</span> <span class="nn">..core.accelerometer</span> <span class="kn">import</span> <span class="n">transformation</span> <span class="k">as</span> <span class="n">accel_transform</span>
+<span class="kn">from</span> <span class="nn">..core.libs.dsp</span> <span class="kn">import</span> <span class="n">filtering</span> <span class="k">as</span> <span class="n">arus_filtering</span>
+<span class="kn">from</span> <span class="nn">..core.libs</span> <span class="kn">import</span> <span class="n">num</span> <span class="k">as</span> <span class="n">arus_num</span>
+<span class="kn">from</span> <span class="nn">..core</span> <span class="kn">import</span> <span class="n">pipeline</span> <span class="k">as</span> <span class="n">arus_pipeline</span>
+
+
+<div class="viewcode-block" id="muss_inference_processor"><a class="viewcode-back" href="../../../generated/arus.models.muss.muss_inference_processor.html#arus.models.muss.muss_inference_processor">[docs]</a><span class="k">def</span> <span class="nf">muss_inference_processor</span><span class="p">(</span><span class="n">chunk_list</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+    <span class="kn">from</span> <span class="nn">.muss</span> <span class="kn">import</span> <span class="n">MUSSModel</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;model&#39;</span><span class="p">]</span>
+    <span class="n">muss</span> <span class="o">=</span> <span class="n">MUSSModel</span><span class="p">()</span>
+    <span class="n">feature_dfs</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">placement_names</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">df</span><span class="p">,</span> <span class="n">st</span><span class="p">,</span> <span class="n">et</span><span class="p">,</span> <span class="n">prev_st</span><span class="p">,</span> <span class="n">prev_et</span><span class="p">,</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">chunk_list</span><span class="p">:</span>
+        <span class="n">feature_df</span> <span class="o">=</span> <span class="n">muss</span><span class="o">.</span><span class="n">compute_features</span><span class="p">(</span>
+            <span class="n">df</span><span class="p">,</span> <span class="n">sr</span><span class="o">=</span><span class="n">kwargs</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="s1">&#39;sr&#39;</span><span class="p">],</span> <span class="n">st</span><span class="o">=</span><span class="n">st</span><span class="p">,</span> <span class="n">et</span><span class="o">=</span><span class="n">et</span><span class="p">)</span>
+        <span class="n">feature_dfs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">feature_df</span><span class="p">)</span>
+        <span class="n">placement_names</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+    <span class="n">sorted_feature_dfs</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">model</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">]:</span>
+            <span class="n">i</span> <span class="o">=</span> <span class="n">placement_names</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+            <span class="n">sorted_feature_dfs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">feature_dfs</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+    <span class="k">except</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span>
+            <span class="s1">&#39;Make sure the placements between your data and the trained model are the same.&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sorted_feature_dfs</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">combined_df</span> <span class="o">=</span> <span class="n">sorted_feature_dfs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">combined_df</span><span class="p">,</span> <span class="n">feature_names</span> <span class="o">=</span> <span class="n">muss</span><span class="o">.</span><span class="n">combine_features</span><span class="p">(</span>
+            <span class="o">*</span><span class="n">sorted_feature_dfs</span><span class="p">,</span> <span class="n">placement_names</span><span class="o">=</span><span class="n">model</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">])</span>
+    <span class="n">filtered_combined_df</span> <span class="o">=</span> <span class="n">muss</span><span class="o">.</span><span class="n">select_features</span><span class="p">(</span>
+        <span class="n">combined_df</span><span class="p">,</span> <span class="n">feature_names</span><span class="o">=</span><span class="n">model</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+    <span class="n">predicted_probs</span> <span class="o">=</span> <span class="n">muss</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span>
+        <span class="n">filtered_combined_df</span><span class="p">,</span> <span class="n">model</span><span class="o">=</span><span class="n">model</span><span class="p">,</span> <span class="n">output_prob</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">predicted_probs</span></div>
+
+
+<div class="viewcode-block" id="MUSSModel"><a class="viewcode-back" href="../../../generated/arus.models.muss.MUSSModel.html#arus.models.muss.MUSSModel">[docs]</a><span class="k">class</span> <span class="nc">MUSSModel</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_saved_featuresets</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_saved_models</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_FEATURE_NAMES</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;MEAN_0&#39;</span><span class="p">,</span> <span class="s1">&#39;STD_0&#39;</span><span class="p">,</span> <span class="s1">&#39;MAX_0&#39;</span><span class="p">,</span> <span class="s1">&#39;RANGE_0&#39;</span><span class="p">,</span> <span class="s1">&#39;DOM_FREQ_0&#39;</span><span class="p">,</span> <span class="s1">&#39;FREQ_POWER_RATIO_ABOVE_3DOT5_0&#39;</span><span class="p">,</span> <span class="s1">&#39;DOM_FREQ_POWER_RATIO_0&#39;</span><span class="p">,</span> <span class="s1">&#39;ACTIVE_SAMPLES_0&#39;</span><span class="p">,</span> <span class="s1">&#39;ACTIVATIONS_0&#39;</span><span class="p">,</span>
+                               <span class="s1">&#39;STD_ACTIVATION_DURATIONS_0&#39;</span><span class="p">,</span> <span class="s2">&quot;MEDIAN_G_ANGLE_X&quot;</span><span class="p">,</span> <span class="s2">&quot;MEDIAN_G_ANGLE_Y&quot;</span><span class="p">,</span> <span class="s2">&quot;MEDIAN_G_ANGLE_Z&quot;</span><span class="p">,</span> <span class="s2">&quot;RANGE_G_ANGLE_X&quot;</span><span class="p">,</span> <span class="s2">&quot;RANGE_G_ANGLE_Y&quot;</span><span class="p">,</span> <span class="s2">&quot;RANGE_G_ANGLE_Z&quot;</span><span class="p">]</span>
+
+<div class="viewcode-block" id="MUSSModel.get_feature_names"><a class="viewcode-back" href="../../../generated/arus.models.muss.MUSSModel.get_feature_names.html#arus.models.muss.MUSSModel.get_feature_names">[docs]</a>    <span class="k">def</span> <span class="nf">get_feature_names</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_FEATURE_NAMES</span></div>
+
+<div class="viewcode-block" id="MUSSModel.combine_features"><a class="viewcode-back" href="../../../generated/arus.models.muss.MUSSModel.combine_features.html#arus.models.muss.MUSSModel.combine_features">[docs]</a>    <span class="k">def</span> <span class="nf">combine_features</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">input_features</span><span class="p">,</span> <span class="n">placement_names</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">group_col</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">group_col</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">group_col</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">group_col</span> <span class="o">=</span> <span class="p">[</span><span class="n">group_col</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">placement_names</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">placement_names</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">input_features</span><span class="p">))</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">placement_names</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">input_features</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s1">&#39;placement_names should have the same length as the number of input_features&#39;</span><span class="p">)</span>
+        <span class="n">sequence</span> <span class="o">=</span> <span class="nb">zip</span><span class="p">(</span><span class="n">input_features</span><span class="p">,</span> <span class="n">placement_names</span><span class="p">)</span>
+
+        <span class="k">def</span> <span class="nf">_combine</span><span class="p">(</span><span class="n">left</span><span class="p">,</span> <span class="n">right</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">left</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">right</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">on</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;HEADER_TIME_STAMP&#39;</span><span class="p">,</span> <span class="s1">&#39;START_TIME&#39;</span><span class="p">,</span>
+                                                   <span class="s1">&#39;STOP_TIME&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="n">group_col</span><span class="p">,</span> <span class="n">suffixes</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;_&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">left</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span> <span class="s1">&#39;_&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">right</span><span class="p">[</span><span class="mi">1</span><span class="p">])))</span>
+        <span class="n">combined_df</span> <span class="o">=</span> <span class="n">functools</span><span class="o">.</span><span class="n">reduce</span><span class="p">(</span><span class="n">_combine</span><span class="p">,</span> <span class="n">sequence</span><span class="p">)</span>
+        <span class="n">combined_feature_names</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">filter</span><span class="p">(</span><span class="k">lambda</span> <span class="n">name</span><span class="p">:</span> <span class="n">name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;_&#39;</span><span class="p">)</span>
+                                             <span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="ow">in</span> <span class="n">placement_names</span><span class="p">,</span> <span class="n">combined_df</span><span class="o">.</span><span class="n">columns</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">combined_df</span><span class="p">,</span> <span class="n">combined_feature_names</span></div>
+
+<div class="viewcode-block" id="MUSSModel.select_features"><a class="viewcode-back" href="../../../generated/arus.models.muss.MUSSModel.select_features.html#arus.models.muss.MUSSModel.select_features">[docs]</a>    <span class="k">def</span> <span class="nf">select_features</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_feature</span><span class="p">,</span> <span class="n">feature_names</span><span class="o">=</span><span class="s1">&#39;All&#39;</span><span class="p">,</span> <span class="n">group_col</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">group_col</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">group_col</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">group_col</span> <span class="o">=</span> <span class="p">[</span><span class="n">group_col</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">feature_names</span> <span class="o">==</span> <span class="s1">&#39;All&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">input_feature</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">selected_cols</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;HEADER_TIME_STAMP&#39;</span><span class="p">,</span> <span class="s1">&#39;START_TIME&#39;</span><span class="p">,</span> <span class="s1">&#39;STOP_TIME&#39;</span><span class="p">]</span> <span class="o">+</span> \
+                <span class="n">group_col</span> <span class="o">+</span> <span class="n">feature_names</span>
+            <span class="k">return</span> <span class="n">input_feature</span><span class="p">[</span><span class="n">selected_cols</span><span class="p">]</span></div>
+
+<div class="viewcode-block" id="MUSSModel.sync_feature_and_class"><a class="viewcode-back" href="../../../generated/arus.models.muss.MUSSModel.sync_feature_and_class.html#arus.models.muss.MUSSModel.sync_feature_and_class">[docs]</a>    <span class="k">def</span> <span class="nf">sync_feature_and_class</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_feature</span><span class="p">,</span> <span class="n">input_class</span><span class="p">,</span> <span class="n">group_col</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">group_col</span> <span class="o">=</span> <span class="p">[]</span> <span class="k">if</span> <span class="n">group_col</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">[</span><span class="n">group_col</span><span class="p">]</span>
+        <span class="n">synced_set</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">input_feature</span><span class="p">,</span> <span class="n">input_class</span><span class="p">,</span>
+                              <span class="n">how</span><span class="o">=</span><span class="s1">&#39;inner&#39;</span><span class="p">,</span>
+                              <span class="n">on</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;HEADER_TIME_STAMP&#39;</span><span class="p">,</span>
+                                  <span class="s1">&#39;START_TIME&#39;</span><span class="p">,</span> <span class="s1">&#39;STOP_TIME&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="n">group_col</span><span class="p">,</span>
+                              <span class="n">suffixes</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;_f&#39;</span><span class="p">,</span> <span class="s1">&#39;_c&#39;</span><span class="p">))</span>
+        <span class="n">synced_feature</span> <span class="o">=</span> <span class="n">synced_set</span><span class="p">[</span><span class="n">input_feature</span><span class="o">.</span><span class="n">columns</span><span class="p">]</span>
+        <span class="n">synced_class</span> <span class="o">=</span> <span class="n">synced_set</span><span class="p">[</span><span class="n">input_class</span><span class="o">.</span><span class="n">columns</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">synced_feature</span><span class="p">,</span> <span class="n">synced_class</span></div>
+
+<div class="viewcode-block" id="MUSSModel.compute_features"><a class="viewcode-back" href="../../../generated/arus.models.muss.MUSSModel.compute_features.html#arus.models.muss.MUSSModel.compute_features">[docs]</a>    <span class="k">def</span> <span class="nf">compute_features</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_data</span><span class="p">,</span> <span class="n">sr</span><span class="p">,</span> <span class="n">st</span><span class="p">,</span> <span class="n">et</span><span class="p">,</span> <span class="n">subwin_secs</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">ori_unit</span><span class="o">=</span><span class="s1">&#39;rad&#39;</span><span class="p">,</span> <span class="n">activation_threshold</span><span class="o">=</span><span class="mf">0.2</span><span class="p">):</span>
+        <span class="n">subwin_samples</span> <span class="o">=</span> <span class="n">subwin_secs</span> <span class="o">*</span> <span class="n">sr</span>
+        <span class="n">X</span> <span class="o">=</span> <span class="n">arus_num</span><span class="o">.</span><span class="n">format_arr</span><span class="p">(</span><span class="n">input_data</span><span class="o">.</span><span class="n">values</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">:</span><span class="mi">4</span><span class="p">])</span>
+        <span class="n">vm_feature_funcs</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">accel_stats</span><span class="o">.</span><span class="n">mean</span><span class="p">,</span>
+            <span class="n">accel_stats</span><span class="o">.</span><span class="n">std</span><span class="p">,</span>
+            <span class="n">accel_stats</span><span class="o">.</span><span class="n">max_value</span><span class="p">,</span>
+            <span class="n">accel_stats</span><span class="o">.</span><span class="n">max_minus_min</span><span class="p">,</span>
+            <span class="n">functools</span><span class="o">.</span><span class="n">partial</span><span class="p">(</span><span class="n">accel_spectrum</span><span class="o">.</span><span class="n">spectrum_features</span><span class="p">,</span>
+                    <span class="n">sr</span><span class="o">=</span><span class="n">sr</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">preset</span><span class="o">=</span><span class="s1">&#39;muss&#39;</span><span class="p">),</span>
+            <span class="n">functools</span><span class="o">.</span><span class="n">partial</span><span class="p">(</span><span class="n">accel_activation</span><span class="o">.</span><span class="n">stats_active_samples</span><span class="p">,</span>
+                    <span class="n">threshold</span><span class="o">=</span><span class="n">activation_threshold</span><span class="p">)</span>
+        <span class="p">]</span>
+
+        <span class="n">axis_feature_funcs</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">functools</span><span class="o">.</span><span class="n">partial</span><span class="p">(</span><span class="n">accel_ori</span><span class="o">.</span><span class="n">gravity_angle_stats</span><span class="p">,</span>
+                    <span class="n">subwin_samples</span><span class="o">=</span><span class="n">subwin_samples</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="n">ori_unit</span><span class="p">)</span>
+        <span class="p">]</span>
+
+        <span class="n">X_vm</span> <span class="o">=</span> <span class="n">accel_transform</span><span class="o">.</span><span class="n">vector_magnitude</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+
+        <span class="n">X_vm_filtered</span> <span class="o">=</span> <span class="n">arus_filtering</span><span class="o">.</span><span class="n">butterworth</span><span class="p">(</span>
+            <span class="n">X_vm</span><span class="p">,</span> <span class="n">sr</span><span class="o">=</span><span class="n">sr</span><span class="p">,</span> <span class="n">cut_offs</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">order</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">filter_type</span><span class="o">=</span><span class="s1">&#39;low&#39;</span><span class="p">)</span>
+        <span class="n">X_filtered</span> <span class="o">=</span> <span class="n">arus_filtering</span><span class="o">.</span><span class="n">butterworth</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">sr</span><span class="o">=</span><span class="n">sr</span><span class="p">,</span> <span class="n">cut_offs</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span>
+                                 <span class="n">order</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">filter_type</span><span class="o">=</span><span class="s1">&#39;low&#39;</span><span class="p">)</span>
+
+        <span class="n">result</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;HEADER_TIME_STAMP&#39;</span><span class="p">:</span> <span class="p">[</span><span class="n">st</span><span class="p">],</span>
+            <span class="s1">&#39;START_TIME&#39;</span><span class="p">:</span> <span class="p">[</span><span class="n">st</span><span class="p">],</span>
+            <span class="s1">&#39;STOP_TIME&#39;</span><span class="p">:</span> <span class="p">[</span><span class="n">et</span><span class="p">]</span>
+        <span class="p">}</span>
+        <span class="k">for</span> <span class="n">func</span> <span class="ow">in</span> <span class="n">vm_feature_funcs</span><span class="p">:</span>
+            <span class="n">values</span><span class="p">,</span> <span class="n">names</span> <span class="o">=</span> <span class="n">func</span><span class="p">(</span><span class="n">X_vm_filtered</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">value</span><span class="p">,</span> <span class="n">name</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">values</span><span class="o">.</span><span class="n">transpose</span><span class="p">(),</span> <span class="n">names</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_FEATURE_NAMES</span><span class="p">:</span>
+                    <span class="n">result</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+
+        <span class="k">for</span> <span class="n">func</span> <span class="ow">in</span> <span class="n">axis_feature_funcs</span><span class="p">:</span>
+            <span class="n">values</span><span class="p">,</span> <span class="n">names</span> <span class="o">=</span> <span class="n">func</span><span class="p">(</span><span class="n">X_filtered</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">value</span><span class="p">,</span> <span class="n">name</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">values</span><span class="o">.</span><span class="n">transpose</span><span class="p">(),</span> <span class="n">names</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_FEATURE_NAMES</span><span class="p">:</span>
+                    <span class="n">result</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+
+        <span class="n">result</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">result</span></div>
+
+<div class="viewcode-block" id="MUSSModel.remove_classes"><a class="viewcode-back" href="../../../generated/arus.models.muss.MUSSModel.remove_classes.html#arus.models.muss.MUSSModel.remove_classes">[docs]</a>    <span class="k">def</span> <span class="nf">remove_classes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_feature</span><span class="p">,</span> <span class="n">input_class</span><span class="p">,</span> <span class="n">class_col</span><span class="p">,</span> <span class="n">classes_to_remove</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;Unknown&#39;</span><span class="p">,</span> <span class="s1">&#39;Transition&#39;</span><span class="p">]):</span>
+        <span class="c1"># remove transition and unknown indices</span>
+        <span class="n">is_valid_label</span> <span class="o">=</span> <span class="o">~</span><span class="n">input_class</span><span class="p">[</span><span class="n">class_col</span><span class="p">]</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">classes_to_remove</span><span class="p">)</span><span class="o">.</span><span class="n">values</span>
+        <span class="n">filtered_feature</span> <span class="o">=</span> <span class="n">input_feature</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">is_valid_label</span><span class="p">,</span> <span class="p">:]</span>
+        <span class="n">filtered_class</span> <span class="o">=</span> <span class="n">input_class</span><span class="p">[</span><span class="n">is_valid_label</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">filtered_feature</span><span class="p">,</span> <span class="n">filtered_class</span></div>
+
+<div class="viewcode-block" id="MUSSModel.remove_groups"><a class="viewcode-back" href="../../../generated/arus.models.muss.MUSSModel.remove_groups.html#arus.models.muss.MUSSModel.remove_groups">[docs]</a>    <span class="k">def</span> <span class="nf">remove_groups</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_feature</span><span class="p">,</span> <span class="n">input_class</span><span class="p">,</span> <span class="n">group_col</span><span class="p">,</span> <span class="n">groups_to_remove</span><span class="o">=</span><span class="p">[]):</span>
+        <span class="n">is_valid_groups</span> <span class="o">=</span> <span class="o">~</span><span class="n">input_class</span><span class="p">[</span><span class="n">group_col</span><span class="p">]</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">groups_to_remove</span><span class="p">)</span>
+        <span class="n">filtered_feature</span> <span class="o">=</span> <span class="n">input_feature</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">is_valid_groups</span><span class="p">,</span> <span class="p">:]</span>
+        <span class="n">filtered_class</span> <span class="o">=</span> <span class="n">input_class</span><span class="p">[</span><span class="n">is_valid_groups</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">filtered_feature</span><span class="p">,</span> <span class="n">filtered_class</span></div>
+
+    <span class="k">def</span> <span class="nf">_train_classifier</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_feature_arr</span><span class="p">,</span> <span class="n">input_class_vec</span><span class="p">,</span> <span class="n">placement_names</span><span class="p">,</span> <span class="n">feature_names</span><span class="p">,</span> <span class="n">C</span><span class="o">=</span><span class="mi">16</span><span class="p">,</span> <span class="n">kernel</span><span class="o">=</span><span class="s1">&#39;rbf&#39;</span><span class="p">,</span> <span class="n">gamma</span><span class="o">=</span><span class="mf">0.25</span><span class="p">,</span> <span class="n">tol</span><span class="o">=</span><span class="mf">0.0001</span><span class="p">,</span> <span class="n">output_probability</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">class_weight</span><span class="o">=</span><span class="s1">&#39;balanced&#39;</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="n">input_matrix</span><span class="p">,</span> <span class="n">input_classes</span> <span class="o">=</span> <span class="n">sk_utils</span><span class="o">.</span><span class="n">shuffle</span><span class="p">(</span>
+            <span class="n">input_feature_arr</span><span class="p">,</span> <span class="n">input_class_vec</span><span class="p">)</span>
+        <span class="n">classifier</span> <span class="o">=</span> <span class="n">svm</span><span class="o">.</span><span class="n">SVC</span><span class="p">(</span>
+            <span class="n">C</span><span class="o">=</span><span class="n">C</span><span class="p">,</span>
+            <span class="n">kernel</span><span class="o">=</span><span class="n">kernel</span><span class="p">,</span>
+            <span class="n">gamma</span><span class="o">=</span><span class="n">gamma</span><span class="p">,</span>
+            <span class="n">tol</span><span class="o">=</span><span class="n">tol</span><span class="p">,</span>
+            <span class="n">probability</span><span class="o">=</span><span class="n">output_probability</span><span class="p">,</span>
+            <span class="n">class_weight</span><span class="o">=</span><span class="n">class_weight</span><span class="p">,</span>
+            <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">)</span>
+        <span class="n">scaler</span> <span class="o">=</span> <span class="n">sk_preprocessing</span><span class="o">.</span><span class="n">MinMaxScaler</span><span class="p">((</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+        <span class="n">scaled_X</span> <span class="o">=</span> <span class="n">scaler</span><span class="o">.</span><span class="n">fit_transform</span><span class="p">(</span><span class="n">input_matrix</span><span class="p">)</span>
+        <span class="n">model</span> <span class="o">=</span> <span class="n">classifier</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">scaled_X</span><span class="p">,</span> <span class="n">input_classes</span><span class="p">)</span>
+        <span class="n">train_accuracy</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">score</span><span class="p">(</span><span class="n">scaled_X</span><span class="p">,</span> <span class="n">input_classes</span><span class="p">)</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">scaler</span><span class="p">,</span> <span class="n">train_accuracy</span><span class="p">,</span>
+                  <span class="n">placement_names</span><span class="p">,</span> <span class="n">feature_names</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">result</span>
+
+<div class="viewcode-block" id="MUSSModel.train_classifier"><a class="viewcode-back" href="../../../generated/arus.models.muss.MUSSModel.train_classifier.html#arus.models.muss.MUSSModel.train_classifier">[docs]</a>    <span class="k">def</span> <span class="nf">train_classifier</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_feature</span><span class="p">,</span> <span class="n">input_class</span><span class="p">,</span> <span class="n">class_col</span><span class="p">,</span> <span class="n">feature_names</span><span class="p">,</span> <span class="n">placement_names</span><span class="p">,</span> <span class="n">save</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Function to train MUSS classifier given input feature vectors and class labels.</span>
+
+<span class="sd">        gamma with 5 better than 0.25, especially between ambulation and lying, we should use a larger gamma for higher decaying impact of neighbor samples.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            input_features (numpy.array): A 2D array that stores the input feature vectors</span>
+<span class="sd">            input_classes (numpy.array): A 2D array that stores the class labels</span>
+<span class="sd">            C (int, optional): Parameter for SVM classifier. Defaults to 16.</span>
+<span class="sd">            kernel (str, optional): Parameter for SVM classifier. Defaults to &#39;rbf&#39;.</span>
+<span class="sd">            gamma (float, optional): Parameter for SVM classifier. Defaults to 0.25.</span>
+<span class="sd">            tol (float, optional): Parameter for SVM classifier. Defaults to 0.0001.</span>
+<span class="sd">            output_probability (bool, optional): Parameter for SVM classifier. Defaults to True.</span>
+<span class="sd">            class_weight (str, optional): Parameter for SVM classifier. Defaults to &#39;balanced&#39;.</span>
+<span class="sd">            verbose (bool, optional): Display training information. Defaults to True.</span>
+<span class="sd">            save (bool, optional): Save trained model to instance variable. Defaults to True.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">input_matrix</span> <span class="o">=</span> <span class="n">input_feature</span><span class="p">[</span><span class="n">feature_names</span><span class="p">]</span><span class="o">.</span><span class="n">values</span>
+        <span class="n">input_classes</span> <span class="o">=</span> <span class="n">input_class</span><span class="p">[</span><span class="n">class_col</span><span class="p">]</span><span class="o">.</span><span class="n">values</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_train_classifier</span><span class="p">(</span>
+            <span class="n">input_matrix</span><span class="p">,</span> <span class="n">input_classes</span><span class="p">,</span> <span class="n">placement_names</span><span class="o">=</span><span class="n">placement_names</span><span class="p">,</span> <span class="n">feature_names</span><span class="o">=</span><span class="n">feature_names</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">save</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_saved_models</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">result</span></div>
+
+    <span class="k">def</span> <span class="nf">_predict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">test_feature</span><span class="p">,</span> <span class="n">classifier</span><span class="p">,</span> <span class="n">scaler</span><span class="p">,</span> <span class="n">output_prob</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="n">scaled_X</span> <span class="o">=</span> <span class="n">scaler</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">test_feature</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">output_prob</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">classifier</span><span class="o">.</span><span class="n">predict_proba</span><span class="p">(</span><span class="n">scaled_X</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">classifier</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">scaled_X</span><span class="p">)</span>
+
+<div class="viewcode-block" id="MUSSModel.predict"><a class="viewcode-back" href="../../../generated/arus.models.muss.MUSSModel.predict.html#arus.models.muss.MUSSModel.predict">[docs]</a>    <span class="k">def</span> <span class="nf">predict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">test_features</span><span class="p">,</span> <span class="n">model</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">output_prob</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">model</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">tuple</span><span class="p">:</span>
+            <span class="n">scaler</span> <span class="o">=</span> <span class="n">model</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">classifier</span> <span class="o">=</span> <span class="n">model</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="nb">type</span><span class="p">(</span><span class="n">model</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">int</span><span class="p">:</span>
+            <span class="n">scaler</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_saved_models</span><span class="p">[</span><span class="n">model</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">classifier</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_saved_models</span><span class="p">[</span><span class="n">model</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">test_feature</span> <span class="o">=</span> <span class="n">test_features</span><span class="p">[</span><span class="n">model</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]]</span><span class="o">.</span><span class="n">values</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_predict</span><span class="p">(</span><span class="n">test_feature</span><span class="p">,</span> <span class="n">classifier</span><span class="p">,</span> <span class="n">scaler</span><span class="p">,</span> <span class="n">output_prob</span><span class="o">=</span><span class="n">output_prob</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="MUSSModel.validate_classifier"><a class="viewcode-back" href="../../../generated/arus.models.muss.MUSSModel.validate_classifier.html#arus.models.muss.MUSSModel.validate_classifier">[docs]</a>    <span class="k">def</span> <span class="nf">validate_classifier</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_feature</span><span class="p">,</span> <span class="n">input_class</span><span class="p">,</span> <span class="n">class_col</span><span class="p">,</span> <span class="n">feature_names</span><span class="p">,</span> <span class="n">placement_names</span><span class="p">,</span> <span class="n">group_col</span><span class="p">,</span> <span class="o">**</span><span class="n">train_kwargs</span><span class="p">):</span>
+        <span class="n">input_feature_arr</span> <span class="o">=</span> <span class="n">input_feature</span><span class="p">[</span><span class="n">feature_names</span><span class="p">]</span><span class="o">.</span><span class="n">values</span>
+        <span class="n">input_class_vec</span> <span class="o">=</span> <span class="n">input_class</span><span class="p">[</span><span class="n">class_col</span><span class="p">]</span><span class="o">.</span><span class="n">values</span>
+        <span class="n">groups</span> <span class="o">=</span> <span class="n">input_class</span><span class="p">[</span><span class="n">group_col</span><span class="p">]</span><span class="o">.</span><span class="n">values</span>
+        <span class="n">logo</span> <span class="o">=</span> <span class="n">sk_model_selection</span><span class="o">.</span><span class="n">LeaveOneGroupOut</span><span class="p">()</span>
+        <span class="n">output_class_vec</span> <span class="o">=</span> <span class="n">input_class_vec</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">train_split</span><span class="p">,</span> <span class="n">test_split</span> <span class="ow">in</span> <span class="n">logo</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">input_feature_arr</span><span class="p">,</span> <span class="n">input_class_vec</span><span class="p">,</span> <span class="n">groups</span><span class="p">):</span>
+            <span class="n">train_feature</span> <span class="o">=</span> <span class="n">input_feature_arr</span><span class="p">[</span><span class="n">train_split</span><span class="p">,</span> <span class="p">:]</span>
+            <span class="n">train_class</span> <span class="o">=</span> <span class="n">input_class_vec</span><span class="p">[</span><span class="n">train_split</span><span class="p">]</span>
+            <span class="n">test_feature</span> <span class="o">=</span> <span class="n">input_feature_arr</span><span class="p">[</span><span class="n">test_split</span><span class="p">,</span> <span class="p">:]</span>
+            <span class="n">model</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_train_classifier</span><span class="p">(</span>
+                <span class="n">train_feature</span><span class="p">,</span> <span class="n">train_class</span><span class="p">,</span> <span class="n">feature_names</span><span class="o">=</span><span class="n">feature_names</span><span class="p">,</span> <span class="n">placement_names</span><span class="o">=</span><span class="n">placement_names</span><span class="p">,</span> <span class="o">**</span> <span class="n">train_kwargs</span><span class="p">)</span>
+            <span class="n">predict_class</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_predict</span><span class="p">(</span>
+                <span class="n">test_feature</span><span class="p">,</span> <span class="n">classifier</span><span class="o">=</span><span class="n">model</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">scaler</span><span class="o">=</span><span class="n">model</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+            <span class="n">output_class_vec</span><span class="p">[</span><span class="n">test_split</span><span class="p">]</span> <span class="o">=</span> <span class="n">predict_class</span>
+        <span class="n">acc</span> <span class="o">=</span> <span class="n">sk_metrics</span><span class="o">.</span><span class="n">accuracy_score</span><span class="p">(</span><span class="n">input_class_vec</span><span class="p">,</span> <span class="n">output_class_vec</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">input_class_vec</span><span class="p">,</span> <span class="n">output_class_vec</span><span class="p">,</span> <span class="n">acc</span></div>
+
+    <span class="k">def</span> <span class="nf">_plot_confusion_matrix</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">conf_matrix</span><span class="p">,</span> <span class="n">size</span><span class="p">):</span>
+        <span class="c1"># plot confusion matrix</span>
+        <span class="n">mpl</span><span class="o">.</span><span class="n">rcParams</span><span class="p">[</span><span class="s1">&#39;font.family&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;serif&#39;</span>
+        <span class="n">mpl</span><span class="o">.</span><span class="n">rcParams</span><span class="p">[</span><span class="s1">&#39;font.size&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">8</span>
+        <span class="n">mpl</span><span class="o">.</span><span class="n">rcParams</span><span class="p">[</span><span class="s1">&#39;font.serif&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;Times New Roman&#39;</span><span class="p">]</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span>
+        <span class="n">sns</span><span class="o">.</span><span class="n">set_style</span><span class="p">({</span>
+            <span class="s1">&#39;font.family&#39;</span><span class="p">:</span> <span class="s1">&#39;serif&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;font.size&#39;</span><span class="p">:</span> <span class="mi">8</span>
+        <span class="p">})</span>
+        <span class="n">g</span> <span class="o">=</span> <span class="n">sns</span><span class="o">.</span><span class="n">heatmap</span><span class="p">(</span><span class="n">conf_matrix</span><span class="p">,</span> <span class="n">annot</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s2">&quot;Greys&quot;</span><span class="p">,</span>
+                        <span class="n">cbar</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">fmt</span><span class="o">=</span><span class="s1">&#39;d&#39;</span><span class="p">,</span> <span class="n">robust</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">linewidths</span><span class="o">=</span><span class="mf">0.2</span><span class="p">)</span>
+        <span class="n">g</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">xlabel</span><span class="o">=</span><span class="s2">&quot;Prediction&quot;</span><span class="p">,</span> <span class="n">ylabel</span><span class="o">=</span><span class="s2">&quot;Ground truth&quot;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">plt</span><span class="o">.</span><span class="n">gcf</span><span class="p">()</span>
+
+<div class="viewcode-block" id="MUSSModel.get_confusion_matrix"><a class="viewcode-back" href="../../../generated/arus.models.muss.MUSSModel.get_confusion_matrix.html#arus.models.muss.MUSSModel.get_confusion_matrix">[docs]</a>    <span class="k">def</span> <span class="nf">get_confusion_matrix</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_class</span><span class="p">,</span> <span class="n">predict_class</span><span class="p">,</span> <span class="n">labels</span><span class="p">,</span> <span class="n">graph</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="n">conf_mat</span> <span class="o">=</span> <span class="n">sk_metrics</span><span class="o">.</span><span class="n">confusion_matrix</span><span class="p">(</span><span class="n">input_class</span><span class="p">,</span> <span class="n">predict_class</span><span class="p">,</span> <span class="n">labels</span><span class="o">=</span><span class="n">labels</span><span class="p">)</span>
+        <span class="n">conf_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">conf_mat</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="n">labels</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">labels</span><span class="p">)</span>
+        <span class="n">conf_df</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;Ground Truth&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">graph</span><span class="p">:</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_plot_confusion_matrix</span><span class="p">(</span>
+                <span class="n">conf_df</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">labels</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">labels</span><span class="p">)))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">conf_df</span>
+        <span class="k">return</span> <span class="n">result</span></div>
+
+<div class="viewcode-block" id="MUSSModel.get_classification_report"><a class="viewcode-back" href="../../../generated/arus.models.muss.MUSSModel.get_classification_report.html#arus.models.muss.MUSSModel.get_classification_report">[docs]</a>    <span class="k">def</span> <span class="nf">get_classification_report</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_class</span><span class="p">,</span> <span class="n">predict_class</span><span class="p">,</span> <span class="n">labels</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">sk_metrics</span><span class="o">.</span><span class="n">classification_repor</span><span class="p">(</span><span class="n">input_class</span><span class="p">,</span> <span class="n">predict_class</span><span class="p">,</span> <span class="n">labels</span><span class="o">=</span><span class="n">labels</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="MUSSModel.get_inference_pipeline"><a class="viewcode-back" href="../../../generated/arus.models.muss.MUSSModel.get_inference_pipeline.html#arus.models.muss.MUSSModel.get_inference_pipeline">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">get_inference_pipeline</span><span class="p">(</span><span class="o">*</span><span class="n">streams</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;muss-pipeline&#39;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">pipeline</span> <span class="o">=</span> <span class="n">arus_pipeline</span><span class="o">.</span><span class="n">Pipeline</span><span class="p">(</span>
+            <span class="n">max_processes</span><span class="o">=</span><span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;max_processes&#39;</span><span class="p">],</span> <span class="n">scheduler</span><span class="o">=</span><span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;scheduler&#39;</span><span class="p">],</span> <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">stream</span> <span class="ow">in</span> <span class="n">streams</span><span class="p">:</span>
+            <span class="n">pipeline</span><span class="o">.</span><span class="n">add_stream</span><span class="p">(</span><span class="n">stream</span><span class="p">)</span>
+        <span class="n">pipeline</span><span class="o">.</span><span class="n">set_processor</span><span class="p">(</span><span class="n">muss_inference_processor</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">pipeline</span></div></div>
+</pre></div>
+
+    </div>
+      
+  </div>
+</div>
+<footer class="footer">
+  <div class="container">
+    <p class="pull-right">
+      <a href="#">Back to top</a>
+      
+        <br/>
+        
+      
+    </p>
+    <p>
+        &copy; Copyright 2019, Qu Tang.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 2.3.1.<br/>
+    </p>
+  </div>
+</footer>
+  </body>
+</html>

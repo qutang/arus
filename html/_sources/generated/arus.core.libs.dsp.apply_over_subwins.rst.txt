@@ -1,0 +1,6 @@
+arus.core.libs.dsp.apply\_over\_subwins
+=======================================
+
+.. currentmodule:: arus.core.libs.dsp
+
+.. autofunction:: apply_over_subwins

@@ -1,0 +1,6 @@
+arus.core.libs.mhealth\_format.is\_sensor\_data
+===============================================
+
+.. currentmodule:: arus.core.libs.mhealth_format
+
+.. autofunction:: is_sensor_data

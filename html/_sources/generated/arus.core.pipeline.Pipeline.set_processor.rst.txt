@@ -1,0 +1,6 @@
+arus.core.pipeline.Pipeline.set\_processor
+==========================================
+
+.. currentmodule:: arus.core.pipeline
+
+.. automethod:: Pipeline.set_processor

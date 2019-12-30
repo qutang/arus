@@ -1,0 +1,6 @@
+arus.core.accelerometer.features.median
+=======================================
+
+.. currentmodule:: arus.core.accelerometer.features
+
+.. autofunction:: median

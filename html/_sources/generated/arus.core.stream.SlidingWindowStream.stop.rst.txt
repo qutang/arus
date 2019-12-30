@@ -1,0 +1,6 @@
+arus.core.stream.SlidingWindowStream.stop
+=========================================
+
+.. currentmodule:: arus.core.stream
+
+.. automethod:: SlidingWindowStream.stop

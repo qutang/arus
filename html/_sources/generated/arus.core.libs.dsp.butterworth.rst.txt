@@ -1,0 +1,6 @@
+arus.core.libs.dsp.butterworth
+==============================
+
+.. currentmodule:: arus.core.libs.dsp
+
+.. autofunction:: butterworth

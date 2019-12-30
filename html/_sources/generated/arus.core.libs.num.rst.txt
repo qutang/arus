@@ -1,0 +1,27 @@
+arus.core.libs.num
+==================
+
+-----------
+Description
+-----------
+
+.. automodule:: arus.core.libs.num
+
+.. currentmodule:: arus.core.libs.num
+
+
+
+
+
+---------
+Functions
+---------
+
+.. autosummary::
+    :toctree: .
+    
+    atleast_scalar
+    
+    format_arr
+    
+

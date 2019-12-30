@@ -1,0 +1,6 @@
+arus.core.accelerometer.features.max\_value
+===========================================
+
+.. currentmodule:: arus.core.accelerometer.features
+
+.. autofunction:: max_value

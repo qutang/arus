@@ -1,0 +1,6 @@
+arus.core.libs.mhealth\_format.segment
+======================================
+
+.. currentmodule:: arus.core.libs.mhealth_format
+
+.. autofunction:: segment

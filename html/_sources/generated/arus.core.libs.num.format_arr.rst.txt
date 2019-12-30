@@ -1,0 +1,6 @@
+arus.core.libs.num.format\_arr
+==============================
+
+.. currentmodule:: arus.core.libs.num
+
+.. autofunction:: format_arr

@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8" />
+    <title>arus.plugins.metawear.stream &#8212; arus 0.6.0 documentation</title>
+    <link rel="stylesheet" href="../../../../_static/bootstrap-sphinx.css" type="text/css" />
+    <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/gallery.css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../../_static/language_data.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+<meta charset='utf-8'>
+<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<script type="text/javascript" src="../../../../_static/js/jquery-1.11.0.min.js "></script>
+<script type="text/javascript" src="../../../../_static/js/jquery-fix.js "></script>
+<script type="text/javascript" src="../../../../_static/bootstrap-3.3.7/js/bootstrap.min.js "></script>
+<script type="text/javascript" src="../../../../_static/bootstrap-sphinx.js "></script>
+
+  </head><body>
+
+  <div id="navbar" class="navbar navbar-inverse navbar-default navbar-fixed-top">
+    <div class="container">
+      <div class="navbar-header">
+        <!-- .btn-navbar is used as the toggle for collapsed navbar content -->
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".nav-collapse">
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="../../../../index.html">
+          arus</a>
+        <span class="navbar-text navbar-version pull-left"><b>0.6.0</b></span>
+      </div>
+
+        <div class="collapse navbar-collapse nav-collapse">
+          <ul class="nav navbar-nav">
+            
+                <li><a href="../../../../examples/index.html">Examples</a></li>
+                <li><a href="../../../../references.html">References</a></li>
+                <li><a href="../../../../news.html">Changelog</a></li>
+            
+            
+              <li class="dropdown globaltoc-container">
+  <a role="button"
+     id="dLabelGlobalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="../../../../index.html">arus <b class="caret"></b></a>
+  <ul class="dropdown-menu globaltoc"
+      role="menu"
+      aria-labelledby="dLabelGlobalToc"></ul>
+</li>
+              
+            
+            
+              
+                
+              
+            
+            
+            
+            
+          </ul>
+
+          
+            
+<form class="navbar-form navbar-right" action="../../../../search.html" method="get">
+ <div class="form-group">
+  <input type="text" name="q" class="form-control" placeholder="Search" />
+ </div>
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+          
+        </div>
+    </div>
+  </div>
+
+<div class="container">
+  <div class="row">
+      <div class="col-md-3">
+        <div id="sidebar" class="bs-sidenav" role="complementary">
+<form action="../../../../search.html" method="get">
+ <div class="form-group">
+  <input type="text" name="q" class="form-control" placeholder="Search" />
+ </div>
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+        </div>
+      </div>
+    <div class="body col-md-9 content" role="main">
+      
+  <h1>Source code for arus.plugins.metawear.stream</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">import</span> <span class="nn">queue</span>
+
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">arus.core</span> <span class="kn">import</span> <span class="n">stream</span> <span class="k">as</span> <span class="n">arus_stream</span>
+<span class="kn">from</span> <span class="nn">mbientlab</span> <span class="kn">import</span> <span class="n">metawear</span>
+<span class="kn">from</span> <span class="nn">pymetawear</span> <span class="kn">import</span> <span class="n">client</span> <span class="k">as</span> <span class="n">mw_client</span>
+
+<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">corrector</span> <span class="k">as</span> <span class="n">arus_mw_corrector</span>
+
+
+<div class="viewcode-block" id="MetaWearSlidingWindowStream"><a class="viewcode-back" href="../../../../generated/arus.plugins.metawear.MetaWearSlidingWindowStream.html#arus.plugins.metawear.MetaWearSlidingWindowStream">[docs]</a><span class="k">class</span> <span class="nc">MetaWearSlidingWindowStream</span><span class="p">(</span><span class="n">arus_stream</span><span class="o">.</span><span class="n">SlidingWindowStream</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Data stream to syncly or asyncly read metawear device sensor stream in real-time.</span>
+
+<span class="sd">    This class inherits `SlidingWindowStream` class to load metawear device data into sliding windows.</span>
+
+<span class="sd">    The stream will load a metawear device (mac address) in the `data_source` and separate them into chunks specified by `window_size` to be loaded in the data queue.</span>
+
+<span class="sd">    Examples:</span>
+<span class="sd">        1. Loading a metawear device of window size 12.8s asynchronously.</span>
+
+<span class="sd">        ```python</span>
+<span class="sd">        .. include:: ../../../examples/metawear_stream.py</span>
+<span class="sd">        ```</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_source</span><span class="p">,</span> <span class="n">window_size</span><span class="p">,</span> <span class="n">sr</span><span class="p">,</span> <span class="n">grange</span><span class="p">,</span> <span class="n">max_retries</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;metawear-stream&#39;</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Args:</span>
+<span class="sd">            data_source (str or list): filepath or list of filepaths of mhealth sensor data</span>
+<span class="sd">            sr (int): the sampling rate (Hz) for the given data</span>
+<span class="sd">            buffer_size (float, optional): the buffer size for file reader in seconds</span>
+<span class="sd">            storage_format (str, optional): the storage format of the files in `data_source`. It now supports `mhealth` and `actigraph`.</span>
+<span class="sd">            simulate_reality (bool, optional): simulate real world time delay if `True`.</span>
+<span class="sd">            name (str, optional): see `Stream.name`.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">data_source</span><span class="o">=</span><span class="n">data_source</span><span class="p">,</span>
+                         <span class="n">window_size</span><span class="o">=</span><span class="n">window_size</span><span class="p">,</span> <span class="n">simulate_reality</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">start_time_col</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">stop_time_col</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sr</span> <span class="o">=</span> <span class="n">sr</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_grange</span> <span class="o">=</span> <span class="n">grange</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_device</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_corrector</span> <span class="o">=</span> <span class="n">arus_mw_corrector</span><span class="o">.</span><span class="n">MetawearTimestampCorrector</span><span class="p">(</span><span class="n">sr</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_max_retries</span> <span class="o">=</span> <span class="n">max_retries</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_input_count</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_callback_started</span> <span class="o">=</span> <span class="kc">False</span>
+
+<div class="viewcode-block" id="MetaWearSlidingWindowStream.get_device_name"><a class="viewcode-back" href="../../../../generated/arus.plugins.metawear.MetaWearSlidingWindowStream.get_device_name.html#arus.plugins.metawear.MetaWearSlidingWindowStream.get_device_name">[docs]</a>    <span class="k">def</span> <span class="nf">get_device_name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">model_code</span> <span class="o">=</span> <span class="n">metawear</span><span class="o">.</span><span class="n">libmetawear</span><span class="o">.</span><span class="n">mbl_mw_metawearboard_get_model</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_device</span><span class="o">.</span><span class="n">mw</span><span class="o">.</span><span class="n">board</span><span class="p">)</span>
+        <span class="n">metawear_models</span> <span class="o">=</span> <span class="n">metawear</span><span class="o">.</span><span class="n">cbindings</span><span class="o">.</span><span class="n">Model</span><span class="p">()</span>
+        <span class="n">model_names</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span>
+            <span class="nb">filter</span><span class="p">(</span><span class="k">lambda</span> <span class="n">attr</span><span class="p">:</span> <span class="s1">&#39;__&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">attr</span><span class="p">,</span> <span class="nb">dir</span><span class="p">(</span><span class="n">metawear_models</span><span class="p">)))</span>
+        <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">model_names</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">metawear_models</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span> <span class="o">==</span> <span class="n">model_code</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">name</span>
+        <span class="k">return</span> <span class="s1">&#39;NA&#39;</span></div>
+
+    <span class="k">def</span> <span class="nf">_setup_metawear</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">addr</span><span class="p">):</span>
+        <span class="n">count_retry</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">while</span> <span class="bp">self</span><span class="o">.</span><span class="n">_device</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_device</span> <span class="o">=</span> <span class="n">mw_client</span><span class="o">.</span><span class="n">MetaWearClient</span><span class="p">(</span><span class="n">addr</span><span class="p">,</span> <span class="n">connect</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">debug</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_device_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_device_name</span><span class="p">()</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">count_retry</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">_max_retries</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span>
+                        <span class="s2">&quot;Max retry reaches, still cannot connect to device: &quot;</span> <span class="o">+</span> <span class="n">addr</span><span class="p">)</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">count_retry</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39; retry connect to &#39;</span> <span class="o">+</span> <span class="n">addr</span><span class="p">)</span>
+                <span class="n">count_retry</span> <span class="o">=</span> <span class="n">count_retry</span> <span class="o">+</span> <span class="mi">1</span>
+                <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;New metawear connected: </span><span class="si">{0}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_device</span><span class="p">))</span>
+        <span class="n">metawear</span><span class="o">.</span><span class="n">libmetawear</span><span class="o">.</span><span class="n">mbl_mw_metawearboard_set_time_for_response</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_device</span><span class="o">.</span><span class="n">mw</span><span class="o">.</span><span class="n">board</span><span class="p">,</span> <span class="mi">4000</span><span class="p">)</span>
+        <span class="c1"># high frequency throughput connection setup</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_device</span><span class="o">.</span><span class="n">settings</span><span class="o">.</span><span class="n">set_connection_parameters</span><span class="p">(</span>
+            <span class="mf">7.5</span><span class="p">,</span> <span class="mf">7.5</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">6000</span><span class="p">)</span>
+        <span class="c1"># Up to 4dB for Class 2 BLE devices</span>
+        <span class="c1"># https://github.com/hbldh/pymetawear/blob/master/pymetawear/modules/settings.py</span>
+        <span class="c1"># https://mbientlab.com/documents/metawear/cpp/0/settings_8h.html#a335f712d5fc0587eff9671b8b105d3ed</span>
+        <span class="c1"># Hossain AKMM, Soh WS. A comprehensive study of Bluetooth signal parameters for localization. 2007 Ieee 18th International Symposium on Personal, Indoor and Mobile Radio Communications, Vols 1-9. 2007:428-32.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_device</span><span class="o">.</span><span class="n">settings</span><span class="o">.</span><span class="n">set_tx_power</span><span class="p">(</span><span class="n">power</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_device</span><span class="o">.</span><span class="n">accelerometer</span><span class="o">.</span><span class="n">set_settings</span><span class="p">(</span>
+            <span class="n">data_rate</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_sr</span><span class="p">,</span> <span class="n">data_range</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_grange</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_device</span><span class="o">.</span><span class="n">accelerometer</span><span class="o">.</span><span class="n">high_frequency_stream</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="k">def</span> <span class="nf">_format_data_as_mhealth</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="n">real_world_ts</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+        <span class="n">ts_set</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_corrector</span><span class="o">.</span><span class="n">correct</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">real_world_ts</span><span class="p">)</span>
+        <span class="n">calibrated_values</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_calibrate_coord_system</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+        <span class="n">formatted</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;HEADER_TIME_STAMP&#39;</span><span class="p">:</span> <span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">Timestamp</span><span class="o">.</span><span class="n">fromtimestamp</span><span class="p">(</span><span class="n">ts_set</span><span class="p">[</span><span class="mi">2</span><span class="p">])],</span>
+            <span class="s1">&#39;X&#39;</span><span class="p">:</span> <span class="p">[</span><span class="n">calibrated_values</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span>
+            <span class="s1">&#39;Y&#39;</span><span class="p">:</span> <span class="p">[</span><span class="n">calibrated_values</span><span class="p">[</span><span class="mi">1</span><span class="p">]],</span>
+            <span class="s1">&#39;Z&#39;</span><span class="p">:</span> <span class="p">[</span><span class="n">calibrated_values</span><span class="p">[</span><span class="mi">2</span><span class="p">]],</span>
+            <span class="s1">&#39;MAC_ADDRESS&#39;</span><span class="p">:</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_data_source</span><span class="p">],</span>
+            <span class="s1">&#39;DEVICE_NAME&#39;</span><span class="p">:</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_device_name</span><span class="p">]</span>
+        <span class="p">}</span>
+        <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">formatted</span><span class="p">)</span>
+
+<div class="viewcode-block" id="MetaWearSlidingWindowStream.stop"><a class="viewcode-back" href="../../../../generated/arus.plugins.metawear.MetaWearSlidingWindowStream.stop.html#arus.plugins.metawear.MetaWearSlidingWindowStream.stop">[docs]</a>    <span class="k">def</span> <span class="nf">stop</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_device</span><span class="o">.</span><span class="n">led</span><span class="o">.</span><span class="n">stop_and_clear</span><span class="p">()</span>
+        <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_device</span><span class="o">.</span><span class="n">accelerometer</span><span class="o">.</span><span class="n">notifications</span><span class="p">(</span><span class="n">callback</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+        <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_device</span><span class="o">.</span><span class="n">disconnect</span><span class="p">()</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Disconnected.&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_callback_started</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_buffer_data_source</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">stop</span><span class="p">()</span></div>
+
+    <span class="k">def</span> <span class="nf">_start_metawear</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_input_count</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="k">def</span> <span class="nf">_callback</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_input_count</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Accelerometer callback starts running...&#39;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_callback_started</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_input_count</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_input_count</span> <span class="o">+</span> <span class="mi">1</span>
+            <span class="n">formatted</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_format_data_as_mhealth</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_buffer_data_source</span><span class="p">(</span><span class="n">formatted</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_input_count</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sr</span><span class="p">:</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Received data for one second&#39;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_input_count</span> <span class="o">=</span> <span class="mi">1</span>
+
+        <span class="k">def</span> <span class="nf">_start</span><span class="p">():</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;starting accelerometer module...&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_device</span><span class="o">.</span><span class="n">accelerometer</span><span class="o">.</span><span class="n">notifications</span><span class="p">(</span>
+                <span class="n">callback</span><span class="o">=</span><span class="n">_callback</span><span class="p">)</span>
+            <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_callback_started</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">False</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_device</span><span class="o">.</span><span class="n">led</span><span class="o">.</span><span class="n">load_preset_pattern</span><span class="p">(</span>
+                    <span class="s1">&#39;solid&#39;</span><span class="p">,</span> <span class="n">repeat_count</span><span class="o">=</span><span class="mh">0xff</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_device</span><span class="o">.</span><span class="n">led</span><span class="o">.</span><span class="n">write_pattern</span><span class="p">(</span><span class="n">pattern</span><span class="p">,</span> <span class="s1">&#39;g&#39;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_device</span><span class="o">.</span><span class="n">led</span><span class="o">.</span><span class="n">play</span><span class="p">()</span>
+                <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">return</span> <span class="n">_start</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">_calibrate_coord_system</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="c1"># axis values are calibrated according to the coordinate system of Actigraph GT9X</span>
+        <span class="c1"># http://www.correctline.pl/wp-content/uploads/2015/01/ActiGraph_Device_Axes_Link.png</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;value&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">x</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;value&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">y</span>
+        <span class="n">z</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;value&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">z</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_device_name</span> <span class="o">==</span> <span class="s1">&#39;METAMOTION_R&#39;</span><span class="p">:</span>
+            <span class="c1"># as normal wear in the case on wrist</span>
+            <span class="n">calibrated_x</span> <span class="o">=</span> <span class="n">y</span>
+            <span class="n">calibrated_y</span> <span class="o">=</span> <span class="o">-</span><span class="n">x</span>
+            <span class="n">calibrated_z</span> <span class="o">=</span> <span class="n">z</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">calibrated_x</span> <span class="o">=</span> <span class="n">x</span>
+            <span class="n">calibrated_y</span> <span class="o">=</span> <span class="n">y</span>
+            <span class="n">calibrated_z</span> <span class="o">=</span> <span class="n">z</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">calibrated_x</span><span class="p">,</span> <span class="n">calibrated_y</span><span class="p">,</span> <span class="n">calibrated_z</span><span class="p">)</span>
+
+<div class="viewcode-block" id="MetaWearSlidingWindowStream.load_data_source_"><a class="viewcode-back" href="../../../../generated/arus.plugins.metawear.MetaWearSlidingWindowStream.load_data_source_.html#arus.plugins.metawear.MetaWearSlidingWindowStream.load_data_source_">[docs]</a>    <span class="k">def</span> <span class="nf">load_data_source_</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_source</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data_source</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">addr</span> <span class="o">=</span> <span class="n">data_source</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_setup_metawear</span><span class="p">(</span><span class="n">addr</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_start_metawear</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+                <span class="s2">&quot;Data source should be the mac address of the metawear device&quot;</span><span class="p">)</span></div></div>
+</pre></div>
+
+    </div>
+      
+  </div>
+</div>
+<footer class="footer">
+  <div class="container">
+    <p class="pull-right">
+      <a href="#">Back to top</a>
+      
+        <br/>
+        
+      
+    </p>
+    <p>
+        &copy; Copyright 2019, Qu Tang.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 2.3.1.<br/>
+    </p>
+  </div>
+</footer>
+  </body>
+</html>

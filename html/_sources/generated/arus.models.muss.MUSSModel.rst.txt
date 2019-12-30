@@ -1,0 +1,37 @@
+arus.models.muss.MUSSModel
+==========================
+
+.. currentmodule:: arus.models.muss
+
+.. autoclass:: MUSSModel
+
+   
+   
+   
+   
+
+   
+
+----------
+Methods
+----------
+
+.. autosummary::
+   :toctree:
+
+   MUSSModel.combine_features
+   MUSSModel.compute_features
+   MUSSModel.get_classification_report
+   MUSSModel.get_confusion_matrix
+   MUSSModel.get_feature_names
+   MUSSModel.get_inference_pipeline
+   MUSSModel.predict
+   MUSSModel.remove_classes
+   MUSSModel.remove_groups
+   MUSSModel.select_features
+   MUSSModel.sync_feature_and_class
+   MUSSModel.train_classifier
+   MUSSModel.validate_classifier
+
+   
+   

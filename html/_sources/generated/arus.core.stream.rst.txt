@@ -1,0 +1,43 @@
+arus.core.stream
+================
+
+-----------
+Description
+-----------
+
+.. automodule:: arus.core.stream
+
+.. currentmodule:: arus.core.stream
+
+
+
+-------
+Classes
+-------
+
+.. autosummary::
+    :toctree: .
+    
+
+    AnnotationFileSlidingWindowStream
+
+    
+
+    GeneratorSlidingWindowStream
+
+    
+
+    SensorFileSlidingWindowStream
+
+    
+
+    SlidingWindowStream
+
+    
+
+    Stream
+
+    
+
+
+

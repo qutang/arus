@@ -1,0 +1,6 @@
+arus.core.stream.Stream.started
+===============================
+
+.. currentmodule:: arus.core.stream
+
+.. autoproperty:: Stream.started

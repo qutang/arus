@@ -1,0 +1,6 @@
+arus.plugins.metawear.MetaWearScanner.get\_nearby\_devices
+==========================================================
+
+.. currentmodule:: arus.plugins.metawear
+
+.. automethod:: MetaWearScanner.get_nearby_devices

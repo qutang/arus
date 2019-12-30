@@ -1,0 +1,6 @@
+arus.core.accelerometer.features.gravity\_angles
+================================================
+
+.. currentmodule:: arus.core.accelerometer.features
+
+.. autofunction:: gravity_angles

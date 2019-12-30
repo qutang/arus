@@ -1,0 +1,6 @@
+arus.core.accelerometer.transformation.flip\_and\_swap
+======================================================
+
+.. currentmodule:: arus.core.accelerometer.transformation
+
+.. autofunction:: flip_and_swap

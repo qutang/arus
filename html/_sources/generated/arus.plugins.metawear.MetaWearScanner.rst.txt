@@ -1,0 +1,25 @@
+arus.plugins.metawear.MetaWearScanner
+=====================================
+
+.. currentmodule:: arus.plugins.metawear
+
+.. autoclass:: MetaWearScanner
+
+   
+   
+   
+   
+
+   
+
+----------
+Methods
+----------
+
+.. autosummary::
+   :toctree:
+
+   MetaWearScanner.get_nearby_devices
+
+   
+   

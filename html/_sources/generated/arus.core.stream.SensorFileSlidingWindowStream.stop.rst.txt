@@ -1,0 +1,6 @@
+arus.core.stream.SensorFileSlidingWindowStream.stop
+===================================================
+
+.. currentmodule:: arus.core.stream
+
+.. automethod:: SensorFileSlidingWindowStream.stop

@@ -1,0 +1,6 @@
+arus.core.stream.SensorFileSlidingWindowStream.name
+===================================================
+
+.. currentmodule:: arus.core.stream
+
+.. autoproperty:: SensorFileSlidingWindowStream.name

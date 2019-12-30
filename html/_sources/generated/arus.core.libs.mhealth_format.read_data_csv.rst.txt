@@ -1,0 +1,6 @@
+arus.core.libs.mhealth\_format.read\_data\_csv
+==============================================
+
+.. currentmodule:: arus.core.libs.mhealth_format
+
+.. autofunction:: read_data_csv

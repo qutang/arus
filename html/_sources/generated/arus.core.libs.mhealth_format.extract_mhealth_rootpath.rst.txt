@@ -1,0 +1,6 @@
+arus.core.libs.mhealth\_format.extract\_mhealth\_rootpath
+=========================================================
+
+.. currentmodule:: arus.core.libs.mhealth_format
+
+.. autofunction:: extract_mhealth_rootpath

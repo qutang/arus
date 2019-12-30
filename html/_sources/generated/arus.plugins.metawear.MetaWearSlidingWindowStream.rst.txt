@@ -1,0 +1,43 @@
+arus.plugins.metawear.MetaWearSlidingWindowStream
+=================================================
+
+.. currentmodule:: arus.plugins.metawear
+
+.. autoclass:: MetaWearSlidingWindowStream
+
+   
+   
+   
+
+----------
+Attributes
+----------
+
+.. autosummary::
+   :toctree:
+
+   MetaWearSlidingWindowStream.name
+   MetaWearSlidingWindowStream.started
+
+   
+   
+
+   
+
+----------
+Methods
+----------
+
+.. autosummary::
+   :toctree:
+
+   MetaWearSlidingWindowStream.chunk_
+   MetaWearSlidingWindowStream.get_device_name
+   MetaWearSlidingWindowStream.get_iterator
+   MetaWearSlidingWindowStream.load_data_source_
+   MetaWearSlidingWindowStream.next
+   MetaWearSlidingWindowStream.start
+   MetaWearSlidingWindowStream.stop
+
+   
+   

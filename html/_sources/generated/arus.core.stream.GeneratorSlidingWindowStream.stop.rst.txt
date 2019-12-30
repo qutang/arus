@@ -1,0 +1,6 @@
+arus.core.stream.GeneratorSlidingWindowStream.stop
+==================================================
+
+.. currentmodule:: arus.core.stream
+
+.. automethod:: GeneratorSlidingWindowStream.stop

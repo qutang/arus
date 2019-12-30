@@ -1,0 +1,6 @@
+arus.core.accelerometer.features.abs\_min\_value
+================================================
+
+.. currentmodule:: arus.core.accelerometer.features
+
+.. autofunction:: abs_min_value

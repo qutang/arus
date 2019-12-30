@@ -1,0 +1,6 @@
+arus.core.libs.mhealth\_format.extract\_session\_start\_time
+============================================================
+
+.. currentmodule:: arus.core.libs.mhealth_format
+
+.. autofunction:: extract_session_start_time

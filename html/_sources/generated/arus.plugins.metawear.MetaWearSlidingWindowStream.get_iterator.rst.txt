@@ -1,0 +1,6 @@
+arus.plugins.metawear.MetaWearSlidingWindowStream.get\_iterator
+===============================================================
+
+.. currentmodule:: arus.plugins.metawear
+
+.. automethod:: MetaWearSlidingWindowStream.get_iterator

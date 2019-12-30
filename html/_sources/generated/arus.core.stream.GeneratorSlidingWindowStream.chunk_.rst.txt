@@ -1,0 +1,6 @@
+arus.core.stream.GeneratorSlidingWindowStream.chunk\_
+=====================================================
+
+.. currentmodule:: arus.core.stream
+
+.. automethod:: GeneratorSlidingWindowStream.chunk_

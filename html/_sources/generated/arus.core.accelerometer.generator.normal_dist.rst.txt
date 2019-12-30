@@ -1,0 +1,6 @@
+arus.core.accelerometer.generator.normal\_dist
+==============================================
+
+.. currentmodule:: arus.core.accelerometer.generator
+
+.. autofunction:: normal_dist

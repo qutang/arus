@@ -1,0 +1,6 @@
+arus.core.stream.Stream.name
+============================
+
+.. currentmodule:: arus.core.stream
+
+.. autoproperty:: Stream.name

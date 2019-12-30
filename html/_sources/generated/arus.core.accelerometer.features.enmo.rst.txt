@@ -1,0 +1,6 @@
+arus.core.accelerometer.features.enmo
+=====================================
+
+.. currentmodule:: arus.core.accelerometer.features
+
+.. autofunction:: enmo

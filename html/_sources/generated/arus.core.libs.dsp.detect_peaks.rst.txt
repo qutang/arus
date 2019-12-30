@@ -1,0 +1,6 @@
+arus.core.libs.dsp.detect\_peaks
+================================
+
+.. currentmodule:: arus.core.libs.dsp
+
+.. autofunction:: detect_peaks

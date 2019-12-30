@@ -1,0 +1,6 @@
+arus.core.libs.mhealth\_format.is\_mhealth\_flat\_filepath
+==========================================================
+
+.. currentmodule:: arus.core.libs.mhealth_format
+
+.. autofunction:: is_mhealth_flat_filepath

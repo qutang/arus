@@ -1,0 +1,6 @@
+arus.core.libs.dsp.resample
+===========================
+
+.. currentmodule:: arus.core.libs.dsp
+
+.. autofunction:: resample

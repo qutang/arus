@@ -1,0 +1,25 @@
+arus.plugins.metawear.MetawearTimestampCorrector
+================================================
+
+.. currentmodule:: arus.plugins.metawear
+
+.. autoclass:: MetawearTimestampCorrector
+
+   
+   
+   
+   
+
+   
+
+----------
+Methods
+----------
+
+.. autosummary::
+   :toctree:
+
+   MetawearTimestampCorrector.correct
+
+   
+   

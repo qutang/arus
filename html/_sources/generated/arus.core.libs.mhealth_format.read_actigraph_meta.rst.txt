@@ -1,0 +1,6 @@
+arus.core.libs.mhealth\_format.read\_actigraph\_meta
+====================================================
+
+.. currentmodule:: arus.core.libs.mhealth_format
+
+.. autofunction:: read_actigraph_meta

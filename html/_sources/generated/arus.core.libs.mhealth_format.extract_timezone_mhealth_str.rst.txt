@@ -1,0 +1,6 @@
+arus.core.libs.mhealth\_format.extract\_timezone\_mhealth\_str
+==============================================================
+
+.. currentmodule:: arus.core.libs.mhealth_format
+
+.. autofunction:: extract_timezone_mhealth_str
