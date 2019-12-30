@@ -33,7 +33,7 @@ jobs:
     - name: Run tests
       run: poetry run pytest --cov --cov-report=xml arus
 
-    - name: Test building
+    - name: Test building package
       run: poetry build
 
     - name: Test building website
