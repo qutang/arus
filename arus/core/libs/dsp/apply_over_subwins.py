@@ -44,7 +44,7 @@ def apply_over_subwins(X, func, subwins=None, subwin_samples=None, **kwargs):
         ))
         subwin_X = X[indices, :]
         subwin_result = func(subwin_X, **kwargs)
-        subwin_result = format_arr(subwin_result)
+        subwin_result = arus_num.format_arr(subwin_result)
         result.append(subwin_result)
     # each row is the result from one sub window
     final_result = np.concatenate(result, axis=0)

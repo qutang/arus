@@ -55,6 +55,6 @@ def flip_and_swap(X, x_flip, y_flip, z_flip):
 
 
 def vector_magnitude(X):
-    X = format_arr(X)
+    X = arus_num.format_arr(X)
     result = la.norm(X, ord=2, axis=1, keepdims=True)
     return result
