@@ -3,4 +3,4 @@ __arus__ python package provides a computation framework to manage and process u
 
 """
 
-__version__ = '0.6.0'
+__version__ = '0.6.0+9000'
