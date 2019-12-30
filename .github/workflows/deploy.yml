@@ -48,7 +48,10 @@ jobs:
       run: poetry build
 
     - name: Build website
-      run: poetry run python build_website.py
+      run: | 
+        poetry run python build_website.py
+        touch ./docs/build/html/.nojekyll
+          
 
     - name: Deploy website
       uses: peaceiris/actions-gh-pages@v2
