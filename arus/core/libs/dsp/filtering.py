@@ -1,11 +1,11 @@
-from scipy.signal import butter, filtfilt, resample_poly
-from ..num import atleast_scalar
+from scipy import signal as sp_signal
+from .. import num as arus_num
 import numpy as np
 
 
 def _get_wn(cut_offs, sr):
     nyquist = sr / 2.0
-    return atleast_scalar(cut_offs) / nyquist
+    return arus_num.atleast_scalar(cut_offs) / nyquist
 
 
 def butterworth(X, sr, cut_offs, order=-1, filter_type='low'):
@@ -24,8 +24,8 @@ def butterworth(X, sr, cut_offs, order=-1, filter_type='low'):
         filtered_X (numpy.ndarray): A numpy array with the same shape as X
     """
     Wn = _get_wn(cut_offs, sr)
-    B, A = butter(order, Wn, btype=filter_type, output='ba')
-    result = filtfilt(B, A, X, axis=0, method='pad', padtype='even')
+    B, A = sp_signal.butter(order, Wn, btype=filter_type, output='ba')
+    result = sp_signal.filtfilt(B, A, X, axis=0, method='pad', padtype='even')
     return result
 
 
@@ -44,7 +44,7 @@ def resample(X, sr, new_sr):
     up = lcm / sr
     down = lcm / new_sr
     # TODO: use prime factorization to generate a cascade of downsampling filter
-    new_X = resample_poly(X, up=up, down=down, axis=0)
+    new_X = sp_signal.resample_poly(X, up=up, down=down, axis=0)
     return new_X
 
 

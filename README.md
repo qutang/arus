@@ -1,4 +1,6 @@
-## Overview
+# `arus` package
+
+
 
 __arus__ python package provides a computation framework to manage and process ubiquitous sensory data for activity recognition.
 
@@ -8,15 +10,33 @@ __arus__ python package provides a computation framework to manage and process u
 [![codecov](https://codecov.io/gh/qutang/arus/branch/master/graph/badge.svg)](https://codecov.io/gh/qutang/arus)
 
 
-## Get started
-
-#### Prerequists
+## Prerequists
 
 ```bash
 python >= 3.6
 ```
 
-#### Installation
+### Windows
+
+For `arus[metawear]` extra, you need,
+
+```bash
+Visual Studio C++ SDK (v14.1)
+Windows SDK (10.0.16299.0)
+Windows SDK (10.0.17763.0)
+```
+
+### Ubuntu
+
+For `arus[metawear]` extra, you need,
+
+```bash
+libbluetooth-dev
+libboost-all-dev
+bluez
+```
+
+## Installation
 
 ```bash
 > pip install arus
@@ -34,26 +54,20 @@ or with `poetry`
 > poetry add arus
 ```
 
-### Plugins
+## Extras
 
-`arus` packages can be extended to involve more file types, Bluetooth devices or network protocols. The following list includes official plugins that extend `arus`.
+`arus[metawear]`: In addition to the core functionality, this extra provides support for metawear devices.
 
-#### Official plugins
+## For developer
 
-1. [`arus-stream-metawear`](https://qutang.github.io/arus-stream-metawear/): a `Stream` class that can be used to stream data acquired from a Metawear device (A wireless Bluetooth sensor) in real-time.
-2. [`arus-components-hci`](https://qutang.github.io/arus-components-hci/): plugins that include streams, pipelines and broadcasters connected to some HCI interface, such as GUI, headphones and haptical devices.
-
-
-### Development
-
-#### Prerequists
+### Prerequists
 
 ```bash
 python >= 3.6
 poetry >= 0.12.17
 ```
 
-#### Set up development environment
+### Set up development environment
 
 ```bash
 > git clone https://github.com/qutang/arus.git

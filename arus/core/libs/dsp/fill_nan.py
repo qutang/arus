@@ -1,6 +1,6 @@
 import numpy as np
 from scipy import interpolate
-from ..num import format_arr
+from .. import num as arus_num
 
 
 def _remove_nan_1d(y):
@@ -23,6 +23,6 @@ def _fill_nan_1d(y):
 
 
 def fill_nan(X):
-    X = format_arr(X)
+    X = arus_num.format_arr(X)
     X_new = np.apply_along_axis(_fill_nan_1d, axis=0, arr=X)
     return X_new

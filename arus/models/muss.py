@@ -9,27 +9,27 @@ Author: Qu Tang
 Date: 2019-12-16
 License: see LICENSE file
 """
-from functools import partial, reduce
+import functools
 
 import numpy as np
 import pandas as pd
 import sklearn.svm as svm
-from sklearn.metrics import classification_report, f1_score, confusion_matrix, accuracy_score
-from sklearn.model_selection import LeaveOneGroupOut
-from sklearn.preprocessing import MinMaxScaler
-from sklearn.utils import shuffle
+from sklearn import metrics as sk_metrics
+from sklearn import model_selection as sk_model_selection
+from sklearn import preprocessing as sk_preprocessing
+from sklearn import utils as sk_utils
 import matplotlib.pyplot as plt
-from matplotlib import rcParams, rcParamsDefault
+import matplotlib as mpl
 import seaborn as sns
 
 from ..core.accelerometer.features import activation as accel_activation
 from ..core.accelerometer.features import orientation as accel_ori
 from ..core.accelerometer.features import spectrum as accel_spectrum
 from ..core.accelerometer.features import stats as accel_stats
-from ..core.accelerometer.transformation import vector_magnitude
-from ..core.libs.dsp.filtering import butterworth
-from ..core.libs.num import format_arr
-from ..core.pipeline import Pipeline
+from ..core.accelerometer import transformation as accel_transform
+from ..core.libs.dsp import filtering as arus_filtering
+from ..core.libs import num as arus_num
+from ..core import pipeline as arus_pipeline
 
 
 def muss_inference_processor(chunk_list, **kwargs):
@@ -89,7 +89,7 @@ class MUSSModel:
         def _combine(left, right):
             return pd.merge(left[0], right[0], on=['HEADER_TIME_STAMP', 'START_TIME',
                                                    'STOP_TIME'] + group_col, suffixes=('_' + str(left[1]), '_' + str(right[1])))
-        combined_df = reduce(_combine, sequence)
+        combined_df = functools.reduce(_combine, sequence)
         combined_feature_names = list(filter(lambda name: name.split('_')
                                              [-1] in placement_names, combined_df.columns))
         return combined_df, combined_feature_names
@@ -119,28 +119,28 @@ class MUSSModel:
 
     def compute_features(self, input_data, sr, st, et, subwin_secs=2, ori_unit='rad', activation_threshold=0.2):
         subwin_samples = subwin_secs * sr
-        X = format_arr(input_data.values[:, 1:4])
+        X = arus_num.format_arr(input_data.values[:, 1:4])
         vm_feature_funcs = [
             accel_stats.mean,
             accel_stats.std,
             accel_stats.max_value,
             accel_stats.max_minus_min,
-            partial(accel_spectrum.spectrum_features,
+            functools.partial(accel_spectrum.spectrum_features,
                     sr=sr, n=1, preset='muss'),
-            partial(accel_activation.stats_active_samples,
+            functools.partial(accel_activation.stats_active_samples,
                     threshold=activation_threshold)
         ]
 
         axis_feature_funcs = [
-            partial(accel_ori.gravity_angle_stats,
+            functools.partial(accel_ori.gravity_angle_stats,
                     subwin_samples=subwin_samples, unit=ori_unit)
         ]
 
-        X_vm = vector_magnitude(X)
+        X_vm = accel_transform.vector_magnitude(X)
 
-        X_vm_filtered = butterworth(
+        X_vm_filtered = arus_filtering.butterworth(
             X_vm, sr=sr, cut_offs=20, order=4, filter_type='low')
-        X_filtered = butterworth(X, sr=sr, cut_offs=20,
+        X_filtered = arus_filtering.butterworth(X, sr=sr, cut_offs=20,
                                  order=4, filter_type='low')
 
         result = {
@@ -177,7 +177,7 @@ class MUSSModel:
         return filtered_feature, filtered_class
 
     def _train_classifier(self, input_feature_arr, input_class_vec, placement_names, feature_names, C=16, kernel='rbf', gamma=0.25, tol=0.0001, output_probability=True, class_weight='balanced', verbose=False):
-        input_matrix, input_classes = shuffle(
+        input_matrix, input_classes = sk_utils.shuffle(
             input_feature_arr, input_class_vec)
         classifier = svm.SVC(
             C=C,
@@ -187,7 +187,7 @@ class MUSSModel:
             probability=output_probability,
             class_weight=class_weight,
             verbose=verbose)
-        scaler = MinMaxScaler((-1, 1))
+        scaler = sk_preprocessing.MinMaxScaler((-1, 1))
         scaled_X = scaler.fit_transform(input_matrix)
         model = classifier.fit(scaled_X, input_classes)
         train_accuracy = model.score(scaled_X, input_classes)
@@ -241,7 +241,7 @@ class MUSSModel:
         input_feature_arr = input_feature[feature_names].values
         input_class_vec = input_class[class_col].values
         groups = input_class[group_col].values
-        logo = LeaveOneGroupOut()
+        logo = sk_model_selection.LeaveOneGroupOut()
         output_class_vec = input_class_vec.copy()
         for train_split, test_split in logo.split(input_feature_arr, input_class_vec, groups):
             train_feature = input_feature_arr[train_split, :]
@@ -252,14 +252,14 @@ class MUSSModel:
             predict_class = self._predict(
                 test_feature, classifier=model[0], scaler=model[1])
             output_class_vec[test_split] = predict_class
-        acc = accuracy_score(input_class_vec, output_class_vec)
+        acc = sk_metrics.accuracy_score(input_class_vec, output_class_vec)
         return input_class_vec, output_class_vec, acc
 
     def _plot_confusion_matrix(self, conf_matrix, size):
         # plot confusion matrix
-        rcParams['font.family'] = 'serif'
-        rcParams['font.size'] = 8
-        rcParams['font.serif'] = ['Times New Roman']
+        mpl.rcParams['font.family'] = 'serif'
+        mpl.rcParams['font.size'] = 8
+        mpl.rcParams['font.serif'] = ['Times New Roman']
         plt.subplots(figsize=(4, 4))
         sns.set_style({
             'font.family': 'serif',
@@ -272,7 +272,7 @@ class MUSSModel:
         return plt.gcf()
 
     def get_confusion_matrix(self, input_class, predict_class, labels, graph=False):
-        conf_mat = confusion_matrix(input_class, predict_class, labels=labels)
+        conf_mat = sk_metrics.confusion_matrix(input_class, predict_class, labels=labels)
         conf_df = pd.DataFrame(conf_mat, columns=labels, index=labels)
         conf_df.index.rename(name='Ground Truth')
         if graph:
@@ -283,11 +283,11 @@ class MUSSModel:
         return result
 
     def get_classification_report(self, input_class, predict_class, labels):
-        return classification_report(input_class, predict_class, labels=labels)
+        return sk_metrics.classification_repor(input_class, predict_class, labels=labels)
 
     @staticmethod
     def get_inference_pipeline(*streams, name='muss-pipeline', **kwargs):
-        pipeline = Pipeline(
+        pipeline = arus_pipeline.Pipeline(
             max_processes=kwargs['max_processes'], scheduler=kwargs['scheduler'], name=name)
         for stream in streams:
             pipeline.add_stream(stream)

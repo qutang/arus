@@ -11,7 +11,7 @@ License: see LICENSE file
 """
 
 import os
-from glob import glob
+import glob
 
 
 def load_test_data(file_type='mhealth', sensor_type='sensor', file_num='multiple', exception_type='consistent_sr'):
@@ -32,11 +32,11 @@ def load_test_data(file_type='mhealth', sensor_type='sensor', file_num='multiple
                                file_type, sensor_type, exception_type)
     meta_file = os.path.join(data_folder, 'meta.csv')
     if file_num == 'multiple':
-        data = list(filter(lambda f: 'meta.csv' != os.path.basename(f), glob(
+        data = list(filter(lambda f: 'meta.csv' != os.path.basename(f), glob.glob(
             os.path.join(data_folder, '*.csv*'))))
         data = sorted(data)
     else:
-        data = list(filter(lambda f: 'meta.csv' != os.path.basename(f), glob(
+        data = list(filter(lambda f: 'meta.csv' != os.path.basename(f), glob.glob(
             os.path.join(data_folder, '*.csv*'))))[0]
     if sensor_type == 'sensor':
         with open(meta_file, 'r') as meta:

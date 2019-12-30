@@ -7,21 +7,18 @@ Author: Qu Tang
 Date: Jul 10, 2018
 """
 import logging
-from functools import reduce
-
 import numpy as np
 
-
-from ...libs.dsp.apply_over_subwins import apply_over_subwins
-from ...libs.num import format_arr
-from . import stats
-from ..transformation import vector_magnitude
+from ...libs import dsp as arus_dsp
+from ...libs import num as arus_num
+from . import stats as accel_stats
+from .. import transformation as accel_transform
 
 
 def _gravity_angles(X, unit='rad'):
-    X = format_arr(X)
-    gravity = stats.mean(X)[0]
-    gravity_vm = vector_magnitude(gravity)
+    X = arus_num.format_arr(X)
+    gravity = accel_stats.mean(X)[0]
+    gravity_vm = accel_transform.vector_magnitude(gravity)
     gravity_angles = np.arccos(
         gravity / gravity_vm) if gravity_vm != 0 else np.zeros_like(gravity)
     if unit == 'deg':
@@ -30,7 +27,7 @@ def _gravity_angles(X, unit='rad'):
 
 
 def gravity_angles(X, subwins=None, subwin_samples=None, unit='rad'):
-    result = apply_over_subwins(
+    result = arus_dsp.apply_over_subwins(
         X, _gravity_angles, subwins=subwins, subwin_samples=subwin_samples, unit=unit)
     final_result = np.atleast_2d(result.flatten())
     names = []
@@ -41,7 +38,7 @@ def gravity_angles(X, subwins=None, subwin_samples=None, unit='rad'):
 
 
 def gravity_angle_stats(X, subwins=None, subwin_samples=None, unit='rad'):
-    result = apply_over_subwins(
+    result = arus_dsp.apply_over_subwins(
         X, _gravity_angles, subwins=subwins, subwin_samples=subwin_samples, unit=unit)
     median_angles = np.nanmedian(result, axis=0, keepdims=True)
     range_angles = np.nanmax(

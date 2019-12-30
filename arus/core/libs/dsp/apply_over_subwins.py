@@ -1,9 +1,9 @@
 import numpy as np
-from ..num import format_arr
+from .. import num as arus_num
 
 
 def apply_over_subwins(X, func, subwins=None, subwin_samples=None, **kwargs):
-    X = format_arr(X)
+    X = arus_num.format_arr(X)
     if subwins is not None:
         # compute the length of each sub window if the number of sub windows is given.
         if subwins == 0:

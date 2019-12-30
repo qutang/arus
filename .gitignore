@@ -8,5 +8,6 @@ __pycache__
 *.code-workspace
 .venv
 .coverage
-docs/
+docs/build
+docs/source/generated
 .metawear

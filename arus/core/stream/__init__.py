@@ -36,7 +36,7 @@ License: see LICENSE file
 import queue
 import threading
 import pandas as pd
-from ..libs.date import parse_timestamp
+from ..libs import date as arus_date
 from ..libs import mhealth_format as mh
 import numpy as np
 import logging
@@ -141,7 +141,7 @@ class Stream:
 
         start_time (str or datetime or datetime64 or pandas.Timestamp, optional): The start time of data source. This is used to sync between multiple streams. If it is `None`, the default value would be extracted from the first sample of the loaded data.
         """
-        self._start_time = parse_timestamp(start_time)
+        self._start_time = arus_date.parse_timestamp(start_time)
         self.started = True
         self._loading_thread = self._get_thread_for_loading(
             self._data_source)
@@ -302,3 +302,8 @@ class SlidingWindowStream(Stream):
 
     def chunk_(self):
         self._chunk_loaded_data()
+
+
+from .sensor_stream import SensorFileSlidingWindowStream
+from .generator_stream import GeneratorSlidingWindowStream
+from .annotation_stream import AnnotationFileSlidingWindowStream

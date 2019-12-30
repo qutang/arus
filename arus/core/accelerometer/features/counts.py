@@ -8,8 +8,8 @@ Date: Jul 10, 2018
 
 """
 import numpy as np
-from ..transformation import vector_magnitude
-from ...libs.num import format_arr
+from .. import transformation as accel_transform
+from ...libs import num as arus_num
 
 
 def enmo(X):
@@ -24,8 +24,8 @@ def enmo(X):
     Returns:
         [numpy.ndarray] -- 1 x 1
     """
-    X = format_arr(X)
-    vm = vector_magnitude(X)
+    X = arus_num.format_arr(X)
+    vm = accel_transform.vector_magnitude(X)
     result = np.nanmean(np.clip(vm - 1, a_min=0, a_max=None),
                         axis=0, keepdims=True)
     return result, 'ENMO'

@@ -3,7 +3,7 @@ import os
 import datetime
 import numpy as np
 import pandas as pd
-from glob import glob
+import glob
 
 CAMELCASE_PATTERN = r'(?:[A-Z][A-Za-z0-9]+)+'
 VERSIONCODE_PATTERN = r'(?:NA|[0-9x]+)'
@@ -99,7 +99,7 @@ def extract_location_mapping_filepath(filepath):
         return result
     else:
         pid_root = extract_pid_rootpath(filepath)
-        candicates = glob(os.path.join(
+        candicates = glob.glob(os.path.join(
             pid_root, '**', 'location_mapping.csv'), recursive=True)
         if len(candicates) == 1:
             return candicates[0]
@@ -119,7 +119,7 @@ def extract_offset_mapping_filepath(filepath):
         offset_mapping_file (str): The `offset_mapping` file path for the entire dataset. If no file is found, return `None`.
     """
     pid_root = extract_pid_rootpath(filepath)
-    candicates = glob(os.path.join(
+    candicates = glob.glob(os.path.join(
         pid_root, '**', 'offset_mapping.csv'), recursive=True)
     if len(candicates) == 1:
         return candicates[0]
@@ -164,7 +164,7 @@ def is_pid_included(filepath):
 
 def extract_orientation_corrections_filepath(filepath):
     pid_root = extract_pid_rootpath(filepath)
-    candicates = glob(os.path.join(
+    candicates = glob.glob(os.path.join(
         pid_root, '**', 'orientation_corrections.csv'), recursive=True)
     if len(candicates) == 1:
         return candicates[0]
@@ -303,7 +303,7 @@ def extract_existing_hourly_filepaths(filepath):
                                                  sensor_or_annotation_type=sensor_or_annotation_type,
                                                  data_type=data_type, version_code=version_code, sensor_or_annotator_id=sensor_or_annotator_id)
 
-    found_files = glob(os.path.join(pid_path, "MasterSynced",
+    found_files = glob.glob(os.path.join(pid_path, "MasterSynced",
                                     "**", hourly_file_pattern), recursive=True)
     if len(found_files) == 0:
         return []

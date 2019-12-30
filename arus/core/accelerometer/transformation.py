@@ -1,10 +1,10 @@
 import numpy as np
 import numpy.linalg as la
-from ..libs.num import format_arr
+from ..libs import num as arus_num
 
 
 def flip_and_swap(X, x_flip, y_flip, z_flip):
-    X = format_arr(X)
+    X = arus_num.format_arr(X)
     X_clone = np.copy(X)
     x = np.copy(X_clone[:, 0])
     y = np.copy(X_clone[:, 1])

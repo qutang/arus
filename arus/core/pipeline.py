@@ -22,17 +22,15 @@ Date: 2019-11-15
 License: see LICENSE file
 """
 
-from .stream import Stream
-from ..core.libs.date import parse_timestamp
-from pathos.pools import ThreadPool, ProcessPool
-from pathos.helpers import cpu_count
+from .libs import date as arus_date
+import pathos.pools as ppools
+import pathos.helpers as phelpers
 import numpy as np
 import queue
 import pandas as pd
 import logging
 import threading
 import time
-from datetime import datetime
 
 
 class Pipeline:
@@ -238,15 +236,15 @@ class Pipeline:
 
             In real time, because stream runs on separate thread, as long as the data is successfully passed to the stream queue, it won't block for a long time.
         """
-        num_of_processors = min(cpu_count() - 2, self._max_processes)
+        num_of_processors = min(phelpers.cpu_count() - 2, self._max_processes)
         if num_of_processors == 0:
             self._pool = None
         else:
             if self._pool is None:
                 if self._scheduler == 'processes':
-                    self._pool = ProcessPool(nodes=num_of_processors)
+                    self._pool = ppools.ProcessPool(nodes=num_of_processors)
                 elif self._scheduler == 'threads':
-                    self._pool = ThreadPool(nodes=num_of_processors)
+                    self._pool = ppools.ThreadPool(nodes=num_of_processors)
                 else:
                     raise NotImplementedError(
                         'This scheduler is not supported: {}'.format(self._scheduler))
@@ -379,7 +377,7 @@ class Pipeline:
             start_time (str or datetime or np.datetime64 or pd.Timestamp, optional): The start time to start accepting the incoming stream windows. If it is `None`, the pipeline will always output any incoming data without checking `start_time`.
         """
         self._process_start_time = start_time
-        self._process_start_time = parse_timestamp(self._process_start_time)
+        self._process_start_time = arus_date.parse_timestamp(self._process_start_time)
         self._started = True
 
     def start(self, start_time=None, process_start_time=None):

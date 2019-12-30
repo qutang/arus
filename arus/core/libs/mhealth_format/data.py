@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 import datetime
-from functools import partial
+import functools
 
 
 def is_sensor_data(df):
@@ -118,7 +118,7 @@ def convert_string_columns_to_datetime64ms(df, file_type):
             dt_format = '%Y-%m-%d %H:%M:%S.%f'
         elif file_type == 'actigraph':
             dt_format = '%m/%d/%Y %H:%M:%S.%f'
-        vfun = partial(
+        vfun = functools.partial(
             pd.to_datetime, format=dt_format, box=False)
         new_arr = vfun(arr)
         result = new_arr.astype('datetime64[ms]')

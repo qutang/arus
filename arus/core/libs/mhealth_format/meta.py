@@ -1,14 +1,14 @@
-from ..mhealth_format import path
-from ..mhealth_format import io
+from . import path as mh_path
+from . import io as mh_io
 import numpy as np
 import pandas as pd
 
 
 def get_offset(filepath, offset_column):
-    offset_mapping_file = path.extract_offset_mapping_filepath(filepath)
-    pid = path.extract_pid(filepath)
+    offset_mapping_file = mh_path.extract_offset_mapping_filepath(filepath)
+    pid = mh_path.extract_pid(filepath)
     if bool(offset_mapping_file):
-        offset_mapping = io.load_offset_mapping(offset_mapping_file)
+        offset_mapping = mh_io.load_offset_mapping(offset_mapping_file)
         offset_in_secs = float(
             offset_mapping.loc[offset_mapping.iloc[:, 0] == pid,
                                offset_mapping.columns[offset_column]].values[0]
@@ -19,12 +19,12 @@ def get_offset(filepath, offset_column):
 
 
 def get_orientation_correction(filepath):
-    orientation_corrections_file = path.extract_orientation_corrections_filepath(
+    orientation_corrections_file = mh_path.extract_orientation_corrections_filepath(
         filepath)
-    pid = path.extract_pid(filepath)
-    sid = path.extract_sid(filepath)
+    pid = mh_path.extract_pid(filepath)
+    sid = mh_path.extract_sid(filepath)
     if bool(orientation_corrections_file):
-        orientation_corrections = io.load_orientation_corrections(
+        orientation_corrections = mh_io.load_orientation_corrections(
             orientation_corrections_file)
         orientation_correction = orientation_corrections.loc[
             (orientation_corrections.iloc[:, 0] == pid) & (
@@ -40,10 +40,10 @@ def get_orientation_correction(filepath):
     return orientation_correction
 
 def get_init_placement(filepath, mapping_file):
-    assert path.is_mhealth_filename(filepath)
+    assert mh_path.is_mhealth_filename(filepath)
     mapping = pd.read_csv(mapping_file)
-    sid = path.extract_sid(filepath)
-    pid = path.extract_pid(filepath)
+    sid = mh_path.extract_sid(filepath)
+    pid = mh_path.extract_pid(filepath)
     pid_col = mapping.columns[0]
     sid_col = mapping.columns[1]
     placement_col = mapping.columns[2]
@@ -52,14 +52,14 @@ def get_init_placement(filepath, mapping_file):
     return loc
 
 def auto_init_placement(filepath):
-    assert path.is_mhealth_filename(filepath)
-    mapping_file = path.extract_location_mapping_filepath(filepath)
+    assert mh_path.is_mhealth_filename(filepath)
+    mapping_file = mh_path.extract_location_mapping_filepath(filepath)
     if mapping_file:
         mapping = pd.read_csv(mapping_file)
     else:
         return None
-    sid = path.extract_sid(filepath)
-    pid = path.extract_pid(filepath)
+    sid = mh_path.extract_sid(filepath)
+    pid = mh_path.extract_pid(filepath)
 
     if len(mapping.columns) == 3:
         pid_col = mapping.columns[0]

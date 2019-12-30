@@ -3,20 +3,10 @@
 
 
 import pandas as pd
-from .path import extract_file_type
-from .path import extract_existing_hourly_filepaths
-from .path import build_mhealth_filename
-from .path import build_mhealth_filepath
-from .data import is_annotation_data
-from .data import is_sensor_data
-from .data import rename_columns
-from .data import get_datetime_columns
-from .data import convert_datetime_columns_to_string
-from .data import convert_datetime_columns_to_datetime64ms
-from .data import convert_string_columns_to_datetime64ms
-from functools import partial
+from . import path as mh_path
+from . import data as mh_data
+import functools
 import os
-from glob import glob
 import logging
 import numpy as np
 
@@ -35,11 +25,11 @@ def _is_large_file(filepath):
 
 
 def read_data_csv(filepath, chunksize=None, iterator=False):
-    file_type = extract_file_type(filepath)
+    file_type = mh_path.extract_file_type(filepath)
     result = None if filepath is None else pd.read_csv(
-        filepath, parse_dates=get_datetime_columns(file_type), infer_datetime_format=True, chunksize=chunksize, iterator=iterator, engine='c')
+        filepath, parse_dates=mh_data.get_datetime_columns(file_type), infer_datetime_format=True, chunksize=chunksize, iterator=iterator, engine='c')
     if not iterator:
-        return rename_columns(result, file_type)
+        return mh_data.rename_columns(result, file_type)
     else:
         return result
 
@@ -85,7 +75,7 @@ def write_data_csv(df, output_folder, pid, file_type, *,
                    flat=False, append=False):
 
     def _get_existing_or_new_hourly_file(output_filepath):
-        existing_files = extract_existing_hourly_filepaths(output_filepath)
+        existing_files = mh_path.extract_existing_hourly_filepaths(output_filepath)
         if len(existing_files) > 0:
             existing_files.sort()
             return existing_files[0]
@@ -100,7 +90,7 @@ def write_data_csv(df, output_folder, pid, file_type, *,
                 timestamp = d['START_TIME'].values[0]
             output_filepath = path_generator(
                 timestamp=timestamp, filename=filename_generator(timestamp))
-            d = convert_datetime_columns_to_string(d, file_type=file_type)
+            d = mh_data.convert_datetime_columns_to_string(d, file_type=file_type)
             if append:
                 output_filepath = _get_existing_or_new_hourly_file(
                     output_filepath)
@@ -115,10 +105,10 @@ def write_data_csv(df, output_folder, pid, file_type, *,
                     d, output_filepath, file_type=file_type)
         return _saver
 
-    build_filename_with_ts = partial(build_mhealth_filename, file_type=file_type, sensor_or_annotation_type=sensor_or_annotation_type,
+    build_filename_with_ts = functools.partial(mh_path.build_mhealth_filename, file_type=file_type, sensor_or_annotation_type=sensor_or_annotation_type,
                                      data_type=data_type, version_code=version_code, sensor_or_annotator_id=sensor_or_annotator_id)
 
-    build_filepath = partial(build_mhealth_filepath,
+    build_filepath = functools.partial(mh_path.build_mhealth_filepath,
                              rootpath=output_folder, pid=pid, flat=flat)
 
     saver = _get_saver(build_filepath, build_filename_with_ts, file_type)
@@ -138,9 +128,9 @@ def write_data_csv(df, output_folder, pid, file_type, *,
 
 def read_actigraph_csv(filepath, chunksize=None, iterator=False):
     def format_actigraph_csv(df):
-        convert_datetime = partial(
-            convert_string_columns_to_datetime64ms, file_type='actigraph')
-        rename = partial(rename_columns, file_type='sensor')
+        convert_datetime = functools.partial(
+            mh_data.convert_string_columns_to_datetime64ms, file_type='actigraph')
+        rename = functools.partial(mh_data.rename_columns, file_type='sensor')
         return rename(convert_datetime(df))
 
     if filepath is None:

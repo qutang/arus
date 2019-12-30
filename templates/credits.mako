@@ -1,1 +1,0 @@
-<a href='https://qutang.github.io'>Qu Tang © 2019</a>

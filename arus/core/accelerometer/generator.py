@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-from datetime import datetime
+import datetime as dt
 import time
 
 
@@ -19,7 +19,7 @@ def _create_dataframe(ts, data):
 
 
 def normal_dist(sr, grange=8, start_time=None, buffer_size=1800, sleep_interval=0, sigma=1):
-    start_time = datetime.now() if start_time is None else start_time
+    start_time = dt.datetime.now() if start_time is None else start_time
     st = time.time()
     while True:
         N = buffer_size * sr

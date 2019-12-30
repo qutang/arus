@@ -1,12 +1,11 @@
 import numpy as np
 import pandas as pd
-from datetime import datetime, timedelta
-
+import datetime as dt
 
 def parse_timestamp(ts):
     if type(ts) == np.datetime64:
         result = pd.Timestamp(ts.astype('datetime64[ms]'))
-    elif type(ts) == datetime:
+    elif type(ts) == dt.datetime:
         result = pd.Timestamp(np.datetime64(ts, 'ms'))
     elif type(ts) == str:
         result = pd.Timestamp(ts)
@@ -18,4 +17,4 @@ def parse_timestamp(ts):
 
 
 def datetime2unix(ts):
-    return (ts - datetime(1970, 1, 1)) / timedelta(seconds=1)
+    return (ts - dt.datetime(1970, 1, 1)) / dt.timedelta(seconds=1)
