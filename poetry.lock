@@ -151,6 +151,17 @@ version = "0.10.0"
 six = "*"
 
 [[package]]
+category = "dev"
+description = "Library for bumping project version like a pro"
+name = "dephell-versioning"
+optional = false
+python-versions = ">=3.5"
+version = "0.1.1"
+
+[package.dependencies]
+packaging = "*"
+
+[[package]]
 category = "main"
 description = "serialize all of python"
 name = "dill"
@@ -907,7 +918,7 @@ docs = ["sphinx", "jaraco.packaging (>=3.2)", "rst.linker (>=1.9)"]
 testing = ["pathlib2", "contextlib2", "unittest2"]
 
 [metadata]
-content-hash = "facb38489421dd018157207ce61d8aa83121340f29ad4c320d3a636581805c75"
+content-hash = "a49a4c8814a08eff3d5d45957cf6ab5632174e9976ba85823a8a386aa02bb4cc"
 python-versions = "^3.6"
 
 [metadata.files]
@@ -994,6 +1005,10 @@ coverage = [
 cycler = [
     {file = "cycler-0.10.0-py2.py3-none-any.whl", hash = "sha256:1d8a5ae1ff6c5cf9b93e8811e581232ad8920aeec647c37316ceac982b08cb2d"},
     {file = "cycler-0.10.0.tar.gz", hash = "sha256:cd7b2d1018258d7247a71425e9f26463dfb444d411c39569972f4ce586b0c9d8"},
+]
+dephell-versioning = [
+    {file = "dephell_versioning-0.1.1-py3-none-any.whl", hash = "sha256:dd22263a273abcf792304093447400f230e69d930ba3a800191173c4b3b3ecd3"},
+    {file = "dephell_versioning-0.1.1.tar.gz", hash = "sha256:c438a39662fdf88b00196b56ece4e542db8fa9b16ee5c164a834451240026848"},
 ]
 dill = [
     {file = "dill-0.3.1.1.tar.gz", hash = "sha256:42d8ef819367516592a825746a18073ced42ca169ab1f5f4044134703e7a049c"},

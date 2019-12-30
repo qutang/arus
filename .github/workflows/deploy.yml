@@ -1,0 +1,63 @@
+name: deploy
+
+on:
+  push: 
+    tags:
+      - v*.*.*
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check out repository
+      uses: actions/checkout@master
+      # with:
+      #   submodules: true
+
+    - name: Setup python version
+      uses: actions/setup-python@v1
+      with:
+        python-version: '3.7.x' # Version range or exact version of a Python version to use, using semvers version range syntax.
+        architecture: 'x64' # (x64 or x86)
+
+    - name: Setup system dependencies
+      run: | 
+        sudo apt update
+        sudo apt install bluez
+        sudo apt install libboost-all-dev
+        sudo apt install libbluetooth-dev
+
+    - name: Setup python dev environment
+      run: |
+        pip install --upgrade pip
+        pip install poetry
+        poetry install
+
+    - name: Run tests
+      run: poetry run pytest --cov --cov-report=xml arus
+
+    - name: Report to codecov
+      uses: codecov/codecov-action@v1.0.3
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        file: ./coverage.xml
+        flags: unittests
+        name: codecov-umbrella
+
+    - name: Build package
+      run: poetry build
+
+    - name: Build website
+      run: poetry run python build_website.py
+
+    - name: Deploy website
+      uses: peaceiris/actions-gh-pages@v2
+      env:
+        PERSONAL_TOKEN: ${{ secrets.PERSONAL_TOKEN }}
+        PUBLISH_BRANCH: gh-pages
+        PUBLISH_DIR: ./docs/build
+      with:
+        emptyCommits: false
+
+    - name: Deploy to pypi
+      run: poetry run twine upload dist/* --skip-existing -u ${{ secrets.PYPI_USERNAME }} -p ${{ secrets.PYPI_PASSWORD }}
