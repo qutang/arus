@@ -1,0 +1,6 @@
+arus
+docs
+.pytest_cache
+.venv
+.vscode
+*.egg-info
