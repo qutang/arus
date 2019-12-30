@@ -1,20 +1,6 @@
-name: Test
+name: unittest and build test
 
-on:
-  pull_request:
-    branches:
-    - master
-  push:
-    branches:
-    - "feat/**"
-    - "dependabot/**"
-    - "fix/**"
-    - "build/**"
-    - "docs/**"
-    - "refactor/**"
-    - "test/**"
-    - "!master"
-
+on: [push, pull_request]
 
 jobs:
   test:
