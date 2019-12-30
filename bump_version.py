@@ -3,6 +3,7 @@
 import subprocess
 import sys
 from dephell_versioning import bump_file,bump_version
+from bump_version_dev import bump_news_version
 from pathlib import Path
 import arus
 
@@ -20,6 +21,9 @@ if confirm.lower() == 'y':
 
     print('Modify package version file')
     bump_file(path=Path('arus', '__init__.py'), old=arus.__version__, new=new_version)
+
+    print('Modify news page version')
+    bump_news_version(new_version)
 
     print('Commit current state')
     subprocess.run('git add .')

@@ -5,6 +5,16 @@ import sys
 from dephell_versioning import bump_file,bump_version
 from pathlib import Path
 import arus
+import os
+
+def bump_news_version(new_version):
+    new_lines = []
+    with open('news.md', 'r') as f:
+        lines = f.readlines()
+        lines[0] = '# ' + new_version + '\n'
+        new_lines = lines
+    with open('news.md', 'w') as f:
+        f.writelines(new_lines)
 
 if sys.argv[1] == 'major' or sys.argv[1] == 'minor' or sys.argv[1] == 'patch':
     new_version = bump_version(version=arus.__version__, rule=sys.argv[1], scheme='semver')
@@ -20,6 +30,9 @@ if confirm.lower() == 'y':
 
     print('Modify package version file')
     bump_file(path=Path('arus', '__init__.py'), old=arus.__version__, new=new_version)
+
+    print('Modify news page version')
+    bump_news_version(new_version)
 else:
     exit(0)
 
