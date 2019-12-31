@@ -1,6 +1,0 @@
-arus.plugins.metawear.MetaWearSlidingWindowStream.start
-=======================================================
-
-.. currentmodule:: arus.plugins.metawear
-
-.. automethod:: MetaWearSlidingWindowStream.start

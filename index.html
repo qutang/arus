@@ -3,7 +3,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta charset="utf-8" />
-    <title>arus package &#8212; arus 0.6.0 documentation</title>
+    <title>arus package &#8212; arus 0.6.1 documentation</title>
     <link rel="stylesheet" href="_static/bootstrap-sphinx.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <link rel="stylesheet" type="text/css" href="_static/gallery.css" />
@@ -36,7 +36,7 @@
         </button>
         <a class="navbar-brand" href="#">
           arus</a>
-        <span class="navbar-text navbar-version pull-left"><b>0.6.0</b></span>
+        <span class="navbar-text navbar-version pull-left"><b>0.6.1</b></span>
       </div>
 
         <div class="collapse navbar-collapse nav-collapse">
@@ -153,14 +153,20 @@ bluez
 <div class="section" id="installation">
 <h2>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h2>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>&gt; pip install arus
+&gt; pip install arus<span class="o">[</span>metawear<span class="o">]</span>
+&gt; pip install arus<span class="o">[</span>demo<span class="o">]</span>
 </pre></div>
 </div>
 <p>or with <code class="docutils literal notranslate"><span class="pre">pipenv</span></code></p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>&gt; pipenv install arus
+&gt; pipenv install arus<span class="o">[</span>metawear<span class="o">]</span>
+&gt; pipenv install arus<span class="o">[</span>demo<span class="o">]</span>
 </pre></div>
 </div>
 <p>or with <code class="docutils literal notranslate"><span class="pre">poetry</span></code></p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>&gt; poetry add arus
+&gt; poetry add arus --extras metawear
+&gt; poetry add arus --extras demo
 </pre></div>
 </div>
 </div>

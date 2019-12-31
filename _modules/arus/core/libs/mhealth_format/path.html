@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8" />
+    <title>arus.core.libs.mhealth_format.path &#8212; arus 0.6.1 documentation</title>
+    <link rel="stylesheet" href="../../../../../_static/bootstrap-sphinx.css" type="text/css" />
+    <link rel="stylesheet" href="../../../../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="../../../../../_static/gallery.css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../../../../" src="../../../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../../../_static/language_data.js"></script>
+    <link rel="index" title="Index" href="../../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../../search.html" />
+<meta charset='utf-8'>
+<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<script type="text/javascript" src="../../../../../_static/js/jquery-1.11.0.min.js "></script>
+<script type="text/javascript" src="../../../../../_static/js/jquery-fix.js "></script>
+<script type="text/javascript" src="../../../../../_static/bootstrap-3.3.7/js/bootstrap.min.js "></script>
+<script type="text/javascript" src="../../../../../_static/bootstrap-sphinx.js "></script>
+
+  </head><body>
+
+  <div id="navbar" class="navbar navbar-inverse navbar-default navbar-fixed-top">
+    <div class="container">
+      <div class="navbar-header">
+        <!-- .btn-navbar is used as the toggle for collapsed navbar content -->
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".nav-collapse">
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="../../../../../index.html">
+          arus</a>
+        <span class="navbar-text navbar-version pull-left"><b>0.6.1</b></span>
+      </div>
+
+        <div class="collapse navbar-collapse nav-collapse">
+          <ul class="nav navbar-nav">
+            
+                <li><a href="../../../../../examples/index.html">Examples</a></li>
+                <li><a href="../../../../../references.html">References</a></li>
+                <li><a href="../../../../../news.html">Changelog</a></li>
+            
+            
+              <li class="dropdown globaltoc-container">
+  <a role="button"
+     id="dLabelGlobalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="../../../../../index.html">arus <b class="caret"></b></a>
+  <ul class="dropdown-menu globaltoc"
+      role="menu"
+      aria-labelledby="dLabelGlobalToc"></ul>
+</li>
+              
+            
+            
+              
+                
+              
+            
+            
+            
+            
+          </ul>
+
+          
+            
+<form class="navbar-form navbar-right" action="../../../../../search.html" method="get">
+ <div class="form-group">
+  <input type="text" name="q" class="form-control" placeholder="Search" />
+ </div>
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+          
+        </div>
+    </div>
+  </div>
+
+<div class="container">
+  <div class="row">
+      <div class="col-md-3">
+        <div id="sidebar" class="bs-sidenav" role="complementary">
+<form action="../../../../../search.html" method="get">
+ <div class="form-group">
+  <input type="text" name="q" class="form-control" placeholder="Search" />
+ </div>
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+        </div>
+      </div>
+    <div class="body col-md-9 content" role="main">
+      
+  <h1>Source code for arus.core.libs.mhealth_format.path</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">datetime</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">glob</span>
+
+<span class="n">CAMELCASE_PATTERN</span> <span class="o">=</span> <span class="sa">r</span><span class="s1">&#39;(?:[A-Z][A-Za-z0-9]+)+&#39;</span>
+<span class="n">VERSIONCODE_PATTERN</span> <span class="o">=</span> <span class="sa">r</span><span class="s1">&#39;(?:NA|[0-9x]+)&#39;</span>
+<span class="n">SID_PATTERN</span> <span class="o">=</span> <span class="sa">r</span><span class="s1">&#39;[A-Z0-9]+&#39;</span>
+<span class="n">ANNOTATOR_PATTERN</span> <span class="o">=</span> <span class="sa">r</span><span class="s1">&#39;[A-Za-z0-9]+&#39;</span>
+<span class="n">FILE_TIMESTAMP_PATTERN</span> <span class="o">=</span> <span class="sa">r</span><span class="s1">&#39;[0-9]</span><span class="si">{4}</span><span class="s1">(?:\-[0-9]</span><span class="si">{2}</span><span class="s1">)</span><span class="si">{5}</span><span class="s1">-[0-9]</span><span class="si">{3}</span><span class="s1">-(?:P|M)[0-9]</span><span class="si">{4}</span><span class="s1">&#39;</span>
+<span class="n">FILE_EXTENSION_PATTERN</span> <span class="o">=</span> <span class="sa">r</span><span class="s1">&#39;&#39;&#39;</span>
+<span class="s1">(?:sensor|event|log|annotation|feature|class|prediction|model|classmap)\.csv</span>
+<span class="s1">&#39;&#39;&#39;</span>
+<span class="n">MHEALTH_FLAT_FILEPATH_PATTERN</span> <span class="o">=</span> <span class="sa">r</span><span class="s1">&#39;(\w+)[\/</span><span class="se">\\</span><span class="s1">]</span><span class="si">{1}</span><span class="s1">(?:(?:MasterSynced[\/</span><span class="se">\\</span><span class="s1">]</span><span class="si">{1}</span><span class="s1">)|(?:Derived[\/</span><span class="se">\\</span><span class="s1">]</span><span class="si">{1}</span><span class="s1">(?:\w+[\/</span><span class="se">\\</span><span class="s1">]</span><span class="si">{1}</span><span class="s1">)*))[0-9A-Za-z\-\.]+\.csv(\.gz)*&#39;</span>
+<span class="n">MHEALTH_FILEPATH_PATTERN</span> <span class="o">=</span> <span class="sa">r</span><span class="s1">&#39;(\w+)[\/</span><span class="se">\\</span><span class="s1">]</span><span class="si">{1}</span><span class="s1">(?:(?:MasterSynced[\/</span><span class="se">\\</span><span class="s1">]</span><span class="si">{1}</span><span class="s1">)|(?:Derived[\/</span><span class="se">\\</span><span class="s1">]</span><span class="si">{1}</span><span class="s1">(?:\w+[\/</span><span class="se">\\</span><span class="s1">]</span><span class="si">{1}</span><span class="s1">)*))\d</span><span class="si">{4}</span><span class="s1">[\/</span><span class="se">\\</span><span class="s1">]</span><span class="si">{1}</span><span class="s1">\d</span><span class="si">{2}</span><span class="s1">[\/</span><span class="se">\\</span><span class="s1">]</span><span class="si">{1}</span><span class="s1">\d</span><span class="si">{2}</span><span class="s1">[\/</span><span class="se">\\</span><span class="s1">]</span><span class="si">{1}</span><span class="s1">\d</span><span class="si">{2}</span><span class="s1">&#39;</span>
+<span class="n">MHEALTH_FILE_TIMESTAMP_FORMAT</span> <span class="o">=</span> <span class="s1">&#39;%Y-%m-</span><span class="si">%d</span><span class="s1">-%H-%M-%S-</span><span class="si">%f</span><span class="s1">&#39;</span>
+<span class="n">MHEALTH_FILE_TIMESTAMP_WITH_TZ_FORMAT</span> <span class="o">=</span> <span class="s1">&#39;%Y-%m-</span><span class="si">%d</span><span class="s1">-%H-%M-%S-</span><span class="si">%f</span><span class="s1">-%z&#39;</span>
+
+
+<div class="viewcode-block" id="is_mhealth_filepath"><a class="viewcode-back" href="../../../../../generated/arus.core.libs.mhealth_format.is_mhealth_filepath.html#arus.core.libs.mhealth_format.is_mhealth_filepath">[docs]</a><span class="k">def</span> <span class="nf">is_mhealth_filepath</span><span class="p">(</span><span class="n">filepath</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Validate if input file path is in mhealth format</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        filepath (str): input file path</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        is_mhealth (bool): `True` if the input is in mhealth format</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">filepath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">filepath</span><span class="p">)</span>
+    <span class="n">matched</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span>
+        <span class="n">MHEALTH_FILEPATH_PATTERN</span><span class="p">,</span>
+        <span class="n">filepath</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">matched</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span></div>
+
+
+<div class="viewcode-block" id="is_mhealth_flat_filepath"><a class="viewcode-back" href="../../../../../generated/arus.core.libs.mhealth_format.is_mhealth_flat_filepath.html#arus.core.libs.mhealth_format.is_mhealth_flat_filepath">[docs]</a><span class="k">def</span> <span class="nf">is_mhealth_flat_filepath</span><span class="p">(</span><span class="n">filepath</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Validate if input file path is in mhealth format (flat structure)</span>
+
+<span class="sd">    The flat structure stores all files directly in the `MasterSynced` folder in the pid folder, ignoring all date and hour folders.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        filepath (str): input file path</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        is_mhealth (bool): `True` if the input is in mhealth flat format</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">matched</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span>
+        <span class="n">MHEALTH_FLAT_FILEPATH_PATTERN</span><span class="p">,</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">filepath</span><span class="p">)</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">matched</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span></div>
+
+
+<div class="viewcode-block" id="extract_mhealth_rootpath"><a class="viewcode-back" href="../../../../../generated/arus.core.libs.mhealth_format.extract_mhealth_rootpath.html#arus.core.libs.mhealth_format.extract_mhealth_rootpath">[docs]</a><span class="k">def</span> <span class="nf">extract_mhealth_rootpath</span><span class="p">(</span><span class="n">filepath</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Extract the root folder path for the whole dataset from the input mhealth file path</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        filepath (str): The input mhealth file path</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        rootpath (str): The root folder path of the whole dataset</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">assert</span> <span class="n">is_mhealth_filepath</span><span class="p">(</span><span class="n">filepath</span><span class="p">)</span> <span class="ow">or</span> <span class="n">is_mhealth_flat_filepath</span><span class="p">(</span><span class="n">filepath</span><span class="p">)</span>
+    <span class="n">pid</span> <span class="o">=</span> <span class="n">extract_pid</span><span class="p">(</span><span class="n">filepath</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">filepath</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">pid</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="extract_pid_rootpath"><a class="viewcode-back" href="../../../../../generated/arus.core.libs.mhealth_format.extract_pid_rootpath.html#arus.core.libs.mhealth_format.extract_pid_rootpath">[docs]</a><span class="k">def</span> <span class="nf">extract_pid_rootpath</span><span class="p">(</span><span class="n">filepath</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Extract the pid folder path for the participant from the input mhealth file path</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        filepath (str): The input mhealth file path</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        pidpath (str): The pid folder path of the participant&#39;s data</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">assert</span> <span class="n">is_mhealth_filepath</span><span class="p">(</span><span class="n">filepath</span><span class="p">)</span> <span class="ow">or</span> <span class="n">is_mhealth_flat_filepath</span><span class="p">(</span><span class="n">filepath</span><span class="p">)</span>
+    <span class="n">pid</span> <span class="o">=</span> <span class="n">extract_pid</span><span class="p">(</span><span class="n">filepath</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">filepath</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">pid</span><span class="p">)[</span><span class="mi">0</span><span class="p">],</span> <span class="n">pid</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="extract_location_mapping_filepath"><a class="viewcode-back" href="../../../../../generated/arus.core.libs.mhealth_format.extract_location_mapping_filepath.html#arus.core.libs.mhealth_format.extract_location_mapping_filepath">[docs]</a><span class="k">def</span> <span class="nf">extract_location_mapping_filepath</span><span class="p">(</span><span class="n">filepath</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Extract the file path of the `location_mapping` meta file</span>
+
+<span class="sd">    If `location_mapping` files are stored separately for each participant, the one that matches the pid of the given input file path will be returned.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        filepath (str): The input mhealth file path</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        location_mapping_file (str): The `location_mapping` file path for the entire dataset. If no file is found, return `None`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">mhealth_root</span> <span class="o">=</span> <span class="n">extract_mhealth_rootpath</span><span class="p">(</span><span class="n">filepath</span><span class="p">)</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+        <span class="n">mhealth_root</span><span class="p">,</span> <span class="s1">&#39;DerivedCrossParticipants&#39;</span><span class="p">,</span> <span class="s1">&#39;location_mapping.csv&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">result</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">result</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">pid_root</span> <span class="o">=</span> <span class="n">extract_pid_rootpath</span><span class="p">(</span><span class="n">filepath</span><span class="p">)</span>
+        <span class="n">candicates</span> <span class="o">=</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+            <span class="n">pid_root</span><span class="p">,</span> <span class="s1">&#39;**&#39;</span><span class="p">,</span> <span class="s1">&#39;location_mapping.csv&#39;</span><span class="p">),</span> <span class="n">recursive</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">candicates</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">candicates</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span></div>
+
+
+<div class="viewcode-block" id="extract_offset_mapping_filepath"><a class="viewcode-back" href="../../../../../generated/arus.core.libs.mhealth_format.extract_offset_mapping_filepath.html#arus.core.libs.mhealth_format.extract_offset_mapping_filepath">[docs]</a><span class="k">def</span> <span class="nf">extract_offset_mapping_filepath</span><span class="p">(</span><span class="n">filepath</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Extract the file path of the `offset_mapping` meta file</span>
+
+<span class="sd">    If `offset_mapping` files are stored separately for each participant, the one that matches the pid of the given input file path will be returned.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        filepath (str): The input mhealth file path</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        offset_mapping_file (str): The `offset_mapping` file path for the entire dataset. If no file is found, return `None`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">pid_root</span> <span class="o">=</span> <span class="n">extract_pid_rootpath</span><span class="p">(</span><span class="n">filepath</span><span class="p">)</span>
+    <span class="n">candicates</span> <span class="o">=</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+        <span class="n">pid_root</span><span class="p">,</span> <span class="s1">&#39;**&#39;</span><span class="p">,</span> <span class="s1">&#39;offset_mapping.csv&#39;</span><span class="p">),</span> <span class="n">recursive</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">candicates</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">candicates</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">mhealth_root</span> <span class="o">=</span> <span class="n">extract_mhealth_rootpath</span><span class="p">(</span><span class="n">filepath</span><span class="p">)</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+            <span class="n">mhealth_root</span><span class="p">,</span> <span class="s1">&#39;DerivedCrossParticipants&#39;</span><span class="p">,</span> <span class="s1">&#39;offset_mapping.csv&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">result</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">result</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span></div>
+
+
+<div class="viewcode-block" id="extract_pid_exceptions_filepath"><a class="viewcode-back" href="../../../../../generated/arus.core.libs.mhealth_format.extract_pid_exceptions_filepath.html#arus.core.libs.mhealth_format.extract_pid_exceptions_filepath">[docs]</a><span class="k">def</span> <span class="nf">extract_pid_exceptions_filepath</span><span class="p">(</span><span class="n">filepath</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Extract the file path of the `pid_exceptions` meta file</span>
+
+<span class="sd">    If `pid_exceptions` files are stored separately for each participant, the one that matches the pid of the given input file path will be returned.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        filepath (str): The input mhealth file path</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        pid_exceptions_file (str): The `pid_exceptions` file path for the entire dataset. If no file is found, return `None`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">mhealth_root</span> <span class="o">=</span> <span class="n">extract_mhealth_rootpath</span><span class="p">(</span><span class="n">filepath</span><span class="p">)</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+        <span class="n">mhealth_root</span><span class="p">,</span> <span class="s1">&#39;DerivedCrossParticipants&#39;</span><span class="p">,</span> <span class="s1">&#39;pid_exceptions.csv&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">result</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">result</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span></div>
+
+
+<div class="viewcode-block" id="is_pid_included"><a class="viewcode-back" href="../../../../../generated/arus.core.libs.mhealth_format.is_pid_included.html#arus.core.libs.mhealth_format.is_pid_included">[docs]</a><span class="k">def</span> <span class="nf">is_pid_included</span><span class="p">(</span><span class="n">filepath</span><span class="p">):</span>
+    <span class="n">exceptions</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">extract_pid_exceptions_filepath</span><span class="p">(</span><span class="n">filepath</span><span class="p">))</span>
+    <span class="n">pid</span> <span class="o">=</span> <span class="n">extract_pid</span><span class="p">(</span><span class="n">filepath</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">pid</span> <span class="o">==</span> <span class="n">exceptions</span><span class="p">[</span><span class="s1">&#39;PID&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">):</span>
+        <span class="k">return</span> <span class="kc">False</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">True</span></div>
+
+
+<div class="viewcode-block" id="extract_orientation_corrections_filepath"><a class="viewcode-back" href="../../../../../generated/arus.core.libs.mhealth_format.extract_orientation_corrections_filepath.html#arus.core.libs.mhealth_format.extract_orientation_corrections_filepath">[docs]</a><span class="k">def</span> <span class="nf">extract_orientation_corrections_filepath</span><span class="p">(</span><span class="n">filepath</span><span class="p">):</span>
+    <span class="n">pid_root</span> <span class="o">=</span> <span class="n">extract_pid_rootpath</span><span class="p">(</span><span class="n">filepath</span><span class="p">)</span>
+    <span class="n">candicates</span> <span class="o">=</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+        <span class="n">pid_root</span><span class="p">,</span> <span class="s1">&#39;**&#39;</span><span class="p">,</span> <span class="s1">&#39;orientation_corrections.csv&#39;</span><span class="p">),</span> <span class="n">recursive</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">candicates</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">candicates</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">mhealth_root</span> <span class="o">=</span> <span class="n">extract_mhealth_rootpath</span><span class="p">(</span><span class="n">filepath</span><span class="p">)</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+            <span class="n">mhealth_root</span><span class="p">,</span> <span class="s1">&#39;DerivedCrossParticipants&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;orientation_corrections.csv&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">result</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">result</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span></div>
+
+
+<div class="viewcode-block" id="is_mhealth_filename"><a class="viewcode-back" href="../../../../../generated/arus.core.libs.mhealth_format.is_mhealth_filename.html#arus.core.libs.mhealth_format.is_mhealth_filename">[docs]</a><span class="k">def</span> <span class="nf">is_mhealth_filename</span><span class="p">(</span><span class="n">filepath</span><span class="p">):</span>
+    <span class="n">filename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">filepath</span><span class="p">)</span>
+
+    <span class="n">sensor_filename_pattern</span> <span class="o">=</span> <span class="s1">&#39;^&#39;</span> <span class="o">+</span> <span class="n">CAMELCASE_PATTERN</span> <span class="o">+</span> <span class="s1">&#39;\-&#39;</span> <span class="o">+</span> \
+        <span class="n">CAMELCASE_PATTERN</span> <span class="o">+</span> \
+        <span class="s1">&#39;\-&#39;</span> <span class="o">+</span> <span class="n">VERSIONCODE_PATTERN</span> <span class="o">+</span> <span class="s1">&#39;\.&#39;</span> <span class="o">+</span> \
+        <span class="n">SID_PATTERN</span> <span class="o">+</span> <span class="s1">&#39;\-&#39;</span> <span class="o">+</span> <span class="n">CAMELCASE_PATTERN</span> <span class="o">+</span> <span class="s1">&#39;\.&#39;</span> <span class="o">+</span> \
+        <span class="n">FILE_TIMESTAMP_PATTERN</span> <span class="o">+</span> <span class="s1">&#39;\.sensor\.csv(\.gz)*$&#39;</span>
+
+    <span class="n">annotation_filename_pattern</span> <span class="o">=</span> <span class="s1">&#39;^&#39;</span> <span class="o">+</span> <span class="n">CAMELCASE_PATTERN</span> <span class="o">+</span> <span class="s1">&#39;\.&#39;</span> <span class="o">+</span> \
+        <span class="n">ANNOTATOR_PATTERN</span> <span class="o">+</span> <span class="s1">&#39;\-&#39;</span> <span class="o">+</span> <span class="n">CAMELCASE_PATTERN</span> <span class="o">+</span> <span class="s1">&#39;\.&#39;</span> <span class="o">+</span> \
+        <span class="n">FILE_TIMESTAMP_PATTERN</span> <span class="o">+</span> <span class="s1">&#39;\.annotation\.csv(\.gz)*$&#39;</span>
+
+    <span class="n">sensor_matched</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span>
+        <span class="n">sensor_filename_pattern</span><span class="p">,</span>
+        <span class="n">filename</span>
+    <span class="p">)</span>
+
+    <span class="n">annotation_matched</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span>
+        <span class="n">annotation_filename_pattern</span><span class="p">,</span>
+        <span class="n">filename</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">sensor_matched</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">annotation_matched</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span></div>
+
+
+<div class="viewcode-block" id="extract_pid"><a class="viewcode-back" href="../../../../../generated/arus.core.libs.mhealth_format.extract_pid.html#arus.core.libs.mhealth_format.extract_pid">[docs]</a><span class="k">def</span> <span class="nf">extract_pid</span><span class="p">(</span><span class="n">filepath</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">is_mhealth_filepath</span><span class="p">(</span><span class="n">filepath</span><span class="p">):</span>
+        <span class="n">matched</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">MHEALTH_FILEPATH_PATTERN</span><span class="p">,</span> <span class="n">filepath</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">is_mhealth_flat_filepath</span><span class="p">(</span><span class="n">filepath</span><span class="p">):</span>
+        <span class="n">matched</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">MHEALTH_FLAT_FILEPATH_PATTERN</span><span class="p">,</span> <span class="n">filepath</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="k">return</span> <span class="n">matched</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="k">if</span> <span class="n">matched</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span></div>
+
+
+<div class="viewcode-block" id="get_pids_list"><a class="viewcode-back" href="../../../../../generated/arus.core.libs.mhealth_format.get_pids_list.html#arus.core.libs.mhealth_format.get_pids_list">[docs]</a><span class="k">def</span> <span class="nf">get_pids_list</span><span class="p">(</span><span class="n">rootpath</span><span class="p">):</span>
+    <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="nb">filter</span><span class="p">(</span><span class="k">lambda</span> <span class="n">name</span><span class="p">:</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">rootpath</span><span class="p">,</span> <span class="n">name</span><span class="p">)),</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">rootpath</span><span class="p">)))</span></div>
+
+
+<div class="viewcode-block" id="extract_sensor_type"><a class="viewcode-back" href="../../../../../generated/arus.core.libs.mhealth_format.extract_sensor_type.html#arus.core.libs.mhealth_format.extract_sensor_type">[docs]</a><span class="k">def</span> <span class="nf">extract_sensor_type</span><span class="p">(</span><span class="n">filepath</span><span class="p">):</span>
+    <span class="k">assert</span> <span class="n">is_mhealth_filepath</span><span class="p">(</span><span class="n">filepath</span><span class="p">)</span> <span class="ow">or</span> <span class="n">is_mhealth_flat_filepath</span><span class="p">(</span>
+        <span class="n">filepath</span><span class="p">)</span> <span class="ow">or</span> <span class="n">is_mhealth_filename</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">filepath</span><span class="p">))</span>
+    <span class="n">filename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">filepath</span><span class="p">)</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">filename</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;-&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">result</span></div>
+
+
+<div class="viewcode-block" id="extract_data_type"><a class="viewcode-back" href="../../../../../generated/arus.core.libs.mhealth_format.extract_data_type.html#arus.core.libs.mhealth_format.extract_data_type">[docs]</a><span class="k">def</span> <span class="nf">extract_data_type</span><span class="p">(</span><span class="n">filepath</span><span class="p">):</span>
+    <span class="k">assert</span> <span class="n">is_mhealth_filepath</span><span class="p">(</span><span class="n">filepath</span><span class="p">)</span> <span class="ow">or</span> <span class="n">is_mhealth_flat_filepath</span><span class="p">(</span>
+        <span class="n">filepath</span><span class="p">)</span> <span class="ow">or</span> <span class="n">is_mhealth_filename</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">filepath</span><span class="p">))</span>
+    <span class="n">filename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">filepath</span><span class="p">)</span>
+    <span class="n">tokens</span> <span class="o">=</span> <span class="n">filename</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">tokens</span> <span class="o">=</span> <span class="n">tokens</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;-&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">tokens</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">tokens</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span></div>
+
+
+<div class="viewcode-block" id="extract_version_code"><a class="viewcode-back" href="../../../../../generated/arus.core.libs.mhealth_format.extract_version_code.html#arus.core.libs.mhealth_format.extract_version_code">[docs]</a><span class="k">def</span> <span class="nf">extract_version_code</span><span class="p">(</span><span class="n">filepath</span><span class="p">):</span>
+    <span class="k">assert</span> <span class="n">is_mhealth_filepath</span><span class="p">(</span><span class="n">filepath</span><span class="p">)</span> <span class="ow">or</span> <span class="n">is_mhealth_flat_filepath</span><span class="p">(</span>
+        <span class="n">filepath</span><span class="p">)</span> <span class="ow">or</span> <span class="n">is_mhealth_filename</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">filepath</span><span class="p">))</span>
+    <span class="n">filename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">filepath</span><span class="p">)</span>
+    <span class="n">tokens</span> <span class="o">=</span> <span class="n">filename</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">tokens</span> <span class="o">=</span> <span class="n">tokens</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;-&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">tokens</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mi">3</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">tokens</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span></div>
+
+
+<div class="viewcode-block" id="extract_sid"><a class="viewcode-back" href="../../../../../generated/arus.core.libs.mhealth_format.extract_sid.html#arus.core.libs.mhealth_format.extract_sid">[docs]</a><span class="k">def</span> <span class="nf">extract_sid</span><span class="p">(</span><span class="n">filepath</span><span class="p">):</span>
+    <span class="k">assert</span> <span class="n">is_mhealth_filepath</span><span class="p">(</span><span class="n">filepath</span><span class="p">)</span> <span class="ow">or</span> <span class="n">is_mhealth_flat_filepath</span><span class="p">(</span>
+        <span class="n">filepath</span><span class="p">)</span> <span class="ow">or</span> <span class="n">is_mhealth_filename</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">filepath</span><span class="p">))</span>
+    <span class="n">filename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">filepath</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">filename</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;-&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="extract_file_type"><a class="viewcode-back" href="../../../../../generated/arus.core.libs.mhealth_format.extract_file_type.html#arus.core.libs.mhealth_format.extract_file_type">[docs]</a><span class="k">def</span> <span class="nf">extract_file_type</span><span class="p">(</span><span class="n">filepath</span><span class="p">):</span>
+    <span class="c1"># assert is_mhealth_filepath(filepath) or is_mhealth_flat_filepath(</span>
+        <span class="c1"># filepath) or is_mhealth_filename(os.path.basename(filepath))</span>
+    <span class="n">filename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">filepath</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">filename</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;gz&#39;</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">filename</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">)[</span><span class="o">-</span><span class="mi">3</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">filename</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">)[</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="extract_file_timestamp"><a class="viewcode-back" href="../../../../../generated/arus.core.libs.mhealth_format.extract_file_timestamp.html#arus.core.libs.mhealth_format.extract_file_timestamp">[docs]</a><span class="k">def</span> <span class="nf">extract_file_timestamp</span><span class="p">(</span><span class="n">filepath</span><span class="p">,</span> <span class="n">ignore_tz</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="k">assert</span> <span class="n">is_mhealth_filepath</span><span class="p">(</span><span class="n">filepath</span><span class="p">)</span> <span class="ow">or</span> <span class="n">is_mhealth_flat_filepath</span><span class="p">(</span>
+        <span class="n">filepath</span><span class="p">)</span> <span class="ow">or</span> <span class="n">is_mhealth_filename</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">filepath</span><span class="p">))</span>
+    <span class="n">filename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">filepath</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">filename</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;gz&#39;</span><span class="p">):</span>
+        <span class="n">timestamp_index</span> <span class="o">=</span> <span class="o">-</span><span class="mi">4</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">timestamp_index</span> <span class="o">=</span> <span class="o">-</span><span class="mi">3</span>
+    <span class="n">timestamp_str</span> <span class="o">=</span> <span class="n">filename</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">)[</span><span class="n">timestamp_index</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">ignore_tz</span><span class="p">:</span>
+        <span class="n">timestamp_str</span> <span class="o">=</span> <span class="n">timestamp_str</span><span class="p">[:</span><span class="o">-</span><span class="mi">6</span><span class="p">]</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">strptime</span><span class="p">(</span>
+            <span class="n">timestamp_str</span><span class="p">,</span> <span class="s1">&#39;%Y-%m-</span><span class="si">%d</span><span class="s1">-%H-%M-%S-</span><span class="si">%f</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">timestamp_str</span> <span class="o">=</span> <span class="n">timestamp_str</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;P&#39;</span><span class="p">,</span> <span class="s1">&#39;+&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;M&#39;</span><span class="p">,</span> <span class="s1">&#39;-&#39;</span><span class="p">)</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">strptime</span><span class="p">(</span>
+            <span class="n">timestamp_str</span><span class="p">,</span> <span class="s1">&#39;%Y-%m-</span><span class="si">%d</span><span class="s1">-%H-%M-%S-</span><span class="si">%f</span><span class="s1">-%z&#39;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">result</span></div>
+
+
+<div class="viewcode-block" id="extract_existing_hourly_filepaths"><a class="viewcode-back" href="../../../../../generated/arus.core.libs.mhealth_format.extract_existing_hourly_filepaths.html#arus.core.libs.mhealth_format.extract_existing_hourly_filepaths">[docs]</a><span class="k">def</span> <span class="nf">extract_existing_hourly_filepaths</span><span class="p">(</span><span class="n">filepath</span><span class="p">):</span>
+    <span class="n">pid_path</span> <span class="o">=</span> <span class="n">extract_pid_rootpath</span><span class="p">(</span><span class="n">filepath</span><span class="p">)</span>
+    <span class="n">file_type</span> <span class="o">=</span> <span class="n">extract_file_type</span><span class="p">(</span><span class="n">filepath</span><span class="p">)</span>
+    <span class="n">data_type</span> <span class="o">=</span> <span class="n">extract_data_type</span><span class="p">(</span><span class="n">filepath</span><span class="p">)</span>
+    <span class="n">version_code</span> <span class="o">=</span> <span class="n">extract_version_code</span><span class="p">(</span><span class="n">filepath</span><span class="p">)</span>
+    <span class="n">sensor_or_annotator_id</span> <span class="o">=</span> <span class="n">extract_sid</span><span class="p">(</span><span class="n">filepath</span><span class="p">)</span>
+    <span class="n">sensor_or_annotation_type</span> <span class="o">=</span> <span class="n">extract_sensor_type</span><span class="p">(</span><span class="n">filepath</span><span class="p">)</span>
+    <span class="n">ts</span> <span class="o">=</span> <span class="n">extract_file_timestamp</span><span class="p">(</span><span class="n">filepath</span><span class="p">,</span> <span class="n">ignore_tz</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">tz</span> <span class="o">=</span> <span class="n">extract_timezone_mhealth_str</span><span class="p">(</span><span class="n">filepath</span><span class="p">)</span>
+    <span class="n">timestamp_pattern</span> <span class="o">=</span> <span class="n">build_mhealth_file_timestamp_hourly_pattern</span><span class="p">(</span><span class="n">ts</span><span class="p">,</span> <span class="n">tz</span><span class="p">)</span>
+
+    <span class="n">hourly_file_pattern</span> <span class="o">=</span> <span class="n">build_mhealth_filename</span><span class="p">(</span><span class="n">timestamp_pattern</span><span class="p">,</span>
+                                                 <span class="n">file_type</span><span class="p">,</span>
+                                                 <span class="n">sensor_or_annotation_type</span><span class="o">=</span><span class="n">sensor_or_annotation_type</span><span class="p">,</span>
+                                                 <span class="n">data_type</span><span class="o">=</span><span class="n">data_type</span><span class="p">,</span> <span class="n">version_code</span><span class="o">=</span><span class="n">version_code</span><span class="p">,</span> <span class="n">sensor_or_annotator_id</span><span class="o">=</span><span class="n">sensor_or_annotator_id</span><span class="p">)</span>
+
+    <span class="n">found_files</span> <span class="o">=</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">pid_path</span><span class="p">,</span> <span class="s2">&quot;MasterSynced&quot;</span><span class="p">,</span>
+                                    <span class="s2">&quot;**&quot;</span><span class="p">,</span> <span class="n">hourly_file_pattern</span><span class="p">),</span> <span class="n">recursive</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">found_files</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">[]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">found_files</span></div>
+
+
+<div class="viewcode-block" id="extract_session_start_time"><a class="viewcode-back" href="../../../../../generated/arus.core.libs.mhealth_format.extract_session_start_time.html#arus.core.libs.mhealth_format.extract_session_start_time">[docs]</a><span class="k">def</span> <span class="nf">extract_session_start_time</span><span class="p">(</span><span class="n">filepath</span><span class="p">,</span> <span class="n">filepaths</span><span class="p">):</span>
+    <span class="n">pid</span> <span class="o">=</span> <span class="n">extract_pid</span><span class="p">(</span><span class="n">filepath</span><span class="p">)</span>
+    <span class="n">smallest</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">path</span> <span class="ow">in</span> <span class="n">filepaths</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">extract_pid</span><span class="p">(</span><span class="n">path</span><span class="p">)</span> <span class="o">==</span> <span class="n">pid</span><span class="p">:</span>
+            <span class="n">timestamp</span> <span class="o">=</span> <span class="n">extract_file_timestamp</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">ignore_tz</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">timestamp</span> <span class="o">&lt;</span> <span class="n">smallest</span><span class="p">:</span>
+                <span class="n">smallest</span> <span class="o">=</span> <span class="n">timestamp</span>
+    <span class="n">smallest</span> <span class="o">=</span> <span class="n">smallest</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">microsecond</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">second</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">minute</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">smallest</span></div>
+
+
+<div class="viewcode-block" id="extract_session_end_time"><a class="viewcode-back" href="../../../../../generated/arus.core.libs.mhealth_format.extract_session_end_time.html#arus.core.libs.mhealth_format.extract_session_end_time">[docs]</a><span class="k">def</span> <span class="nf">extract_session_end_time</span><span class="p">(</span><span class="n">filepath</span><span class="p">,</span> <span class="n">filepaths</span><span class="p">):</span>
+    <span class="n">pid</span> <span class="o">=</span> <span class="n">extract_pid</span><span class="p">(</span><span class="n">filepath</span><span class="p">)</span>
+    <span class="n">largest</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">fromtimestamp</span><span class="p">(</span><span class="mi">100000</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">path</span> <span class="ow">in</span> <span class="n">filepaths</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">extract_pid</span><span class="p">(</span><span class="n">path</span><span class="p">)</span> <span class="o">==</span> <span class="n">pid</span><span class="p">:</span>
+            <span class="n">timestamp</span> <span class="o">=</span> <span class="n">extract_file_timestamp</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">ignore_tz</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">timestamp</span> <span class="o">&gt;</span> <span class="n">largest</span><span class="p">:</span>
+                <span class="n">largest</span> <span class="o">=</span> <span class="n">timestamp</span>
+    <span class="k">if</span> <span class="n">largest</span><span class="o">.</span><span class="n">minute</span> <span class="o">!=</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">largest</span><span class="o">.</span><span class="n">second</span> <span class="o">!=</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">largest</span><span class="o">.</span><span class="n">microsecond</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">largest</span> <span class="o">=</span> <span class="n">largest</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">microsecond</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">second</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                                  <span class="n">minute</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span> <span class="o">+</span> <span class="n">datetime</span><span class="o">.</span><span class="n">timedelta</span><span class="p">(</span><span class="n">hours</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">largest</span></div>
+
+
+<div class="viewcode-block" id="extract_timezone"><a class="viewcode-back" href="../../../../../generated/arus.core.libs.mhealth_format.extract_timezone.html#arus.core.libs.mhealth_format.extract_timezone">[docs]</a><span class="k">def</span> <span class="nf">extract_timezone</span><span class="p">(</span><span class="n">filepath</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Extract time zone object from the input mhealth file path</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        filepath (str): File path in mhealth format</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        tz (tzinfo): The extracted time zone object</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">dt</span> <span class="o">=</span> <span class="n">extract_file_timestamp</span><span class="p">(</span><span class="n">filepath</span><span class="p">,</span> <span class="n">ignore_tz</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">dt</span><span class="o">.</span><span class="n">tzinfo</span></div>
+
+
+<div class="viewcode-block" id="extract_timezone_mhealth_str"><a class="viewcode-back" href="../../../../../generated/arus.core.libs.mhealth_format.extract_timezone_mhealth_str.html#arus.core.libs.mhealth_format.extract_timezone_mhealth_str">[docs]</a><span class="k">def</span> <span class="nf">extract_timezone_mhealth_str</span><span class="p">(</span><span class="n">filepath</span><span class="p">):</span>
+    <span class="k">assert</span> <span class="n">is_mhealth_filepath</span><span class="p">(</span><span class="n">filepath</span><span class="p">)</span> <span class="ow">or</span> <span class="n">is_mhealth_flat_filepath</span><span class="p">(</span>
+        <span class="n">filepath</span><span class="p">)</span> <span class="ow">or</span> <span class="n">is_mhealth_filename</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">filepath</span><span class="p">))</span>
+    <span class="n">filename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">filepath</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">filename</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;gz&#39;</span><span class="p">):</span>
+        <span class="n">timestamp_index</span> <span class="o">=</span> <span class="o">-</span><span class="mi">4</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">timestamp_index</span> <span class="o">=</span> <span class="o">-</span><span class="mi">3</span>
+    <span class="n">timestamp_str</span> <span class="o">=</span> <span class="n">filename</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">)[</span><span class="n">timestamp_index</span><span class="p">]</span>
+    <span class="n">tz_str</span> <span class="o">=</span> <span class="n">timestamp_str</span><span class="p">[</span><span class="o">-</span><span class="mi">5</span><span class="p">:]</span>
+    <span class="k">return</span> <span class="n">tz_str</span></div>
+
+
+<div class="viewcode-block" id="extract_timezone_name"><a class="viewcode-back" href="../../../../../generated/arus.core.libs.mhealth_format.extract_timezone_name.html#arus.core.libs.mhealth_format.extract_timezone_name">[docs]</a><span class="k">def</span> <span class="nf">extract_timezone_name</span><span class="p">(</span><span class="n">filepath</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Extract time zone name from the input mhealth file path</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        filepath (str): File path in mhealth format</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        tz_name (str): Time zone name as formatted with `%Z`</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">dt</span> <span class="o">=</span> <span class="n">extract_file_timestamp</span><span class="p">(</span><span class="n">filepath</span><span class="p">,</span> <span class="n">ignore_tz</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">tz_name</span> <span class="o">=</span> <span class="n">dt</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;%Z&#39;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">tz_name</span></div>
+
+
+<div class="viewcode-block" id="build_mhealth_file_timestamp_hourly_pattern"><a class="viewcode-back" href="../../../../../generated/arus.core.libs.mhealth_format.build_mhealth_file_timestamp_hourly_pattern.html#arus.core.libs.mhealth_format.build_mhealth_file_timestamp_hourly_pattern">[docs]</a><span class="k">def</span> <span class="nf">build_mhealth_file_timestamp_hourly_pattern</span><span class="p">(</span><span class="n">timestamp</span><span class="p">,</span> <span class="n">tz</span><span class="p">):</span>
+    <span class="n">ts_str</span> <span class="o">=</span> <span class="n">build_mhealth_file_timestamp</span><span class="p">(</span><span class="n">timestamp</span><span class="p">)</span>
+    <span class="n">hourly_ts_str</span> <span class="o">=</span> <span class="n">ts_str</span><span class="p">[:</span><span class="mi">14</span><span class="p">]</span>
+    <span class="n">hourly_ts_str_pattern</span> <span class="o">=</span> <span class="n">hourly_ts_str</span> <span class="o">+</span> <span class="s1">&#39;??-??-???-&#39;</span> <span class="o">+</span> <span class="n">tz</span>
+    <span class="k">return</span> <span class="n">hourly_ts_str_pattern</span></div>
+
+
+<div class="viewcode-block" id="build_mhealth_file_timestamp"><a class="viewcode-back" href="../../../../../generated/arus.core.libs.mhealth_format.build_mhealth_file_timestamp.html#arus.core.libs.mhealth_format.build_mhealth_file_timestamp">[docs]</a><span class="k">def</span> <span class="nf">build_mhealth_file_timestamp</span><span class="p">(</span><span class="n">timestamp</span><span class="p">):</span>
+    <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">timestamp</span><span class="p">)</span> <span class="o">==</span> <span class="n">np</span><span class="o">.</span><span class="n">datetime64</span><span class="p">:</span>
+        <span class="n">ts</span> <span class="o">=</span> <span class="n">timestamp</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s1">&#39;datetime64[ms]&#39;</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="nb">type</span><span class="p">(</span><span class="n">timestamp</span><span class="p">)</span> <span class="o">==</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="p">:</span>
+        <span class="n">ts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">datetime64</span><span class="p">(</span><span class="n">timestamp</span><span class="p">,</span> <span class="s1">&#39;ms&#39;</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="nb">type</span><span class="p">(</span><span class="n">timestamp</span><span class="p">)</span> <span class="o">==</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">timestamp</span>
+    <span class="n">ts_str</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">datetime_as_string</span><span class="p">(</span>
+        <span class="n">ts</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;ms&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;:&#39;</span><span class="p">,</span> <span class="s1">&#39;-&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;T&#39;</span><span class="p">,</span> <span class="s1">&#39;-&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="s1">&#39;-&#39;</span><span class="p">)</span>
+    <span class="n">tz_str</span> <span class="o">=</span> <span class="n">build_mhealth_file_timezone</span><span class="p">(</span><span class="n">timestamp</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">ts_str</span> <span class="o">+</span> <span class="s1">&#39;-&#39;</span> <span class="o">+</span> <span class="n">tz_str</span></div>
+
+
+<div class="viewcode-block" id="build_mhealth_file_timezone"><a class="viewcode-back" href="../../../../../generated/arus.core.libs.mhealth_format.build_mhealth_file_timezone.html#arus.core.libs.mhealth_format.build_mhealth_file_timezone">[docs]</a><span class="k">def</span> <span class="nf">build_mhealth_file_timezone</span><span class="p">(</span><span class="n">timestamp</span><span class="p">):</span>
+    <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">timestamp</span><span class="p">)</span> <span class="o">==</span> <span class="n">np</span><span class="o">.</span><span class="n">datetime64</span><span class="p">:</span>
+        <span class="n">ts</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="n">timestamp</span><span class="p">)</span><span class="o">.</span><span class="n">to_pydatetime</span><span class="p">()</span>
+    <span class="k">elif</span> <span class="nb">type</span><span class="p">(</span><span class="n">timestamp</span><span class="p">)</span> <span class="o">==</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="p">:</span>
+        <span class="n">ts</span> <span class="o">=</span> <span class="n">timestamp</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s1">&#39;Input argument is in unknown type&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">ts</span><span class="o">.</span><span class="n">tzinfo</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">tz_str</span> <span class="o">=</span> <span class="s1">&#39;P0000&#39;</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">tz_str</span> <span class="o">=</span> <span class="n">ts</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;%Z&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;UTC&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span>
+            <span class="s1">&#39;-&#39;</span><span class="p">,</span> <span class="s1">&#39;M&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;+&#39;</span><span class="p">,</span> <span class="s1">&#39;P&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;:&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">tz_str</span></div>
+
+
+<div class="viewcode-block" id="build_mhealth_hourly_structure"><a class="viewcode-back" href="../../../../../generated/arus.core.libs.mhealth_format.build_mhealth_hourly_structure.html#arus.core.libs.mhealth_format.build_mhealth_hourly_structure">[docs]</a><span class="k">def</span> <span class="nf">build_mhealth_hourly_structure</span><span class="p">(</span><span class="n">timestamp</span><span class="p">):</span>
+    <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">timestamp</span><span class="p">)</span> <span class="o">==</span> <span class="n">np</span><span class="o">.</span><span class="n">datetime64</span><span class="p">:</span>
+        <span class="n">ts</span> <span class="o">=</span> <span class="n">timestamp</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s1">&#39;datetime64[ms]&#39;</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="nb">type</span><span class="p">(</span><span class="n">timestamp</span><span class="p">)</span> <span class="o">==</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="p">:</span>
+        <span class="n">ts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">datetime64</span><span class="p">(</span><span class="n">timestamp</span><span class="p">,</span> <span class="s1">&#39;ms&#39;</span><span class="p">)</span>
+    <span class="n">ts</span> <span class="o">=</span> <span class="n">ts</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{year:04d}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{month:02d}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{day:02d}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{hour:02d}</span><span class="s1">&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">year</span><span class="o">=</span><span class="n">ts</span><span class="o">.</span><span class="n">year</span><span class="p">,</span> <span class="n">month</span><span class="o">=</span><span class="n">ts</span><span class="o">.</span><span class="n">month</span><span class="p">,</span> <span class="n">day</span><span class="o">=</span><span class="n">ts</span><span class="o">.</span><span class="n">day</span><span class="p">,</span> <span class="n">hour</span><span class="o">=</span><span class="n">ts</span><span class="o">.</span><span class="n">hour</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="build_mhealth_filename"><a class="viewcode-back" href="../../../../../generated/arus.core.libs.mhealth_format.build_mhealth_filename.html#arus.core.libs.mhealth_format.build_mhealth_filename">[docs]</a><span class="k">def</span> <span class="nf">build_mhealth_filename</span><span class="p">(</span><span class="n">timestamp</span><span class="p">,</span> <span class="n">file_type</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span>
+                           <span class="n">sensor_or_annotation_type</span><span class="o">=</span><span class="s1">&#39;Unknown&#39;</span><span class="p">,</span>
+                           <span class="n">data_type</span><span class="o">=</span><span class="s1">&#39;Unknown&#39;</span><span class="p">,</span>
+                           <span class="n">version_code</span><span class="o">=</span><span class="s1">&#39;NA&#39;</span><span class="p">,</span>
+                           <span class="n">sensor_or_annotator_id</span><span class="o">=</span><span class="s1">&#39;XXX&#39;</span><span class="p">,</span> <span class="n">compress</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+
+    <span class="n">ts_str</span> <span class="o">=</span> <span class="n">build_mhealth_file_timestamp</span><span class="p">(</span><span class="n">timestamp</span><span class="p">)</span>
+    <span class="n">extension</span> <span class="o">=</span> <span class="s1">&#39;csv.gz&#39;</span> <span class="k">if</span> <span class="n">compress</span> <span class="k">else</span> <span class="s1">&#39;csv&#39;</span>
+
+    <span class="k">if</span> <span class="n">file_type</span> <span class="o">==</span> <span class="s1">&#39;sensor&#39;</span><span class="p">:</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{sensor_type}</span><span class="s1">-</span><span class="si">{data_type}</span><span class="s1">-</span><span class="si">{version_code}</span><span class="s1">.</span><span class="si">{sensor_id}</span><span class="s1">-</span><span class="si">{data_type}</span><span class="s1">.</span><span class="si">{timestamp}</span><span class="s1">.</span><span class="si">{file_type}</span><span class="s1">.</span><span class="si">{extension}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="n">sensor_type</span><span class="o">=</span><span class="n">sensor_or_annotation_type</span><span class="p">,</span>
+            <span class="n">data_type</span><span class="o">=</span><span class="n">data_type</span><span class="p">,</span>
+            <span class="n">version_code</span><span class="o">=</span><span class="n">version_code</span><span class="p">,</span>
+            <span class="n">sensor_id</span><span class="o">=</span><span class="n">sensor_or_annotator_id</span><span class="p">,</span>
+            <span class="n">timestamp</span><span class="o">=</span><span class="n">ts_str</span><span class="p">,</span>
+            <span class="n">file_type</span><span class="o">=</span><span class="n">file_type</span><span class="p">,</span>
+            <span class="n">extension</span><span class="o">=</span><span class="n">extension</span>
+        <span class="p">)</span>
+    <span class="k">elif</span> <span class="n">file_type</span> <span class="o">==</span> <span class="s1">&#39;annotation&#39;</span><span class="p">:</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{annotation_type}</span><span class="s1">.</span><span class="si">{annotator_id}</span><span class="s1">-</span><span class="si">{annotation_type}</span><span class="s1">.</span><span class="si">{timestamp}</span><span class="s1">.</span><span class="si">{file_type}</span><span class="s1">.</span><span class="si">{extension}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="n">annotation_type</span><span class="o">=</span><span class="n">sensor_or_annotation_type</span><span class="p">,</span>
+            <span class="n">annotator_id</span><span class="o">=</span><span class="n">sensor_or_annotator_id</span><span class="p">,</span>
+            <span class="n">timestamp</span><span class="o">=</span><span class="n">ts_str</span><span class="p">,</span>
+            <span class="n">file_type</span><span class="o">=</span><span class="n">file_type</span><span class="p">,</span>
+            <span class="n">extension</span><span class="o">=</span><span class="n">extension</span>
+        <span class="p">)</span>
+    <span class="k">return</span> <span class="n">result</span></div>
+
+
+<div class="viewcode-block" id="build_mhealth_filepath"><a class="viewcode-back" href="../../../../../generated/arus.core.libs.mhealth_format.build_mhealth_filepath.html#arus.core.libs.mhealth_format.build_mhealth_filepath">[docs]</a><span class="k">def</span> <span class="nf">build_mhealth_filepath</span><span class="p">(</span><span class="n">rootpath</span><span class="p">,</span> <span class="n">pid</span><span class="p">,</span> <span class="n">timestamp</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">flat</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">rootpath</span><span class="p">,</span> <span class="n">pid</span><span class="p">,</span> <span class="s1">&#39;MasterSynced&#39;</span><span class="p">,</span> <span class="n">build_mhealth_hourly_structure</span><span class="p">(</span><span class="n">timestamp</span><span class="p">),</span> <span class="n">filename</span><span class="p">)</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">flat</span> <span class="k">else</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">rootpath</span><span class="p">,</span> <span class="n">pid</span><span class="p">,</span> <span class="s1">&#39;MasterSynced&#39;</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span></div>
+</pre></div>
+
+    </div>
+      
+  </div>
+</div>
+<footer class="footer">
+  <div class="container">
+    <p class="pull-right">
+      <a href="#">Back to top</a>
+      
+        <br/>
+        
+      
+    </p>
+    <p>
+        &copy; Copyright 2019, Qu Tang.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 2.3.1.<br/>
+    </p>
+  </div>
+</footer>
+  </body>
+</html>

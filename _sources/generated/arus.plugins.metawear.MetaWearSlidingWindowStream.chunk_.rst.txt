@@ -1,6 +1,0 @@
-arus.plugins.metawear.MetaWearSlidingWindowStream.chunk\_
-=========================================================
-
-.. currentmodule:: arus.plugins.metawear
-
-.. automethod:: MetaWearSlidingWindowStream.chunk_
