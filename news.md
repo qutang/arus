@@ -1,5 +1,9 @@
 # 0.6.0+9000
 
+## Refactoring
+
+* Modulize arus demo app
+
 # 0.6.0
 
 ## Features
