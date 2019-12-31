@@ -34,6 +34,7 @@ scikit-learn = "^0.22"
 pysimplegui = "^4.13.0"
 seaborn = "^0.9.0"
 pymetawear = "^0.12.0"
+joblib = "0.11"
 
 [tool.poetry.dev-dependencies]
 pylint = "^2.4"
@@ -47,6 +48,10 @@ sphinx_bootstrap_theme = "^0.7.1"
 recommonmark = "^0.6.0"
 m2r = "^0.2.1"
 sphinx-gallery = "^0.5.0"
+pyinstaller = "^3.5"
+dephell_versioning = "^0.1.1"
+pywin32-ctypes = "^0.2.0"
+pefile = "^2019.4.18"
 
 [tool.semantic_release]
 version_variable = "pyproject.toml:version"

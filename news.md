@@ -1,5 +1,9 @@
 # 0.6.0+9000
 
+## Build
+
+* Freeze arus demo app using PyInstaller
+
 ## Refactoring
 
 * Modulize arus demo app
