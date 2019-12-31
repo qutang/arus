@@ -240,6 +240,7 @@ class MUSSModel:
     def validate_classifier(self, input_feature, input_class, class_col, feature_names, placement_names, group_col, **train_kwargs):
         input_feature_arr = input_feature[feature_names].values
         input_class_vec = input_class[class_col].values
+        class_labels = np.unique(input_class_vec)
         groups = input_class[group_col].values
         logo = sk_model_selection.LeaveOneGroupOut()
         output_class_vec = input_class_vec.copy()
@@ -253,7 +254,7 @@ class MUSSModel:
                 test_feature, classifier=model[0], scaler=model[1])
             output_class_vec[test_split] = predict_class
         acc = sk_metrics.accuracy_score(input_class_vec, output_class_vec)
-        return input_class_vec, output_class_vec, acc
+        return input_class_vec, output_class_vec, class_labels, acc
 
     def _plot_confusion_matrix(self, conf_matrix, size):
         # plot confusion matrix
@@ -283,7 +284,7 @@ class MUSSModel:
         return result
 
     def get_classification_report(self, input_class, predict_class, labels):
-        return sk_metrics.classification_repor(input_class, predict_class, labels=labels)
+        return sk_metrics.classification_report(input_class, predict_class, labels=labels, output_dict=True)
 
     @staticmethod
     def get_inference_pipeline(*streams, name='muss-pipeline', **kwargs):
