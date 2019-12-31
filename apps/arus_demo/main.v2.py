@@ -1,48 +1,22 @@
 import logging
 import os
 import app_state as app
-import backend
-import dashboard
+try:
+    import backend
+    import dashboard
+except ImportError as e:
+    msg = (
+        "Arus demo requirements are not installed.\n\n"
+        "Please install the demo extra packages as follows:\n\n"
+        "  pip install arus[demo]\n\n"
+        "  poetry add arus --extras demo"
+    )
+    raise ImportError(str(e) + "\n\n" + msg)
 import multiprocessing
 import sys
 import os
 
-
-
-if __name__ == "__main__":
-    try:
-        # Python 3.4+
-        if sys.platform.startswith('win'):
-            import multiprocessing.popen_spawn_win32 as forking
-        else:
-            import multiprocessing.popen_fork as forking
-    except ImportError:
-        import multiprocessing.forking as forking
-
-    if sys.platform.startswith('win'):
-        # First define a modified version of Popen.
-        class _Popen(forking.Popen):
-            def __init__(self, *args, **kw):
-                if hasattr(sys, 'frozen'):
-                    # We have to set original _MEIPASS2 value from sys._MEIPASS
-                    # to get --onefile mode working.
-                    os.putenv('_MEIPASS2', sys._MEIPASS)
-                try:
-                    super(_Popen, self).__init__(*args, **kw)
-                finally:
-                    if hasattr(sys, 'frozen'):
-                        # On some platforms (e.g. AIX) 'os.unsetenv()' is not
-                        # available. In those cases we cannot delete the variable
-                        # but only set it to the empty string. The bootloader
-                        # can handle this case.
-                        if hasattr(os, 'unsetenv'):
-                            os.unsetenv('_MEIPASS2')
-                        else:
-                            os.putenv('_MEIPASS2', '')
-
-    # Second override 'Popen' class with our modified version.
-    forking.Popen = _Popen
-    multiprocessing.freeze_support()
+def start_app():
     logging.basicConfig(
         level=logging.DEBUG, format='[%(levelname)s]%(asctime)s <P%(process)d-%(threadName)s> %(message)s')
     os.chdir(os.path.dirname(os.path.realpath(__file__)))
@@ -50,3 +24,8 @@ if __name__ == "__main__":
     app_state.initial_dataset = backend.load_initial_data()
     demo = dashboard.Dashboard(title='Arus Demo - Dashboard')
     demo.start()
+
+if __name__ == "__main__":
+    multiprocessing.freeze_support()
+    start_app()
+    

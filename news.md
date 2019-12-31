@@ -2,11 +2,13 @@
 
 ## Build
 
-* Freeze arus demo app using PyInstaller
+* Freeze arus demo app using PyInstaller.
+* Now `arus.plugins.metawear` is extra and the requirements should be installed with extra `metawear`.
+* Now arus demo app is optional and the requirements should be installed with extra `demo`.
 
 ## Refactoring
 
-* Modulize arus demo app
+* Modulize arus demo app.
 
 # 0.6.0
 

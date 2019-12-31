@@ -71,7 +71,7 @@ description = "Internationalization utilities"
 name = "babel"
 optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
-version = "2.7.0"
+version = "2.8.0"
 
 [package.dependencies]
 pytz = ">=2015.7"
@@ -122,8 +122,8 @@ description = "Cross-platform colored terminal text."
 marker = "sys_platform == \"win32\""
 name = "colorama"
 optional = false
-python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
-version = "0.4.1"
+python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*"
+version = "0.4.3"
 
 [[package]]
 category = "dev"
@@ -330,7 +330,7 @@ version = "0.6.1"
 category = "main"
 description = "Python bindings for the MetaWear C++ SDK by MbientLab"
 name = "metawear"
-optional = false
+optional = true
 python-versions = ">=2.7"
 version = "0.7.0"
 
@@ -534,7 +534,7 @@ mccabe = ">=0.6,<0.7"
 category = "main"
 description = "Python client for connecting to MbientLab's MetaWear boards"
 name = "pymetawear"
-optional = false
+optional = true
 python-versions = "*"
 version = "0.12.0"
 
@@ -554,7 +554,7 @@ version = "2.4.6"
 category = "main"
 description = "GUI SDK Launched in 2018 Actively developed and supported. Super-simple to create custom GUI's.  Python 2.7 & 3 Support. 200 Demo programs & Cookbook for rapid start. Extensive documentation. Examples using Machine Learning(GUI, OpenCV Integration,  Chatterbot), Rainmeter Style Floating Desktop Widgets, Matplotlib + Pyplot integration, add GUI to command line scripts, PDF & Image Viewer. Great for beginners as well as advanced GUI programmers"
 name = "pysimplegui"
-optional = false
+optional = true
 python-versions = "*"
 version = "4.14.1"
 
@@ -920,7 +920,7 @@ socks = ["PySocks (>=1.5.6,<1.5.7 || >1.5.7,<2.0)"]
 category = "main"
 description = "Python bindings for MbientLab's Warble library"
 name = "warble"
-optional = false
+optional = true
 python-versions = ">=2.7"
 version = "1.2.0"
 
@@ -964,8 +964,12 @@ more-itertools = "*"
 docs = ["sphinx", "jaraco.packaging (>=3.2)", "rst.linker (>=1.9)"]
 testing = ["pathlib2", "contextlib2", "unittest2"]
 
+[extras]
+demo = ["pysimplegui"]
+metawear = ["pymetawear"]
+
 [metadata]
-content-hash = "fd2def4985e4d28d406ea350dcfc6a1ebf34d134933618b21fd6099ff653d3dc"
+content-hash = "ecaaa5dfb6cb06af35d925f4018603dc29c967ab0d804338f93c85c1e2035ed5"
 python-versions = "^3.6"
 
 [metadata.files]
@@ -993,8 +997,8 @@ autopep8 = [
     {file = "autopep8-1.4.4.tar.gz", hash = "sha256:4d8eec30cc81bc5617dbf1218201d770dc35629363547f17577c61683ccfb3ee"},
 ]
 babel = [
-    {file = "Babel-2.7.0-py2.py3-none-any.whl", hash = "sha256:af92e6106cb7c55286b25b38ad7695f8b4efb36a90ba483d7f7a6628c46158ab"},
-    {file = "Babel-2.7.0.tar.gz", hash = "sha256:e86135ae101e31e2c8ec20a4e0c5220f4eed12487d5cf3f78be7e98d3a57fc28"},
+    {file = "Babel-2.8.0-py2.py3-none-any.whl", hash = "sha256:d670ea0b10f8b723672d3a6abeb87b565b244da220d76b4dba1b66269ec152d4"},
+    {file = "Babel-2.8.0.tar.gz", hash = "sha256:1aac2ae2d0d8ea368fa90906567f5c08463d98ade155c0c4bfedd6a0f7160e38"},
 ]
 bleach = [
     {file = "bleach-3.1.0-py2.py3-none-any.whl", hash = "sha256:213336e49e102af26d9cde77dd2d0397afabc5a6bf2fed985dc35b5d1e285a16"},
@@ -1013,8 +1017,8 @@ codecov = [
     {file = "codecov-2.0.15.tar.gz", hash = "sha256:8ed8b7c6791010d359baed66f84f061bba5bd41174bf324c31311e8737602788"},
 ]
 colorama = [
-    {file = "colorama-0.4.1-py2.py3-none-any.whl", hash = "sha256:f8ac84de7840f5b9c4e3347b3c1eaa50f7e49c2b07596221daec5edaabbd7c48"},
-    {file = "colorama-0.4.1.tar.gz", hash = "sha256:05eed71e2e327246ad6b38c540c4a3117230b19679b875190486ddd2d721422d"},
+    {file = "colorama-0.4.3-py2.py3-none-any.whl", hash = "sha256:7d73d2a99753107a36ac6b455ee49046802e59d9d076ef8e47b61499fa29afff"},
+    {file = "colorama-0.4.3.tar.gz", hash = "sha256:e96da0d330793e2cb9485e9ddfd918d456036c7149416295932478192f4436a1"},
 ]
 commonmark = [
     {file = "commonmark-0.9.1-py2.py3-none-any.whl", hash = "sha256:da2f38c92590f83de410ba1a3cbceafbc74fee9def35f9251ba9a971d6d66fd9"},

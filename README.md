@@ -40,18 +40,24 @@ bluez
 
 ```bash
 > pip install arus
+> pip install arus[metawear]
+> pip install arus[demo]
 ```
 
 or with `pipenv`
 
 ```bash
 > pipenv install arus
+> pipenv install arus[metawear]
+> pipenv install arus[demo]
 ```
 
 or with `poetry`
 
 ```bash
 > poetry add arus
+> poetry add arus --extras metawear
+> poetry add arus --extras demo
 ```
 
 ## Extras
