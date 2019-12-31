@@ -77,5 +77,6 @@ class ModelTrainingPanel:
                         self._app_state.initial_model = task.get()
                         self._progress_bar.UpdateBar(100)
                         self._progress_bar_text.Update(value='Completed. Training accuracy: ' + str(self._app_state.initial_model[2]))
+                        task = None
         self.close_task_pool()
         self._window.close()

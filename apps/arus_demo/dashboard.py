@@ -14,6 +14,7 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import app_state as app
 import backend
 from model_training_panel import ModelTrainingPanel
+from model_validation_panel import ModelValidationPanel
 
 
 def dashboard_heading(text):
@@ -164,18 +165,8 @@ class Dashboard:
             self._initial_model_validate_button.Update(disabled=False)
 
     def _handle_initial_model_validation(self):
-        if self._app_state.initial_model is not None:
-            no_need_validate = np.array_equal(
-                sorted(self._app_state.initial_model_validation_results[-1]), sorted(self._app_state.initial_model[0].classes_)
-                )
-        else:
-            no_need_validate = False
-        if self._app_state.initial_model_validation_results is not None and no_need_validate:
-            # self.popup_init_model_validation(run=False)
-            pass
-        else:
-            pass
-            # self.popup_init_model_validation(run=True)
+        panel = ModelValidationPanel("Initial model validation")
+        panel.start()
 
     def _handle_initial_model_testing(self):
         pass

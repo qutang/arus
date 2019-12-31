@@ -9,7 +9,7 @@ except ImportError as e:
         "Arus demo requirements are not installed.\n\n"
         "Please install the demo extra packages as follows:\n\n"
         "  pip install arus[demo]\n\n"
-        "  poetry add arus --extras demo"
+        "  poetry add arus  --extras demo"
     )
     raise ImportError(str(e) + "\n\n" + msg)
 import multiprocessing

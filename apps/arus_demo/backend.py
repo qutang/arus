@@ -46,7 +46,7 @@ def train_initial_model(training_labels, feature_df, class_df, pool):
                         input_class, class_col='MUSS_22_ACTIVITY_ABBRS', feature_names=combined_feature_names, placement_names=['DW', 'DA'])
     yield task
 
-def validate_initial_model(model, feature_df, class_df):
+def validate_initial_model(model, feature_df, class_df, pool):
     muss = MUSSModel()
     feature_set = feature_df
     class_set = class_df
@@ -66,17 +66,43 @@ def validate_initial_model(model, feature_df, class_df):
         combined_feature_set, cleared_class_set, group_col='PID')
     # only use training labels
     yield 'Filtering out unused class labels...'
-    training_labels = model.classes_
+    training_labels = model[0].classes_
     filter_condition = synced_class['MUSS_22_ACTIVITY_ABBRS'].isin(
         training_labels)
     input_feature = synced_feature.loc[filter_condition, :]
     input_class = synced_class.loc[filter_condition, :]
 
     yield 'Validating SVM classifier...'
-    pool = pools.ProcessPool(nodes=1)
     task = pool.apipe(muss.validate_classifier, input_feature,
                         input_class, class_col='MUSS_22_ACTIVITY_ABBRS', feature_names=combined_feature_names, placement_names=['DW', 'DA'], group_col='PID')
-    return task
+    yield task
+
+def get_confusion_matrix_figure(validation_result):
+    muss = MUSSModel()
+    labels = validation_result[-2]
+    fig = muss.get_confusion_matrix(
+        validation_result[0], validation_result[1], labels=labels, graph=True)
+    return fig
+
+def get_classification_report_table(validation_result):
+    muss = MUSSModel()
+    report = muss.get_classification_report(
+        validation_result[0], validation_result[1], labels=validation_result[-2])
+    report_table = []
+    for key, values in report.items():
+        report_row = []
+        if key in validation_result[-2]:
+            report_row.append(key)
+            for metric_name, metric_value in values.items():
+                if metric_name == 'precision':
+                    report_row.append(round(metric_value, 2))
+                elif metric_name == 'recall':
+                    report_row.append(round(metric_value, 2))
+                elif metric_name == 'f1-score':
+                    report_row.append(round(metric_value, 2))
+            report_table.append(report_row)
+    return report_table
+
 
 def test_initial_model(devices, model):
     muss = MUSSModel()
