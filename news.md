@@ -1,5 +1,9 @@
 # 0.6.1+9000
 
+## Fix
+
+* The first window will also delay in real time when setting `simulate_reality` as `True` in streams.
+
 # 0.6.1
 
 ## Build

@@ -288,12 +288,10 @@ class SlidingWindowStream(Stream):
         package = (current_window, current_window_st, current_window_et,
                    previous_window_st, previous_window_et, self.name)
         if self._simulate_reality:
-            if previous_window_st is not None:
-                delay = (current_window_st - previous_window_st) / \
-                    np.timedelta64(1, 's')
-                logging.debug('Delay for ' + str(delay) +
-                              ' seconds to simulate reality')
-                time.sleep(max(current_clock + delay - time.time(), 0))
+            delay = self._window_size
+            logging.debug('Delay for ' + str(delay) +
+                            ' seconds to simulate reality')
+            time.sleep(max(current_clock + delay - time.time(), 0))
             self._put_data_in_queue(package)
             return time.time()
         else:
