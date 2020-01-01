@@ -125,11 +125,10 @@ def test_muss_validate_classifier():
     filtered_feature, filtered_class = muss.remove_groups(
         filtered_feature, filtered_class, group_col='PID', groups_to_remove=groups_to_remove)
 
-    test_class, pred_class, acc = muss.validate_classifier(
+    test_class, pred_class, class_labels, acc = muss.validate_classifier(
         filtered_feature, filtered_class, class_col='MUSS_3_POSTURES', feature_names=muss.get_feature_names(), placement_names=['DW'], group_col='PID')
     np.testing.assert_array_equal(test_class.shape, pred_class.shape)
     assert acc > 0.7
-
 
 def test_muss_get_confusion_matrix():
     muss = MUSSModel()
