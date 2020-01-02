@@ -61,7 +61,8 @@ class MetaWearSlidingWindowStream(arus_stream.SlidingWindowStream):
         count_retry = 0
         while self._device is None:
             try:
-                self._device = mw_client.MetaWearClient(addr, connect=True, debug=False)
+                self._device = mw_client.MetaWearClient(
+                    addr, connect=True, debug=False)
                 self._device_name = self.get_device_name()
             except Exception as e:
                 if count_retry == self._max_retries:
@@ -70,7 +71,7 @@ class MetaWearSlidingWindowStream(arus_stream.SlidingWindowStream):
                 logging.error(str(e))
                 logging.info(str(count_retry) + ' retry connect to ' + addr)
                 count_retry = count_retry + 1
-                time.sleep(2)
+                time.sleep(1)
         logging.info("New metawear connected: {0}".format(
             self._device))
         metawear.libmetawear.mbl_mw_metawearboard_set_time_for_response(
