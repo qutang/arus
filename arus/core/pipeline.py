@@ -135,21 +135,25 @@ class Pipeline:
         try:
             logging.info('Stop pipeline...')
             self._connected = False
-            time.sleep(0.1)
+            time.sleep(0.2)
             if self._started:
+                logging.info('Wait for processing tasks...')
                 self._process_tasks.join()
                 self._process_tasks.queue.clear()
-                time.sleep(0.1)
+                time.sleep(0.2)
             self._stop_sender = True
             with self._process_cond:
                 self._started = False
                 self._process_cond.notify_all()
-            time.sleep(0.1)
+            time.sleep(0.2)
             if self._pool is not None:
+                logging.info('Close processing pool...')
                 self._pool.close()
                 self._pool.join()
+            logging.info('Stop input streams...')
             for stream in self._streams:
                 stream.stop()
+            logging.info('Clear result queue...')
             with self._queue.mutex:
                 self._queue.queue.clear()
             logging.info('Stopped.')

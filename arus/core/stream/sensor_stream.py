@@ -54,5 +54,5 @@ class SensorFileSlidingWindowStream(SlidingWindowStream):
             else:
                 raise NotImplementedError(
                     'The given storage format argument is not supported')
-        logging.debug('Stoploading thread')
+        logging.info('Stop loading thread')
         self._buffer_data_source(None)
