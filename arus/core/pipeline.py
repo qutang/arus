@@ -71,6 +71,7 @@ class Pipeline:
         self._chunks = dict()
         self._stream_pointer = dict()
         self._started = False
+        self._process_cond = threading.Condition(threading.Lock())
         self._connected = False
         self._stop_sender = False
         self._preserve_status = preserve_status
@@ -250,6 +251,7 @@ class Pipeline:
                         'This scheduler is not supported: {}'.format(self._scheduler))
             else:
                 self._pool.restart()
+        self._process_cond.acquire()
         while self._connected:
             if self._started:
                 for stream in self._streams:
@@ -271,9 +273,11 @@ class Pipeline:
                             st) + 'coming before process start time: ' + str(self._process_start_time))
             else:
                 # ignore the incoming stream data, the thread will stand by
-                pass
+                self._process_cond.wait(timeout=0.1)
+        self._process_cond.release()
 
     def _send_result(self):
+        self._process_cond.acquire()
         while not self._stop_sender:
             if self._started:
                 try:
@@ -292,7 +296,8 @@ class Pipeline:
                     pass
             else:
                 # ignore if the pipeline is just connected but not started
-                pass
+                self._process_cond.wait(timeout=0.1)
+        self._process_cond.release()
 
     def _process_synced_chunks(self, st, et, prev_st, prev_et, name):
         if st.timestamp() not in self._chunks:
@@ -357,6 +362,7 @@ class Pipeline:
 
         The streams will output data but data will be ignored by the pipeline until `Pipeline.process` got called.
         """
+        self._started = False
         self._stop_sender = False
         self._connected = True
         self._sync_thread = threading.Thread(
@@ -369,6 +375,7 @@ class Pipeline:
         self._sender_thread.start()
         for stream in self._streams:
             stream.start(start_time=start_time)
+        return True
 
     def process(self, start_time=None):
         """Start processing the connected incoming stream data.
@@ -377,8 +384,12 @@ class Pipeline:
             start_time (str or datetime or np.datetime64 or pd.Timestamp, optional): The start time to start accepting the incoming stream windows. If it is `None`, the pipeline will always output any incoming data without checking `start_time`.
         """
         self._process_start_time = start_time
-        self._process_start_time = arus_date.parse_timestamp(self._process_start_time)
+        self._process_start_time = arus_date.parse_timestamp(
+            self._process_start_time)
+        self._process_cond.acquire()
         self._started = True
+        self._process_cond.notify_all()
+        self._process_cond.release()
 
     def start(self, start_time=None, process_start_time=None):
         """Connect and process the incoming streams in a row together.
