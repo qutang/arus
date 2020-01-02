@@ -4,9 +4,9 @@ block_cipher = None
 
 
 a = Analysis(['main.v2.py'],
-             pathex=['C:\\Users\\tqshe\\projects\\arus\\apps\\arus_demo', 'C:\\Users\\tqshe\\projects\\arus\\.venv\\Lib\\site-packages\\scipy\\.libs'],
-             binaries=[("C:\\Users\\tqshe\\projects\\arus\\.venv\\Lib\\site-packages\\mbientlab\metawear\\MetaWear.Win32.dll", "."), ("C:\\Users\\tqshe\\projects\\arus\\.venv\\Lib\\site-packages\\mbientlab\\warble\\warble.dll", ".")],
-             datas=[("C:\\Users\\tqshe\\projects\\arus\\data\\single\\mhealth\\feature\\multi_placements\\muss.feature.csv.gz", ".\\data\\single\\mhealth\\feature\\multi_placements\\"), ("C:\\Users\\tqshe\\projects\\arus\\data\\single\\mhealth\\class_labels\\multi_tasks\\muss.class.csv", ".\\data\\single\\mhealth\\class_labels\\multi_tasks\\")],
+             pathex=['.', '../../.venv/Lib/site-packages/scipy/.libs'],
+             binaries=[("../../.venv/Lib/site-packages/mbientlab\metawear/MetaWear.Win32.dll", "."), ("../..//.venv/Lib/site-packages/mbientlab/warble/warble.dll", ".")],
+             datas=[("../../data/single/mhealth/feature/multi_placements/muss.feature.csv.gz", "./data/single/mhealth/feature/multi_placements/"), ("../../data/single/mhealth/class_labels/multi_tasks/muss.class.csv", "./data/single/mhealth/class_labels/multi_tasks/")],
              hiddenimports=['scipy.special._ufuncs_cxx',
                             'scipy.linalg.cython_blas',
                             'scipy.linalg.cython_lapack',
