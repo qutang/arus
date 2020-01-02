@@ -6,7 +6,7 @@ This example shows how to pass previous output and input to processor for a pipe
 """
 
 from arus.core.pipeline import Pipeline
-from arus.core.stream.generator_stream import GeneratorSlidingWindowStream
+from arus.core.stream import GeneratorSlidingWindowStream
 from arus.core.accelerometer import generator
 from datetime import datetime
 import pandas as pd

@@ -17,6 +17,7 @@ import sphinx_bootstrap_theme
 import re
 import os
 from arus import __version__
+from sphinx_gallery.sorting import ExplicitOrder
 
 # -- Project information -----------------------------------------------------
 
@@ -38,16 +39,21 @@ release = version
 extensions = [
     'sphinx_gallery.gen_gallery',
     'sphinx.ext.autosummary',
-    'sphinx.ext.coverage', 
+    'sphinx.ext.coverage',
     'sphinx.ext.napoleon',
     'sphinx.ext.viewcode',
     'm2r',
 ]
 
 sphinx_gallery_conf = {
-     'examples_dirs': '../../examples',   # path to your example scripts
-     'gallery_dirs': 'examples',  # path to where to save gallery generated output
-     'filename_pattern': r'((plot)|(run))_'
+    'examples_dirs': '../../examples',   # path to your example scripts
+    'gallery_dirs': 'examples',  # path to where to save gallery generated output
+    'filename_pattern': r'((plot)|(run))_',
+    'subsection_order': ExplicitOrder(['../../examples/streams',
+                                       '../../examples/pipelines',
+                                       '../../examples/models',
+                                       '../../examples/broadcasters',
+                                       '../../examples/metawear'])
 }
 
 autosummary_generate = True
