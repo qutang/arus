@@ -43,7 +43,7 @@ def test_Pipeline():
                         name='single-stream-pipeline')
     pipeline.add_stream(stream)
     pipeline.set_processor(_pipeline_test_processor)
-    pipeline.start()
+    pipeline.start(start_time=start_time, process_start_time=start_time)
 
     results = []
     for result, st, et, prev_st, prev_et, name in pipeline.get_iterator():
@@ -77,7 +77,7 @@ def test_Pipeline():
     stream2 = GeneratorSlidingWindowStream(
         stream2_config, window_size=window_size, name='stream-2')
     pipeline.add_stream(stream2)
-    pipeline.start(start_time=start_time)
+    pipeline.start(start_time=start_time, process_start_time=start_time)
 
     results = []
     for result, st, et, prev_st, prev_et, name in pipeline.get_iterator():
