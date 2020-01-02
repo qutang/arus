@@ -3,7 +3,7 @@
 block_cipher = None
 
 
-a = Analysis(['main.v2.py'],
+a = Analysis(['main.py'],
              pathex=['.', '../../.venv/Lib/site-packages/scipy/.libs'],
              binaries=[("../../.venv/Lib/site-packages/mbientlab\metawear/MetaWear.Win32.dll", "."), ("../..//.venv/Lib/site-packages/mbientlab/warble/warble.dll", ".")],
              datas=[("../../data/single/mhealth/feature/multi_placements/muss.feature.csv.gz", "./data/single/mhealth/feature/multi_placements/"), ("../../data/single/mhealth/class_labels/multi_tasks/muss.class.csv", "./data/single/mhealth/class_labels/multi_tasks/")],
@@ -38,7 +38,7 @@ exe = EXE(pyz,
           a.scripts,
           [],
           exclude_binaries=True,
-          name='main.v2',
+          name='arus_demo',
           debug=False,
           bootloader_ignore_signals=False,
           strip=False,
@@ -51,4 +51,4 @@ coll = COLLECT(exe,
                strip=False,
                upx=True,
                upx_exclude=[],
-               name='main.v2')
+               name='arus_demo')
