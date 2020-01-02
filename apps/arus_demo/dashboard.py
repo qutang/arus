@@ -15,23 +15,28 @@ import app_state as app
 import backend
 from model_training_panel import ModelTrainingPanel
 from model_validation_panel import ModelValidationPanel
+from model_testing_panel import ModelTestingPanel
 
 
 def dashboard_heading(text):
     return sg.Text(text=text, relief=sg.RELIEF_FLAT,
-                           font=('Helvetica', 12, 'bold'), size=(20, 1))
+                   font=('Helvetica', 12, 'bold'), size=(20, 1))
+
 
 def dashboard_description(text, key=None):
     return sg.Text(
-            text=text, font=('Helvetica', 10), size=(25, None), key=key)
+        text=text, font=('Helvetica', 10), size=(25, None), key=key)
+
 
 def dashboard_listbox(items, mode, key=None):
     return sg.Listbox(
-            values=items, select_mode=mode, font=('Helvetica', 10), size=(27, 20), key=key, enable_events=True)
+        values=items, select_mode=mode, font=('Helvetica', 10), size=(27, 20), key=key, enable_events=True)
+
 
 def dashboard_control_button(text, disabled, key=None):
     return sg.Button(button_text=text,
-                              font=('Helvetica', 11), auto_size_button=True, size=(20, None), key=key, disabled=disabled)
+                     font=('Helvetica', 11), auto_size_button=True, size=(20, None), key=key, disabled=disabled)
+
 
 def dashboard_text_combo_with_button(items, text, key=None):
     return sg.Combo(values=items, font=('Helvetica', 11), size=(15, None), key=key), sg.Button(button_text=text, font=('Helvetica', 10), size=(5, None))
@@ -55,7 +60,8 @@ class Dashboard:
         model_info = "No model available"
 
         key_listbox = '_CLASS_LABELS_INITIAL_'
-        key_buttons = ["_" + text.upper().replace(' ', '_') + '_INITIAL_' for text in button_texts]
+        key_buttons = ["_" + text.upper().replace(' ', '_') +
+                       '_INITIAL_' for text in button_texts]
         key_model_info = '_MODEL_INFO_INITIAL_'
 
         header = [[dashboard_heading(heading)]]
@@ -63,18 +69,18 @@ class Dashboard:
         description = [[dashboard_description(description)]]
 
         class_label_list = [[dashboard_listbox(
-                                items=class_labels, 
-                                mode=sg.LISTBOX_SELECT_MODE_EXTENDED, 
-                                key=key_listbox)
-                            ]]
-        
+            items=class_labels,
+            mode=sg.LISTBOX_SELECT_MODE_EXTENDED,
+            key=key_listbox)
+        ]]
+
         buttons = [
-                [dashboard_control_button(text=text, disabled=True, key=key)] for text, key in zip(button_texts, key_buttons)
-            ]
-        
+            [dashboard_control_button(text=text, disabled=True, key=key)] for text, key in zip(button_texts, key_buttons)
+        ]
+
         info = [[
                 dashboard_description(text=model_info, key=key_model_info)
-            ]]
+                ]]
 
         return sg.Column(layout=header + description + class_label_list + buttons + info, scrollable=False)
 
@@ -86,14 +92,16 @@ class Dashboard:
 
         header = [[dashboard_heading(text=heading)]]
         description = [[dashboard_description(text=description)]]
-        text_combo = [dashboard_text_combo_with_button(items=class_labels, text=text_combo_text)]
+        text_combo = [dashboard_text_combo_with_button(
+            items=class_labels, text=text_combo_text)]
 
         class_labels_list = [[
-                dashboard_listbox(
-                    items=[], mode=sg.LISTBOX_SELECT_MODE_EXTENDED)
-            ]]
+            dashboard_listbox(
+                items=[], mode=sg.LISTBOX_SELECT_MODE_EXTENDED)
+        ]]
 
-        buttons = [[dashboard_control_button(text=text, disabled=True)] for text in button_texts]
+        buttons = [[dashboard_control_button(
+            text=text, disabled=True)] for text in button_texts]
 
         return sg.Column(layout=header + description + text_combo + class_labels_list + buttons, scrollable=False)
 
@@ -106,7 +114,8 @@ class Dashboard:
         description = [[dashboard_description(description)]]
         class_label_list = [[dashboard_listbox(
             items=class_labels, mode=sg.LISTBOX_SELECT_MODE_EXTENDED)]]
-        buttons = [[dashboard_control_button(text, disabled=True)] for text in button_texts]
+        buttons = [[dashboard_control_button(
+            text, disabled=True)] for text in button_texts]
 
         return sg.Column(layout=header + description + class_label_list + buttons, scrollable=False)
 
@@ -145,13 +154,12 @@ class Dashboard:
         self._initial_model_info_text.Update(
             value=info)
 
-
     def _handle_initial_model_training(self):
         if self._app_state.initial_model is not None:
             no_need_retrain = np.array_equal(
-                sorted(self._app_state.initial_model_training_labels), 
+                sorted(self._app_state.initial_model_training_labels),
                 sorted(self._app_state.initial_model[0].classes_)
-                )
+            )
         else:
             no_need_retrain = False
         if self._app_state.initial_model is not None and no_need_retrain:
@@ -169,7 +177,8 @@ class Dashboard:
         panel.start()
 
     def _handle_initial_model_testing(self):
-        pass
+        panel = ModelTestingPanel("Initial model testing")
+        panel.start()
 
     def _handle_initial_model_training_label_changed(self, labels):
         num_classes = len(labels)
@@ -186,8 +195,10 @@ class Dashboard:
             self._handle_initial_model_validation()
         elif event == self._initial_model_test_button.Key:
             self._handle_initial_model_testing()
-        elif event == self._initial_model_class_labels.Key:  # Only enable buttons when there are two or more classes selected
-            self._handle_initial_model_training_label_changed(values[self._initial_model_class_labels.Key])
+        # Only enable buttons when there are two or more classes selected
+        elif event == self._initial_model_class_labels.Key:
+            self._handle_initial_model_training_label_changed(
+                values[self._initial_model_class_labels.Key])
 
     def start(self):
         sg.ChangeLookAndFeel('Reddit')

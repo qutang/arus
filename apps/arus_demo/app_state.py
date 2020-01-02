@@ -1,5 +1,6 @@
 from pathos import pools
 
+
 class AppState:
     class _AppState:
         def __init__(self):
@@ -13,6 +14,8 @@ class AppState:
             self.nearby_devices = None
             self.task_pool = pools.ProcessPool(nodes=2)
             self.task_pool.close()
+            self.io_pool = pools.ThreadPool(nodes=1)
+            self.io_pool.close()
 
     def __init__(self):
         pass
@@ -24,4 +27,3 @@ class AppState:
         if AppState._instance is None:
             AppState._instance = AppState._AppState()
         return AppState._instance
-    

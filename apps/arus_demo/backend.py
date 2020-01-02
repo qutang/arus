@@ -5,16 +5,18 @@ from pathos import pools
 from arus.plugins.metawear import MetaWearSlidingWindowStream, MetaWearScanner
 import datetime as dt
 
+
 def load_initial_data():
     class_filepath, _ = load_test_data(file_type='mhealth', sensor_type='class_labels',
-                                        file_num='single', exception_type='multi_tasks')
+                                       file_num='single', exception_type='multi_tasks')
     feature_filepath, _ = load_test_data(file_type='mhealth', sensor_type='feature',
-                                            file_num='single', exception_type='multi_placements')
+                                         file_num='single', exception_type='multi_placements')
     class_df = pd.read_csv(class_filepath, parse_dates=[
         0, 1, 2], infer_datetime_format=True)
     feature_df = pd.read_csv(feature_filepath, parse_dates=[
         0, 1, 2], infer_datetime_format=True)
     return feature_df, class_df
+
 
 def train_initial_model(training_labels, feature_df, class_df, pool):
     muss = MUSSModel()
@@ -30,7 +32,7 @@ def train_initial_model(training_labels, feature_df, class_df, pool):
     combined_feature_set, combined_feature_names = muss.combine_features(
         dw_features, da_features, placement_names=['DW', 'DA'])
     cleared_class_set = class_set[['HEADER_TIME_STAMP',
-                                    'START_TIME', 'STOP_TIME', 'MUSS_22_ACTIVITY_ABBRS']]
+                                   'START_TIME', 'STOP_TIME', 'MUSS_22_ACTIVITY_ABBRS']]
     yield 'Synchronizing training data and class labels...'
     synced_feature, synced_class = muss.sync_feature_and_class(
         combined_feature_set, cleared_class_set)
@@ -43,8 +45,9 @@ def train_initial_model(training_labels, feature_df, class_df, pool):
 
     yield 'Training SVM classifier...'
     task = pool.apipe(muss.train_classifier, input_feature,
-                        input_class, class_col='MUSS_22_ACTIVITY_ABBRS', feature_names=combined_feature_names, placement_names=['DW', 'DA'])
+                      input_class, class_col='MUSS_22_ACTIVITY_ABBRS', feature_names=combined_feature_names, placement_names=['DW', 'DA'])
     yield task
+
 
 def validate_initial_model(model, feature_df, class_df, pool):
     muss = MUSSModel()
@@ -60,7 +63,7 @@ def validate_initial_model(model, feature_df, class_df, pool):
     combined_feature_set, combined_feature_names = muss.combine_features(
         dw_features, da_features, placement_names=['DW', 'DA'], group_col='PID')
     cleared_class_set = class_set[['HEADER_TIME_STAMP',
-                                    'START_TIME', 'STOP_TIME', 'PID', 'MUSS_22_ACTIVITY_ABBRS']]
+                                   'START_TIME', 'STOP_TIME', 'PID', 'MUSS_22_ACTIVITY_ABBRS']]
     yield 'Synchronizing training data and class labels...'
     synced_feature, synced_class = muss.sync_feature_and_class(
         combined_feature_set, cleared_class_set, group_col='PID')
@@ -74,8 +77,9 @@ def validate_initial_model(model, feature_df, class_df, pool):
 
     yield 'Validating SVM classifier...'
     task = pool.apipe(muss.validate_classifier, input_feature,
-                        input_class, class_col='MUSS_22_ACTIVITY_ABBRS', feature_names=combined_feature_names, placement_names=['DW', 'DA'], group_col='PID')
+                      input_class, class_col='MUSS_22_ACTIVITY_ABBRS', feature_names=combined_feature_names, placement_names=['DW', 'DA'], group_col='PID')
     yield task
+
 
 def get_confusion_matrix_figure(validation_result):
     muss = MUSSModel()
@@ -83,6 +87,7 @@ def get_confusion_matrix_figure(validation_result):
     fig = muss.get_confusion_matrix(
         validation_result[0], validation_result[1], labels=labels, graph=True)
     return fig
+
 
 def get_classification_report_table(validation_result):
     muss = MUSSModel()
@@ -115,11 +120,11 @@ def test_initial_model(devices, model):
         streams.append(stream)
     pipeline = muss.get_inference_pipeline(
         *streams, name='muss-pipeline', model=model, DA={'sr': 50}, DW={'sr': 50}, max_processes=2, scheduler='processes')
-    pipeline.start(start_time=start_time)
+    pipeline.connect(start_time=start_time)
     return pipeline
 
-def get_nearby_devices():
+
+def get_nearby_devices(pool):
     scanner = MetaWearScanner()
-    pool = pools.ThreadPool(nodes=1)
     task = pool.apipe(scanner.get_nearby_devices, max_devices=2)
     return task
