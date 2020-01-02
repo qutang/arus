@@ -34,3 +34,4 @@ class GeneratorSlidingWindowStream(SlidingWindowStream):
                 self._buffer_data_source(data)
             else:
                 break
+        self._buffer_data_source(None)
