@@ -1,5 +1,9 @@
 # 0.6.1+9000
 
+## Improved
+
+* Better flow control for model testing in arus demo app.
+
 ## Added
 
 * New libs module for plotting helpers. Added `adjust_lightness` for color manipulation.
