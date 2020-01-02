@@ -3,6 +3,7 @@
 ## Fix
 
 * The first window will also delay in real time when setting `simulate_reality` as `True` in streams.
+* Better multi-threading performance and flow control for pipeline.
 
 # 0.6.1
 
