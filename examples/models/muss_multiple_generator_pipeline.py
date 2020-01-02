@@ -45,7 +45,6 @@ def prepare_streams():
         "generator": generator.normal_dist,
         'kwargs': {
             "grange": 8,
-            "start_time": None,
             "buffer_size": 100,
             "sleep_interval": 0,
             "sigma": 1,
@@ -57,7 +56,6 @@ def prepare_streams():
         "generator": generator.normal_dist,
         'kwargs': {
             "grange": 4,
-            "start_time": None,
             "buffer_size": 100,
             "sleep_interval": 0,
             "sigma": 2,
@@ -66,7 +64,7 @@ def prepare_streams():
     }
 
     window_size = 12.8
-    start_time = datetime.now()
+
     stream1 = GeneratorSlidingWindowStream(
         stream1_config, window_size=window_size, start_time_col=0, stop_time_col=0, name='DW')
     stream2 = GeneratorSlidingWindowStream(
@@ -75,14 +73,15 @@ def prepare_streams():
 
 
 if __name__ == "__main__":
+    start_time = datetime.now()
     logging.basicConfig(
-        level=logging.DEBUG, format='[%(levelname)s]%(asctime)s <P%(process)d-%(threadName)s> %(message)s')
+        level=logging.INFO, format='[%(levelname)s]%(asctime)s <P%(process)d-%(threadName)s> %(message)s')
     muss = MUSSModel()
     model = train_test_classifier(muss)
     stream1, stream2 = prepare_streams()
     muss_pipeline = muss.get_inference_pipeline(
         stream1, stream2, model=model, scheduler='processes', max_processes=2, DW={'sr': 50}, DA={'sr': 50})
-    muss_pipeline.start()
+    muss_pipeline.start(start_time=start_time)
     i = 0
     for data, _, _, _, _, name in muss_pipeline.get_iterator():
         i = i + 1
