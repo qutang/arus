@@ -1,15 +1,15 @@
 """
 Module includes classes that accept single or multiple `arus.core.stream` instances, synchronize data from the streams, process the data using customized processor function, and output using the same iterator interface as `arus.core.stream`.
 
-## Usage of `arus.core.pipeline.Pipeline`
+# Usage of `arus.core.pipeline.Pipeline`
 
-### Single stream case
+# Single stream case
 
 ```python
 .. include:: ../../examples/single_stream_pipeline.py
 ```
 
-### Multiple streams case
+# Multiple streams case
 
 ```python
 .. include:: ../../examples/multi_stream_pipeline.py
@@ -133,34 +133,37 @@ class Pipeline:
             bool: `True` if the pipeline is shut down correctly.
         """
         try:
-            logging.debug('Stop pipeline...')
+            logging.info('Stop pipeline...')
             self._connected = False
-            time.sleep(0.2)
-            self._process_tasks.join()
-            self._process_tasks.queue.clear()
-            time.sleep(0.2)
-            self._started = False
+            time.sleep(0.1)
+            if self._started:
+                self._process_tasks.join()
+                self._process_tasks.queue.clear()
+                time.sleep(0.1)
             self._stop_sender = True
-            time.sleep(0.2)
+            with self._process_cond:
+                self._started = False
+                self._process_cond.notify_all()
+            time.sleep(0.1)
             if self._pool is not None:
                 self._pool.close()
                 self._pool.join()
-            time.sleep(0.2)
             for stream in self._streams:
                 stream.stop()
             with self._queue.mutex:
                 self._queue.queue.clear()
-            logging.debug('Stopped.')
+            logging.info('Stopped.')
         except Exception as e:
-            print(e)
+            logging.error(e)
             return False
         return True
 
     def pause(self):
-        """Pause processing the incoming streams, yet pipeline can still receive data from streams. Data will be ignored and not stored. 
+        """Pause processing the incoming streams, yet pipeline can still receive data from streams. Data will be ignored and not stored.
         """
-        self._started = False
-        self._process_start_time = None
+        with self._process_cond:
+            self._started = False
+            self._process_start_time = None
         with self._queue.mutex:
             self._queue.queue.clear()
 
@@ -251,12 +254,12 @@ class Pipeline:
                         'This scheduler is not supported: {}'.format(self._scheduler))
             else:
                 self._pool.restart()
-        self._process_cond.acquire()
         while self._connected:
             if self._started:
                 for stream in self._streams:
                     for data, st, et, prev_st, prev_et, name in stream.get_iterator():
                         if self._is_data_after_start_time(st):
+                            logging.info('recieved data window from ' + name)
                             self._chunks[st.timestamp()] = [] if st.timestamp(
                             ) not in self._chunks else self._chunks[st.timestamp()]
                             self._chunks[st.timestamp()].append(
@@ -272,12 +275,11 @@ class Pipeline:
                         logging.debug('Discard one stream window' + str(
                             st) + 'coming before process start time: ' + str(self._process_start_time))
             else:
-                # ignore the incoming stream data, the thread will stand by
-                self._process_cond.wait(timeout=0.1)
-        self._process_cond.release()
+                with self._process_cond:
+                    # ignore the incoming stream data, the thread will stand by
+                    self._process_cond.wait()
 
     def _send_result(self):
-        self._process_cond.acquire()
         while not self._stop_sender:
             if self._started:
                 try:
@@ -290,14 +292,15 @@ class Pipeline:
                         self._process_tasks.task_done()
                     if self._preserve_status:
                         self._prev_output.put(result)
+                    logging.info('Sending processed results to queue...')
                     self._put_result_in_queue(
                         (result, st, et, prev_st, prev_et, name))
                 except queue.Empty:
                     pass
             else:
-                # ignore if the pipeline is just connected but not started
-                self._process_cond.wait(timeout=0.1)
-        self._process_cond.release()
+                with self._process_cond:
+                    # ignore if the pipeline is just connected but not started
+                    self._process_cond.wait()
 
     def _process_synced_chunks(self, st, et, prev_st, prev_et, name):
         if st.timestamp() not in self._chunks:
@@ -338,6 +341,7 @@ class Pipeline:
                     del self._chunks[st.timestamp()]
                 elif self._pool is not None:
                     try:
+                        logging.info('Started a processing task.')
                         task = self._pool.apipe(self._processor, chunk_list,
                                                 **self._processor_kwargs)
                         self._process_tasks.put(
@@ -386,10 +390,10 @@ class Pipeline:
         self._process_start_time = start_time
         self._process_start_time = arus_date.parse_timestamp(
             self._process_start_time)
-        self._process_cond.acquire()
-        self._started = True
-        self._process_cond.notify_all()
-        self._process_cond.release()
+        with self._process_cond:
+            self._started = True
+            self._process_cond.notify_all()
+        return True
 
     def start(self, start_time=None, process_start_time=None):
         """Connect and process the incoming streams in a row together.
