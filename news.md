@@ -1,5 +1,13 @@
 # 0.6.1+9000
 
+## Added
+
+* New libs module for plotting helpers. Added `adjust_lightness` for color manipulation.
+
+## Changed
+
+* Adjust metawear stream retry interval to one second.
+
 ## Fix
 
 * The first window will also delay in real time when setting `simulate_reality` as `True` in streams.
