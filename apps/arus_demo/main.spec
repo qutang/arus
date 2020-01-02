@@ -6,7 +6,7 @@ block_cipher = None
 a = Analysis(['main.py'],
              pathex=['.', '../../.venv/Lib/site-packages/scipy/.libs'],
              binaries=[("../../.venv/Lib/site-packages/mbientlab\metawear/MetaWear.Win32.dll", "."), ("../..//.venv/Lib/site-packages/mbientlab/warble/warble.dll", ".")],
-             datas=[("../../data/single/mhealth/feature/multi_placements/muss.feature.csv.gz", "./data/single/mhealth/feature/multi_placements/"), ("../../data/single/mhealth/class_labels/multi_tasks/muss.class.csv", "./data/single/mhealth/class_labels/multi_tasks/")],
+             datas=[("../../data/single/mhealth/feature/multi_placements/muss.feature.csv.gz", "./data/single/mhealth/feature/multi_placements/"), ("../../data/single/mhealth/class_labels/multi_tasks/muss.class.csv", "./data/single/mhealth/class_labels/multi_tasks/"), ("./dom_wrist.png", "."), ("./right_ankle.png", ".")],
              hiddenimports=['scipy.special._ufuncs_cxx',
                             'scipy.linalg.cython_blas',
                             'scipy.linalg.cython_lapack',
