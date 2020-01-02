@@ -16,6 +16,7 @@
 
 * The first window will also delay in real time when setting `simulate_reality` as `True` in streams.
 * Better multi-threading performance and flow control for pipeline.
+* Resolve infinite waiting bug when stopping generator stream.
 
 # 0.6.1
 
