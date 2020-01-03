@@ -5,8 +5,10 @@ block_cipher = None
 
 a = Analysis(['main.py'],
              pathex=['.', '../../.venv/Lib/site-packages/scipy/.libs'],
-             binaries=[("../../.venv/Lib/site-packages/mbientlab\metawear/MetaWear.Win32.dll", "."), ("../..//.venv/Lib/site-packages/mbientlab/warble/warble.dll", ".")],
-             datas=[("../../data/single/mhealth/feature/multi_placements/muss.feature.csv.gz", "./data/single/mhealth/feature/multi_placements/"), ("../../data/single/mhealth/class_labels/multi_tasks/muss.class.csv", "./data/single/mhealth/class_labels/multi_tasks/"), ("./dom_wrist.png", "."), ("./right_ankle.png", ".")],
+             binaries=[("../../.venv/Lib/site-packages/mbientlab\metawear/MetaWear.Win32.dll",
+                        "."), ("../..//.venv/Lib/site-packages/mbientlab/warble/warble.dll", ".")],
+             datas=[("../../data/single/mhealth/feature/multi_placements/muss.feature.csv.gz", "./data/single/mhealth/feature/multi_placements/"),
+                    ("../../data/single/mhealth/class_labels/multi_tasks/muss.class.csv", "./data/single/mhealth/class_labels/multi_tasks/"), ("./dom_wrist.png", "."), ("./right_ankle.png", "."), ("./switch_now.mp3", "."), ("./keep_going.mp3", ".")],
              hiddenimports=['scipy.special._ufuncs_cxx',
                             'scipy.linalg.cython_blas',
                             'scipy.linalg.cython_lapack',
@@ -33,7 +35,7 @@ a = Analysis(['main.py'],
              cipher=block_cipher,
              noarchive=False)
 pyz = PYZ(a.pure, a.zipped_data,
-             cipher=block_cipher)
+          cipher=block_cipher)
 exe = EXE(pyz,
           a.scripts,
           [],
@@ -43,7 +45,7 @@ exe = EXE(pyz,
           bootloader_ignore_signals=False,
           strip=False,
           upx=True,
-          console=True )
+          console=True)
 coll = COLLECT(exe,
                a.binaries,
                a.zipfiles,
