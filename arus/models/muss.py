@@ -30,6 +30,7 @@ from ..core.accelerometer import transformation as accel_transform
 from ..core.libs.dsp import filtering as arus_filtering
 from ..core.libs import num as arus_num
 from ..core import pipeline as arus_pipeline
+from ..core.libs import mhealth_format as arus_mh
 
 
 def muss_inference_processor(chunk_list, **kwargs):
@@ -62,6 +63,63 @@ def muss_inference_processor(chunk_list, **kwargs):
     predicted_probs = muss.predict(
         filtered_combined_df, model=model, output_prob=True)
     return predicted_probs
+
+
+def muss_data_collection_processor(chunk_list, **kwargs):
+    import pandas as pd
+    from .muss import MUSSModel
+    import pathos.pools as ppools
+    output_folder = kwargs['output_folder']
+    pid = kwargs['pid']
+    model = kwargs['model']
+
+    def _save_raw(chunk_data, output_folder, pid):
+        df = chunk_data[0]
+        name = chunk_data[-1]
+        arus_mh.write_data_csv(df.iloc[:, 0:4], output_folder=output_folder, pid=pid, file_type='sensor', sensor_or_annotation_type='MetaWearR',
+                               data_type='AccelerationCalibrated', sensor_or_annotator_id=name, split_hours=False, flat=True, append=True)
+        print('Saved data to: ' + output_folder)
+    if model is None:
+        # passive data collection, just save whatever received
+        for data in chunk_list:
+            _save_raw(data, output_folder, pid)
+
+        return True
+    else:
+        io_pool = ppools.ThreadPool(nodes=len(chunk_list))
+        io_pool.restart(force=True)
+        model = kwargs['model']
+        muss = MUSSModel()
+        feature_dfs = []
+        placement_names = []
+        save_task = io_pool.amap(_save_raw, chunk_list, len(
+            chunk_list) * [output_folder], len(chunk_list) * [pid])
+        for df, st, et, prev_st, prev_et, name in chunk_list:
+            feature_df = muss.compute_features(
+                df, sr=kwargs[name]['sr'], st=st, et=et)
+            feature_dfs.append(feature_df)
+            placement_names.append(name)
+        sorted_feature_dfs = []
+        try:
+            for p in model[-2]:
+                i = placement_names.index(p)
+                sorted_feature_dfs.append(feature_dfs[i])
+        except:
+            print(
+                'Make sure the placements between your data and the trained model are the same.')
+        if len(sorted_feature_dfs) == 1:
+            combined_df = sorted_feature_dfs[0]
+        else:
+            combined_df, feature_names = muss.combine_features(
+                *sorted_feature_dfs, placement_names=model[-2])
+        filtered_combined_df = muss.select_features(
+            combined_df, feature_names=model[-1])
+        predicted_probs = muss.predict(
+            filtered_combined_df, model=model, output_prob=True)
+        save_task.get()
+        io_pool.close()
+        io_pool.join()
+        return predicted_probs
 
 
 class MUSSModel:
@@ -126,14 +184,14 @@ class MUSSModel:
             accel_stats.max_value,
             accel_stats.max_minus_min,
             functools.partial(accel_spectrum.spectrum_features,
-                    sr=sr, n=1, preset='muss'),
+                              sr=sr, n=1, preset='muss'),
             functools.partial(accel_activation.stats_active_samples,
-                    threshold=activation_threshold)
+                              threshold=activation_threshold)
         ]
 
         axis_feature_funcs = [
             functools.partial(accel_ori.gravity_angle_stats,
-                    subwin_samples=subwin_samples, unit=ori_unit)
+                              subwin_samples=subwin_samples, unit=ori_unit)
         ]
 
         X_vm = accel_transform.vector_magnitude(X)
@@ -141,7 +199,7 @@ class MUSSModel:
         X_vm_filtered = arus_filtering.butterworth(
             X_vm, sr=sr, cut_offs=20, order=4, filter_type='low')
         X_filtered = arus_filtering.butterworth(X, sr=sr, cut_offs=20,
-                                 order=4, filter_type='low')
+                                                order=4, filter_type='low')
 
         result = {
             'HEADER_TIME_STAMP': [st],
@@ -273,7 +331,8 @@ class MUSSModel:
         return plt.gcf()
 
     def get_confusion_matrix(self, input_class, predict_class, labels, graph=False):
-        conf_mat = sk_metrics.confusion_matrix(input_class, predict_class, labels=labels)
+        conf_mat = sk_metrics.confusion_matrix(
+            input_class, predict_class, labels=labels)
         conf_df = pd.DataFrame(conf_mat, columns=labels, index=labels)
         conf_df.index.rename(name='Ground Truth')
         if graph:
@@ -287,10 +346,19 @@ class MUSSModel:
         return sk_metrics.classification_report(input_class, predict_class, labels=labels, output_dict=True)
 
     @staticmethod
-    def get_inference_pipeline(*streams, name='muss-pipeline', **kwargs):
+    def get_inference_pipeline(*streams, name='muss-inference-pipeline', **kwargs):
         pipeline = arus_pipeline.Pipeline(
             max_processes=kwargs['max_processes'], scheduler=kwargs['scheduler'], name=name)
         for stream in streams:
             pipeline.add_stream(stream)
         pipeline.set_processor(muss_inference_processor, **kwargs)
+        return pipeline
+
+    @staticmethod
+    def get_data_collection_pipeline(*streams, name='muss-data-collection-pipeline', **kwargs):
+        pipeline = arus_pipeline.Pipeline(
+            max_processes=kwargs['max_processes'], scheduler=kwargs['scheduler'], name=name)
+        for stream in streams:
+            pipeline.add_stream(stream)
+        pipeline.set_processor(muss_data_collection_processor, **kwargs)
         return pipeline
