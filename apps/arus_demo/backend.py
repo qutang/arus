@@ -3,7 +3,10 @@ import pandas as pd
 from arus.models.muss import MUSSModel
 from pathos import pools
 from arus.plugins.metawear import MetaWearSlidingWindowStream, MetaWearScanner
+from arus.core.libs import mhealth_format as arus_mh
+from playsound import playsound
 import datetime as dt
+import os
 
 
 def load_initial_data():
@@ -122,6 +125,36 @@ def test_initial_model(devices, model):
         *streams, name='muss-pipeline', model=model, DA={'sr': 50}, DW={'sr': 50}, max_processes=2, scheduler='processes')
     pipeline.connect(start_time=start_time)
     return pipeline
+
+
+def collect_data(devices, output_folder, pid, model=None):
+    muss = MUSSModel()
+    device_addrs = devices
+    streams = []
+    window_size = 4
+    sr = 50
+    output_folder = os.path.join(output_folder, 'data')
+    start_time = dt.datetime.now()
+    for addr, placement in zip(device_addrs, ['DW', 'DA']):
+        stream = MetaWearSlidingWindowStream(
+            addr, window_size=window_size, sr=sr, grange=8, name=placement)
+        streams.append(stream)
+    pipeline = muss.get_data_collection_pipeline(
+        *streams, model=model, DA={'sr': sr}, DW={'sr': sr}, max_processes=2, scheduler='processes', output_folder=output_folder, pid=pid)
+    pipeline.connect(start_time=start_time)
+    return pipeline
+
+
+def save_current_annotation(current_annotation, output_folder, pid, pool, active=False):
+    output_folder = os.path.join(output_folder, 'data')
+    df = pd.DataFrame.from_dict(current_annotation)
+    task = pool.apipe(arus_mh.write_data_csv, df, output_folder=output_folder,                  pid=pid, file_type='annotation',
+                      sensor_or_annotation_type='ActiveSession' if active else 'PassiveSession', sensor_or_annotator_id='ARUS', split_hours=False, flat=True, append=True)
+    return task
+
+
+def play_sound(text, pool):
+    return pool.apipe(playsound, text + '.mp3', block=True)
 
 
 def get_nearby_devices(pool):

@@ -16,6 +16,7 @@ import backend
 from model_training_panel import ModelTrainingPanel
 from model_validation_panel import ModelValidationPanel
 from model_testing_panel import ModelTestingPanel
+from data_collection_panel import DataCollectionPanel
 
 
 def dashboard_heading(text):
@@ -28,9 +29,9 @@ def dashboard_description(text, key=None):
         text=text, font=('Helvetica', 10), size=(25, None), key=key)
 
 
-def dashboard_listbox(items, mode, key=None):
+def dashboard_listbox(items, mode, key=None, right_click_menu=None):
     return sg.Listbox(
-        values=items, select_mode=mode, font=('Helvetica', 10), size=(27, 20), key=key, enable_events=True)
+        values=items, select_mode=mode, font=('Helvetica', 10), size=(27, 20), key=key, enable_events=True, right_click_menu=right_click_menu)
 
 
 def dashboard_control_button(text, disabled, key=None):
@@ -38,8 +39,12 @@ def dashboard_control_button(text, disabled, key=None):
                      font=('Helvetica', 11), auto_size_button=True, size=(20, None), key=key, disabled=disabled)
 
 
-def dashboard_text_combo_with_button(items, text, key=None):
-    return sg.Combo(values=items, font=('Helvetica', 11), size=(15, None), key=key), sg.Button(button_text=text, font=('Helvetica', 10), size=(5, None))
+def dashboard_text_combo_with_button(items, text, button_key=None, input_key=None):
+    add_button = sg.Button(button_text=text, font=(
+        'Helvetica', 10), size=(5, None), key=button_key)
+    new_activity_input = sg.Combo(values=items, font=(
+        'Helvetica', 11), size=(15, None), key=input_key, enable_events=True)
+    return new_activity_input, add_button
 
 
 class Dashboard:
@@ -53,7 +58,7 @@ class Dashboard:
         self._initial_model_class_labels = None
         self._app_state = app.AppState.getInstance()
 
-    def _init_dashboard_model_training(self, class_labels=[]):
+    def _init_dashboard_model_training(self):
         heading = 'Step 1 - Train initial model'
         description = "Hold 'Ctrl' to select multiple classes you would like to train for the model."
         button_texts = ['Train model', 'Validate model', 'Test model']
@@ -69,7 +74,7 @@ class Dashboard:
         description = [[dashboard_description(description)]]
 
         class_label_list = [[dashboard_listbox(
-            items=class_labels,
+            items=self._class_labels,
             mode=sg.LISTBOX_SELECT_MODE_EXTENDED,
             key=key_listbox)
         ]]
@@ -84,28 +89,35 @@ class Dashboard:
 
         return sg.Column(layout=header + description + class_label_list + buttons + info, scrollable=False)
 
-    def _init_dashboard_new_activities(self, class_labels=[]):
+    def _init_dashboard_new_activities(self):
         heading = 'Step 2 - Add new activities'
         description = "Type a new activity class or select an activity class from the dropdown list that you want to collect data for. Hold 'Ctrl' to select multiple classes you would like to collect data for."
+
         text_combo_text = 'Add'
+        add_button_key = '_NEW_ACTIVITY_ADD_'
+        new_activity_input_key = '_NEW_ACTIVITY_INPUT_'
+
+        activity_list_key = '_NEW_ACTIVITY_LIST_'
+
         button_texts = ['Collect data', 'Check data']
+        button_keys = ['_NEW_ACTIVITY_COLLECT_', '_NEW_ACTIVITY_CHECK_']
 
         header = [[dashboard_heading(text=heading)]]
         description = [[dashboard_description(text=description)]]
         text_combo = [dashboard_text_combo_with_button(
-            items=class_labels, text=text_combo_text)]
+            items=[], text=text_combo_text, button_key=add_button_key, input_key=new_activity_input_key)]
 
         class_labels_list = [[
             dashboard_listbox(
-                items=[], mode=sg.LISTBOX_SELECT_MODE_EXTENDED)
+                items=self._class_labels, mode=sg.LISTBOX_SELECT_MODE_EXTENDED, key=activity_list_key)
         ]]
 
         buttons = [[dashboard_control_button(
-            text=text, disabled=True)] for text in button_texts]
+            text=text, disabled=True, key=key)] for text, key in zip(button_texts, button_keys)]
 
         return sg.Column(layout=header + description + text_combo + class_labels_list + buttons, scrollable=False)
 
-    def _init_dashboard_model_update(self, class_labels=[]):
+    def _init_dashboard_model_update(self):
         heading = 'Step 3 - Update model'
         description = "Hold 'Ctrl' to select multiple classes you would like to use the new data to update the model."
         button_texts = ['Update model', 'Validate model']
@@ -113,7 +125,7 @@ class Dashboard:
         header = [[dashboard_heading(heading)]]
         description = [[dashboard_description(description)]]
         class_label_list = [[dashboard_listbox(
-            items=class_labels, mode=sg.LISTBOX_SELECT_MODE_EXTENDED)]]
+            items=self._class_labels, mode=sg.LISTBOX_SELECT_MODE_EXTENDED)]]
         buttons = [[dashboard_control_button(
             text, disabled=True)] for text in button_texts]
 
@@ -124,13 +136,10 @@ class Dashboard:
         return class_df['MUSS_22_ACTIVITY_ABBRS'].unique().tolist()
 
     def init_dashboard(self):
-        class_labels = self._get_initial_class_labels()
-        col_model_training = self._init_dashboard_model_training(
-            class_labels=class_labels)
-        col_new_activities = self._init_dashboard_new_activities(
-            class_labels=class_labels)
-        col_model_update = self._init_dashboard_model_update(
-            class_labels=class_labels)
+        self._class_labels = self._get_initial_class_labels()
+        col_model_training = self._init_dashboard_model_training()
+        col_new_activities = self._init_dashboard_new_activities()
+        col_model_update = self._init_dashboard_model_update()
         layout = [
             [col_model_training, col_new_activities,
                 col_model_update]
@@ -144,6 +153,11 @@ class Dashboard:
         self._initial_model_validate_button = dashboard['_VALIDATE_MODEL_INITIAL_']
         self._initial_model_test_button = dashboard['_TEST_MODEL_INITIAL_']
         self._initial_model_info_text = dashboard['_MODEL_INFO_INITIAL_']
+
+        self._new_activity_add_button = dashboard['_NEW_ACTIVITY_ADD_']
+        self._new_activity_input = dashboard['_NEW_ACTIVITY_INPUT_']
+        self._new_activity_list = dashboard['_NEW_ACTIVITY_LIST_']
+        self._new_activity_collect_button = dashboard['_NEW_ACTIVITY_COLLECT_']
         return dashboard
 
     def _display_model_info(self):
@@ -180,6 +194,10 @@ class Dashboard:
         panel = ModelTestingPanel("Initial model testing")
         panel.start()
 
+    def _handle_data_collection(self):
+        panel = DataCollectionPanel("Data collection for new activites")
+        panel.start()
+
     def _handle_initial_model_training_label_changed(self, labels):
         num_classes = len(labels)
         if num_classes > 1:
@@ -188,6 +206,19 @@ class Dashboard:
             self._initial_model_train_button.Update(disabled=True)
         self._app_state.initial_model_training_labels = labels
 
+    def _handle_activities_for_collection_changed(self, labels):
+        num_classes = len(labels)
+        if num_classes >= 1:
+            self._new_activity_collect_button.Update(disabled=False)
+        else:
+            self._new_activity_collect_button.Update(disabled=True)
+        self._app_state.selected_activities_for_collection = labels
+
+    def _handle_add_new_activity(self, name):
+        if name not in self._class_labels:
+            self._class_labels = [name] + self._class_labels
+            self._new_activity_list.Update(self._class_labels)
+
     def handle_dashboard(self, event, values):
         if event == self._initial_model_train_button.Key:  # Train model
             self._handle_initial_model_training()
@@ -195,10 +226,17 @@ class Dashboard:
             self._handle_initial_model_validation()
         elif event == self._initial_model_test_button.Key:
             self._handle_initial_model_testing()
+        elif event == self._new_activity_collect_button.Key:
+            self._handle_data_collection()
         # Only enable buttons when there are two or more classes selected
         elif event == self._initial_model_class_labels.Key:
             self._handle_initial_model_training_label_changed(
                 values[self._initial_model_class_labels.Key])
+        elif event == self._new_activity_add_button.Key:
+            self._handle_add_new_activity(values[self._new_activity_input.Key])
+        elif event == self._new_activity_list.Key:
+            self._handle_activities_for_collection_changed(
+                values[self._new_activity_list.Key])
 
     def start(self):
         sg.ChangeLookAndFeel('Reddit')
@@ -206,6 +244,7 @@ class Dashboard:
         while True:
             event, values = self._dashboard_window.read()
             print(event)
+            print(values)
             if event is None:
                 break
             else:

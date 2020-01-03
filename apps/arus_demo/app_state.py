@@ -1,4 +1,5 @@
 from pathos import pools
+import os
 
 
 class AppState:
@@ -11,10 +12,14 @@ class AppState:
             self.initial_model_validation_results = None
             self.initial_dataset = None
             self.initial_model_pipeline = None
+            self.selected_activities_for_collection = None
             self.nearby_devices = None
-            self.task_pool = pools.ProcessPool(nodes=2)
+            self.output_folder = os.path.join(
+                os.path.expanduser("~"), 'arus')
+            self.pid = None
+            self.task_pool = pools.ProcessPool(nodes=6)
             self.task_pool.close()
-            self.io_pool = pools.ThreadPool(nodes=1)
+            self.io_pool = pools.ThreadPool(nodes=4)
             self.io_pool.close()
 
     def __init__(self):
