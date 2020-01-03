@@ -109,7 +109,7 @@ class MetaWearSlidingWindowStream(arus_stream.SlidingWindowStream):
         self._device.accelerometer.notifications(callback=None)
         time.sleep(0.5)
         self._device.disconnect()
-        logging.debug('Disconnected.')
+        logging.info('Disconnected.')
         self._callback_started = False
         self._buffer_data_source(None)
         super().stop()
