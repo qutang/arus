@@ -136,9 +136,9 @@ class Stream:
         """
         self.started = False
         time.sleep(0.1)
-        self._chunking_thread.join()
+        self._chunking_thread.join(timeout=1.5)
         time.sleep(0.1)
-        self._loading_thread.join()
+        self._loading_thread.join(timeout=1.5)
         with self._queue.mutex:
             self._queue.queue.clear()
         with self._buffer.mutex:
@@ -158,7 +158,11 @@ class Stream:
     def chunk_(self):
         """By default, this function just transfers data in the buffer to the result queue
         """
-        for data in self._buffer.get():
+        while self.started:
+            try:
+                data = self._buffer.get(timeout=0.1)
+            except queue.Empty:
+                continue
             self._put_data_in_queue(data)
 
 
@@ -226,7 +230,7 @@ class SlidingWindowStream(Stream):
         previous_window_et = None
         while self.started:
             try:
-                data = self._buffer.get(timeout=0.1)
+                data = self._buffer.get(timeout=0.2)
             except queue.Empty:
                 continue
             if data is None:
