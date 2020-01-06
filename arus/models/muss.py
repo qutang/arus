@@ -72,6 +72,11 @@ def muss_data_collection_processor(chunk_list, **kwargs):
     output_folder = kwargs['output_folder']
     pid = kwargs['pid']
     model = kwargs['model']
+    muss = MUSSModel()
+    raw_data_dfs = []
+    feature_dfs = []
+    placement_names = []
+    sorted_feature_dfs = []
 
     def _save_raw(chunk_data, output_folder, pid):
         df = chunk_data[0]
@@ -79,27 +84,19 @@ def muss_data_collection_processor(chunk_list, **kwargs):
         arus_mh.write_data_csv(df.iloc[:, 0:4], output_folder=output_folder, pid=pid, file_type='sensor', sensor_or_annotation_type='MetaWearR',
                                data_type='AccelerationCalibrated', sensor_or_annotator_id=name, split_hours=False, flat=True, append=True)
         print('Saved data to: ' + output_folder)
-    if model is None:
-        # passive data collection, just save whatever received
-        for data in chunk_list:
-            _save_raw(data, output_folder, pid)
 
-        return True
-    else:
-        io_pool = ppools.ThreadPool(nodes=len(chunk_list))
-        io_pool.restart(force=True)
-        model = kwargs['model']
-        muss = MUSSModel()
-        feature_dfs = []
-        placement_names = []
-        save_task = io_pool.amap(_save_raw, chunk_list, len(
-            chunk_list) * [output_folder], len(chunk_list) * [pid])
-        for df, st, et, prev_st, prev_et, name in chunk_list:
-            feature_df = muss.compute_features(
-                df, sr=kwargs[name]['sr'], st=st, et=et)
-            feature_dfs.append(feature_df)
-            placement_names.append(name)
-        sorted_feature_dfs = []
+    io_pool = ppools.ThreadPool(nodes=len(chunk_list))
+    io_pool.restart(force=True)
+    save_task = io_pool.amap(_save_raw, chunk_list, len(
+        chunk_list) * [output_folder], len(chunk_list) * [pid])
+    for df, st, et, prev_st, prev_et, name in chunk_list:
+        raw_data_dfs.append(df)
+        feature_df = muss.compute_features(
+            df, sr=kwargs[name]['sr'], st=st, et=et)
+        feature_dfs.append(feature_df)
+        placement_names.append(name)
+
+    if model is not None:
         try:
             for p in model[-2]:
                 i = placement_names.index(p)
@@ -116,10 +113,14 @@ def muss_data_collection_processor(chunk_list, **kwargs):
             combined_df, feature_names=model[-1])
         predicted_probs = muss.predict(
             filtered_combined_df, model=model, output_prob=True)
-        save_task.get()
-        io_pool.close()
-        io_pool.join()
-        return predicted_probs
+    else:
+        filtered_combined_df, feature_names = muss.combine_features(
+            *feature_dfs, placement_names=placement_names)
+        predicted_probs = None
+    save_task.get()
+    io_pool.close()
+    io_pool.join()
+    return predicted_probs, filtered_combined_df, raw_data_dfs
 
 
 class MUSSModel:
