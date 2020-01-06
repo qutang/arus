@@ -3,7 +3,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta charset="utf-8" />
-    <title>Stream using annotation generator &#8212; arus 0.6.1 documentation</title>
+    <title>Stream using annotation generator &#8212; arus 0.6.2 documentation</title>
     <link rel="stylesheet" href="../../_static/bootstrap-sphinx.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
     <link rel="stylesheet" type="text/css" href="../../_static/gallery.css" />
@@ -36,7 +36,7 @@
         </button>
         <a class="navbar-brand" href="../../index.html">
           arus</a>
-        <span class="navbar-text navbar-version pull-left"><b>0.6.1</b></span>
+        <span class="navbar-text navbar-version pull-left"><b>0.6.2</b></span>
       </div>
 
         <div class="collapse navbar-collapse nav-collapse">
@@ -87,7 +87,14 @@
   <div class="row">
       <div class="col-md-3">
         <div id="sidebar" class="bs-sidenav" role="complementary"><ul>
-<li><a class="reference internal" href="#">Stream using annotation generator</a></li>
+<li><a class="reference internal" href="#">Stream using annotation generator</a><ul>
+<li><a class="reference internal" href="#imports">Imports</a></li>
+<li><a class="reference internal" href="#set-up-annotation-generator">Set up annotation generator</a></li>
+<li><a class="reference internal" href="#setup-stream">Setup stream</a></li>
+<li><a class="reference internal" href="#start-stream-and-read-data-from-the-stream">Start stream and read data from the stream</a></li>
+<li><a class="reference internal" href="#stop-the-stream">Stop the stream</a></li>
+</ul>
+</li>
 </ul>
 
 <div id="sourcelink">
@@ -111,47 +118,69 @@
 </div>
 <div class="sphx-glr-example-title section" id="stream-using-annotation-generator">
 <span id="sphx-glr-examples-streams-run-annotation-generator-stream-py"></span><h1>Stream using annotation generator<a class="headerlink" href="#stream-using-annotation-generator" title="Permalink to this headline">¶</a></h1>
-<p class="sphx-glr-script-out">Out:</p>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>2019-12-31 20:30:10.634320-2019-12-31 20:30:19.651162668-Sitting-Standing-Standing
-2019-12-31 20:30:19.651162668-2019-12-31 20:30:34.621064305-Standing-Lying-Sitting-Lying
-2019-12-31 20:30:34.621064305-2019-12-31 20:30:46.181161277-Lying-Lying-Lying-Lying
-2019-12-31 20:30:46.181161277-2019-12-31 20:30:59.201921702-Lying-Standing-Sitting
-2019-12-31 20:30:59.201921702-2019-12-31 20:31:12.119143532-Sitting-Standing-Standing-Lying
-</pre></div>
-</div>
-<div class="line-block">
-<div class="line"><br /></div>
-</div>
+<div class="section" id="imports">
+<h2>Imports<a class="headerlink" href="#imports" title="Permalink to this headline">¶</a></h2>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">arus.core.annotation.generator</span> <span class="kn">import</span> <span class="n">normal_dist</span>
-<span class="kn">from</span> <span class="nn">arus.core.stream.generator_stream</span> <span class="kn">import</span> <span class="n">GeneratorSlidingWindowStream</span>
-
-<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
-    <span class="n">data_source</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s2">&quot;generator&quot;</span><span class="p">:</span> <span class="n">normal_dist</span><span class="p">,</span>
-        <span class="s2">&quot;kwargs&quot;</span><span class="p">:</span> <span class="p">{</span>
-            <span class="s2">&quot;duration_mu&quot;</span><span class="p">:</span> <span class="mi">5</span><span class="p">,</span>
-            <span class="s2">&quot;duration_sigma&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
-            <span class="s2">&quot;num_mu&quot;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span>
-            <span class="s2">&quot;labels&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;Sitting&#39;</span><span class="p">,</span> <span class="s1">&#39;Standing&#39;</span><span class="p">,</span> <span class="s1">&#39;Lying&#39;</span><span class="p">],</span>
-            <span class="s2">&quot;sleep_interval&quot;</span><span class="p">:</span> <span class="mi">0</span>
-        <span class="p">}</span>
-    <span class="p">}</span>
-
-    <span class="n">stream</span> <span class="o">=</span> <span class="n">GeneratorSlidingWindowStream</span><span class="p">(</span><span class="n">data_source</span><span class="p">,</span> <span class="n">window_size</span><span class="o">=</span><span class="mf">12.8</span><span class="p">,</span>
-                                          <span class="n">simulate_reality</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">start_time_col</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">stop_time_col</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;annotator-generator-stream&#39;</span><span class="p">)</span>
-    <span class="n">stream</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
-
-    <span class="n">n</span> <span class="o">=</span> <span class="mi">5</span>
-    <span class="k">for</span> <span class="n">window</span><span class="p">,</span> <span class="n">st</span><span class="p">,</span> <span class="n">et</span><span class="p">,</span> <span class="n">prev_st</span><span class="p">,</span> <span class="n">prev_et</span><span class="p">,</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">stream</span><span class="o">.</span><span class="n">get_iterator</span><span class="p">():</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{}</span><span class="s2">-</span><span class="si">{}</span><span class="s2">-</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">window</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>
-                                <span class="n">window</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="s1">&#39;-&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">window</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:,</span> <span class="mi">3</span><span class="p">])))</span>
-        <span class="n">n</span> <span class="o">-=</span> <span class="mi">1</span>
-        <span class="k">if</span> <span class="n">n</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="k">break</span>
-    <span class="n">stream</span><span class="o">.</span><span class="n">stop</span><span class="p">()</span>
+<span class="kn">from</span> <span class="nn">arus.core.stream</span> <span class="kn">import</span> <span class="n">GeneratorSlidingWindowStream</span>
 </pre></div>
 </div>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 0 minutes  0.100 seconds)</p>
+</div>
+<div class="section" id="set-up-annotation-generator">
+<h2>Set up annotation generator<a class="headerlink" href="#set-up-annotation-generator" title="Permalink to this headline">¶</a></h2>
+<p><cite>kwargs</cite> will be passed to <cite>normal_dist</cite> when generating the stream
+The generated stream data will be stored as pandas DataFrame with mHealth Specification.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">data_source</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;generator&quot;</span><span class="p">:</span> <span class="n">normal_dist</span><span class="p">,</span>
+    <span class="s2">&quot;kwargs&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">&quot;duration_mu&quot;</span><span class="p">:</span> <span class="mi">5</span><span class="p">,</span>
+        <span class="s2">&quot;duration_sigma&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+        <span class="s2">&quot;num_mu&quot;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span>
+        <span class="s2">&quot;labels&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;Sitting&#39;</span><span class="p">,</span> <span class="s1">&#39;Standing&#39;</span><span class="p">,</span> <span class="s1">&#39;Lying&#39;</span><span class="p">],</span>
+        <span class="s2">&quot;sleep_interval&quot;</span><span class="p">:</span> <span class="mi">0</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="setup-stream">
+<h2>Setup stream<a class="headerlink" href="#setup-stream" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">stream</span> <span class="o">=</span> <span class="n">GeneratorSlidingWindowStream</span><span class="p">(</span><span class="n">data_source</span><span class="p">,</span>
+                                      <span class="n">window_size</span><span class="o">=</span><span class="mf">12.8</span><span class="p">,</span>
+                                      <span class="n">simulate_reality</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                                      <span class="n">start_time_col</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+                                      <span class="n">stop_time_col</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+                                      <span class="n">name</span><span class="o">=</span><span class="s1">&#39;annotator-generator-stream&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="start-stream-and-read-data-from-the-stream">
+<h2>Start stream and read data from the stream<a class="headerlink" href="#start-stream-and-read-data-from-the-stream" title="Permalink to this headline">¶</a></h2>
+<p>You may use <cite>stream.get_iterator()</cite> to return a generator to read data from a stream.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">stream</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+<span class="n">n</span> <span class="o">=</span> <span class="mi">5</span>
+<span class="k">for</span> <span class="n">window</span><span class="p">,</span> <span class="n">st</span><span class="p">,</span> <span class="n">et</span><span class="p">,</span> <span class="n">prev_st</span><span class="p">,</span> <span class="n">prev_et</span><span class="p">,</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">stream</span><span class="o">.</span><span class="n">get_iterator</span><span class="p">():</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{}</span><span class="s2">-</span><span class="si">{}</span><span class="s2">-</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">window</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>
+                            <span class="n">window</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="s1">&#39;-&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">window</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:,</span> <span class="mi">3</span><span class="p">])))</span>
+    <span class="n">n</span> <span class="o">-=</span> <span class="mi">1</span>
+    <span class="k">if</span> <span class="n">n</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">break</span>
+</pre></div>
+</div>
+<p class="sphx-glr-script-out">Out:</p>
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>2020-01-06 23:12:31.405741-2020-01-06 23:12:42.814140461-Standing-Standing-Lying
+2020-01-06 23:12:42.814140461-2020-01-06 23:12:55.259535663-Lying-Lying-Sitting
+2020-01-06 23:12:55.259535663-2020-01-06 23:13:08.969902183-Sitting-Standing-Standing-Standing
+2020-01-06 23:13:08.969902183-2020-01-06 23:13:18.557491069-Standing-Sitting-Standing
+2020-01-06 23:13:18.557491069-2020-01-06 23:13:34.724295650-Standing-Lying-Lying-Standing
+</pre></div>
+</div>
+</div>
+<div class="section" id="stop-the-stream">
+<h2>Stop the stream<a class="headerlink" href="#stop-the-stream" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">stream</span><span class="o">.</span><span class="n">stop</span><span class="p">()</span>
+</pre></div>
+</div>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 0 minutes  0.352 seconds)</p>
 <div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-examples-streams-run-annotation-generator-stream-py">
 <div class="sphx-glr-download docutils container">
 <p><a class="reference download internal" download="" href="../../_downloads/08bc6c18bafeeceb6c63065a303c7afc/run_annotation_generator_stream.py"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Python</span> <span class="pre">source</span> <span class="pre">code:</span> <span class="pre">run_annotation_generator_stream.py</span></code></a></p>
@@ -161,6 +190,7 @@
 </div>
 </div>
 <p class="sphx-glr-signature"><a class="reference external" href="https://sphinx-gallery.github.io">Gallery generated by Sphinx-Gallery</a></p>
+</div>
 </div>
 
 

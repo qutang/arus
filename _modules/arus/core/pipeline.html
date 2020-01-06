@@ -3,7 +3,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta charset="utf-8" />
-    <title>arus.core.pipeline &#8212; arus 0.6.1 documentation</title>
+    <title>arus.core.pipeline &#8212; arus 0.6.2 documentation</title>
     <link rel="stylesheet" href="../../../_static/bootstrap-sphinx.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
     <link rel="stylesheet" type="text/css" href="../../../_static/gallery.css" />
@@ -36,7 +36,7 @@
         </button>
         <a class="navbar-brand" href="../../../index.html">
           arus</a>
-        <span class="navbar-text navbar-version pull-left"><b>0.6.1</b></span>
+        <span class="navbar-text navbar-version pull-left"><b>0.6.2</b></span>
       </div>
 
         <div class="collapse navbar-collapse nav-collapse">
@@ -102,15 +102,15 @@
 <span></span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">Module includes classes that accept single or multiple `arus.core.stream` instances, synchronize data from the streams, process the data using customized processor function, and output using the same iterator interface as `arus.core.stream`.</span>
 
-<span class="sd">## Usage of `arus.core.pipeline.Pipeline`</span>
+<span class="sd"># Usage of `arus.core.pipeline.Pipeline`</span>
 
-<span class="sd">### Single stream case</span>
+<span class="sd"># Single stream case</span>
 
 <span class="sd">```python</span>
 <span class="sd">.. include:: ../../examples/single_stream_pipeline.py</span>
 <span class="sd">```</span>
 
-<span class="sd">### Multiple streams case</span>
+<span class="sd"># Multiple streams case</span>
 
 <span class="sd">```python</span>
 <span class="sd">.. include:: ../../examples/multi_stream_pipeline.py</span>
@@ -172,6 +172,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_chunks</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_stream_pointer</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_started</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_process_cond</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Condition</span><span class="p">(</span><span class="n">threading</span><span class="o">.</span><span class="n">Lock</span><span class="p">())</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_connected</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_stop_sender</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_preserve_status</span> <span class="o">=</span> <span class="n">preserve_status</span>
@@ -233,34 +234,41 @@
 <span class="sd">            bool: `True` if the pipeline is shut down correctly.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">try</span><span class="p">:</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Stop pipeline...&#39;</span><span class="p">)</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Stop pipeline...&#39;</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_connected</span> <span class="o">=</span> <span class="kc">False</span>
             <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.2</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_process_tasks</span><span class="o">.</span><span class="n">join</span><span class="p">()</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_process_tasks</span><span class="o">.</span><span class="n">queue</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
-            <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.2</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_started</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_started</span><span class="p">:</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Wait for processing tasks...&#39;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_process_tasks</span><span class="o">.</span><span class="n">join</span><span class="p">()</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_process_tasks</span><span class="o">.</span><span class="n">queue</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+                <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.2</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_stop_sender</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_cond</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_started</span> <span class="o">=</span> <span class="kc">False</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_process_cond</span><span class="o">.</span><span class="n">notify_all</span><span class="p">()</span>
             <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.2</span><span class="p">)</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pool</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Close processing pool...&#39;</span><span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_pool</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_pool</span><span class="o">.</span><span class="n">join</span><span class="p">()</span>
-            <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.2</span><span class="p">)</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Stop input streams...&#39;</span><span class="p">)</span>
             <span class="k">for</span> <span class="n">stream</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_streams</span><span class="p">:</span>
                 <span class="n">stream</span><span class="o">.</span><span class="n">stop</span><span class="p">()</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Clear result queue...&#39;</span><span class="p">)</span>
             <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_queue</span><span class="o">.</span><span class="n">mutex</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_queue</span><span class="o">.</span><span class="n">queue</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Stopped.&#39;</span><span class="p">)</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Stopped.&#39;</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
             <span class="k">return</span> <span class="kc">False</span>
         <span class="k">return</span> <span class="kc">True</span></div>
 
 <div class="viewcode-block" id="Pipeline.pause"><a class="viewcode-back" href="../../../generated/arus.core.pipeline.Pipeline.pause.html#arus.core.pipeline.Pipeline.pause">[docs]</a>    <span class="k">def</span> <span class="nf">pause</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Pause processing the incoming streams, yet pipeline can still receive data from streams. Data will be ignored and not stored. </span>
+        <span class="sd">&quot;&quot;&quot;Pause processing the incoming streams, yet pipeline can still receive data from streams. Data will be ignored and not stored.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_started</span> <span class="o">=</span> <span class="kc">False</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_process_start_time</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_cond</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_started</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_process_start_time</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_queue</span><span class="o">.</span><span class="n">mutex</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_queue</span><span class="o">.</span><span class="n">queue</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span></div>
 
@@ -344,18 +352,21 @@
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pool</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scheduler</span> <span class="o">==</span> <span class="s1">&#39;processes&#39;</span><span class="p">:</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">_pool</span> <span class="o">=</span> <span class="n">ppools</span><span class="o">.</span><span class="n">ProcessPool</span><span class="p">(</span><span class="n">nodes</span><span class="o">=</span><span class="n">num_of_processors</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_pool</span><span class="o">.</span><span class="n">restart</span><span class="p">(</span><span class="n">force</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
                 <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scheduler</span> <span class="o">==</span> <span class="s1">&#39;threads&#39;</span><span class="p">:</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">_pool</span> <span class="o">=</span> <span class="n">ppools</span><span class="o">.</span><span class="n">ThreadPool</span><span class="p">(</span><span class="n">nodes</span><span class="o">=</span><span class="n">num_of_processors</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_pool</span><span class="o">.</span><span class="n">restart</span><span class="p">(</span><span class="n">force</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
                         <span class="s1">&#39;This scheduler is not supported: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_scheduler</span><span class="p">))</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_pool</span><span class="o">.</span><span class="n">restart</span><span class="p">()</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_pool</span><span class="o">.</span><span class="n">restart</span><span class="p">(</span><span class="n">force</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
         <span class="k">while</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connected</span><span class="p">:</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_started</span><span class="p">:</span>
                 <span class="k">for</span> <span class="n">stream</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_streams</span><span class="p">:</span>
                     <span class="k">for</span> <span class="n">data</span><span class="p">,</span> <span class="n">st</span><span class="p">,</span> <span class="n">et</span><span class="p">,</span> <span class="n">prev_st</span><span class="p">,</span> <span class="n">prev_et</span><span class="p">,</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">stream</span><span class="o">.</span><span class="n">get_iterator</span><span class="p">():</span>
                         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_data_after_start_time</span><span class="p">(</span><span class="n">st</span><span class="p">):</span>
+                            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;recieved data window from &#39;</span> <span class="o">+</span> <span class="n">name</span><span class="p">)</span>
                             <span class="bp">self</span><span class="o">.</span><span class="n">_chunks</span><span class="p">[</span><span class="n">st</span><span class="o">.</span><span class="n">timestamp</span><span class="p">()]</span> <span class="o">=</span> <span class="p">[]</span> <span class="k">if</span> <span class="n">st</span><span class="o">.</span><span class="n">timestamp</span><span class="p">(</span>
                             <span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_chunks</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">_chunks</span><span class="p">[</span><span class="n">st</span><span class="o">.</span><span class="n">timestamp</span><span class="p">()]</span>
                             <span class="bp">self</span><span class="o">.</span><span class="n">_chunks</span><span class="p">[</span><span class="n">st</span><span class="o">.</span><span class="n">timestamp</span><span class="p">()]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
@@ -371,8 +382,9 @@
                         <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Discard one stream window&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span>
                             <span class="n">st</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;coming before process start time: &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_process_start_time</span><span class="p">))</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="c1"># ignore the incoming stream data, the thread will stand by</span>
-                <span class="k">pass</span>
+                <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_cond</span><span class="p">:</span>
+                    <span class="c1"># ignore the incoming stream data, the thread will stand by</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_process_cond</span><span class="o">.</span><span class="n">wait</span><span class="p">()</span>
 
     <span class="k">def</span> <span class="nf">_send_result</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">while</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_stop_sender</span><span class="p">:</span>
@@ -387,13 +399,15 @@
                         <span class="bp">self</span><span class="o">.</span><span class="n">_process_tasks</span><span class="o">.</span><span class="n">task_done</span><span class="p">()</span>
                     <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_preserve_status</span><span class="p">:</span>
                         <span class="bp">self</span><span class="o">.</span><span class="n">_prev_output</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+                    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Sending processed results to queue...&#39;</span><span class="p">)</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">_put_result_in_queue</span><span class="p">(</span>
                         <span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="n">st</span><span class="p">,</span> <span class="n">et</span><span class="p">,</span> <span class="n">prev_st</span><span class="p">,</span> <span class="n">prev_et</span><span class="p">,</span> <span class="n">name</span><span class="p">))</span>
                 <span class="k">except</span> <span class="n">queue</span><span class="o">.</span><span class="n">Empty</span><span class="p">:</span>
                     <span class="k">pass</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="c1"># ignore if the pipeline is just connected but not started</span>
-                <span class="k">pass</span>
+                <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_cond</span><span class="p">:</span>
+                    <span class="c1"># ignore if the pipeline is just connected but not started</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_process_cond</span><span class="o">.</span><span class="n">wait</span><span class="p">()</span>
 
     <span class="k">def</span> <span class="nf">_process_synced_chunks</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">st</span><span class="p">,</span> <span class="n">et</span><span class="p">,</span> <span class="n">prev_st</span><span class="p">,</span> <span class="n">prev_et</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">st</span><span class="o">.</span><span class="n">timestamp</span><span class="p">()</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_chunks</span><span class="p">:</span>
@@ -434,12 +448,15 @@
                     <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">_chunks</span><span class="p">[</span><span class="n">st</span><span class="o">.</span><span class="n">timestamp</span><span class="p">()]</span>
                 <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pool</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                     <span class="k">try</span><span class="p">:</span>
+                        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Starting a processing task...&#39;</span><span class="p">)</span>
                         <span class="n">task</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pool</span><span class="o">.</span><span class="n">apipe</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_processor</span><span class="p">,</span> <span class="n">chunk_list</span><span class="p">,</span>
                                                 <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">_processor_kwargs</span><span class="p">)</span>
+                        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Started a processing task...&#39;</span><span class="p">)</span>
                         <span class="bp">self</span><span class="o">.</span><span class="n">_process_tasks</span><span class="o">.</span><span class="n">put</span><span class="p">(</span>
                             <span class="p">(</span><span class="n">task</span><span class="p">,</span> <span class="n">st</span><span class="p">,</span> <span class="n">et</span><span class="p">,</span> <span class="n">prev_st</span><span class="p">,</span> <span class="n">prev_et</span><span class="p">,</span> <span class="n">name</span><span class="p">))</span>
                         <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">_chunks</span><span class="p">[</span><span class="n">st</span><span class="o">.</span><span class="n">timestamp</span><span class="p">()]</span>
-                    <span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                        <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
                         <span class="k">return</span>
 
     <span class="k">def</span> <span class="nf">_put_result_in_queue</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">result</span><span class="p">):</span>
@@ -458,6 +475,7 @@
 
 <span class="sd">        The streams will output data but data will be ignored by the pipeline until `Pipeline.process` got called.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_started</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_stop_sender</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_connected</span> <span class="o">=</span> <span class="kc">True</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_sync_thread</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Thread</span><span class="p">(</span>
@@ -469,7 +487,8 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_sync_thread</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_sender_thread</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
         <span class="k">for</span> <span class="n">stream</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_streams</span><span class="p">:</span>
-            <span class="n">stream</span><span class="o">.</span><span class="n">start</span><span class="p">(</span><span class="n">start_time</span><span class="o">=</span><span class="n">start_time</span><span class="p">)</span></div>
+            <span class="n">stream</span><span class="o">.</span><span class="n">start</span><span class="p">(</span><span class="n">start_time</span><span class="o">=</span><span class="n">start_time</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">True</span></div>
 
 <div class="viewcode-block" id="Pipeline.process"><a class="viewcode-back" href="../../../generated/arus.core.pipeline.Pipeline.process.html#arus.core.pipeline.Pipeline.process">[docs]</a>    <span class="k">def</span> <span class="nf">process</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start_time</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Start processing the connected incoming stream data.</span>
@@ -478,8 +497,12 @@
 <span class="sd">            start_time (str or datetime or np.datetime64 or pd.Timestamp, optional): The start time to start accepting the incoming stream windows. If it is `None`, the pipeline will always output any incoming data without checking `start_time`.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_process_start_time</span> <span class="o">=</span> <span class="n">start_time</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_process_start_time</span> <span class="o">=</span> <span class="n">arus_date</span><span class="o">.</span><span class="n">parse_timestamp</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_process_start_time</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_started</span> <span class="o">=</span> <span class="kc">True</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_process_start_time</span> <span class="o">=</span> <span class="n">arus_date</span><span class="o">.</span><span class="n">parse_timestamp</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_process_start_time</span><span class="p">)</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_cond</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_started</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_process_cond</span><span class="o">.</span><span class="n">notify_all</span><span class="p">()</span>
+        <span class="k">return</span> <span class="kc">True</span></div>
 
 <div class="viewcode-block" id="Pipeline.start"><a class="viewcode-back" href="../../../generated/arus.core.pipeline.Pipeline.start.html#arus.core.pipeline.Pipeline.start">[docs]</a>    <span class="k">def</span> <span class="nf">start</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start_time</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">process_start_time</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Connect and process the incoming streams in a row together.</span>

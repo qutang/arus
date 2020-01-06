@@ -3,7 +3,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta charset="utf-8" />
-    <title>arus.core.stream.Stream &#8212; arus 0.6.1 documentation</title>
+    <title>arus.core.stream.Stream &#8212; arus 0.6.2 documentation</title>
     <link rel="stylesheet" href="../_static/bootstrap-sphinx.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
     <link rel="stylesheet" type="text/css" href="../_static/gallery.css" />
@@ -36,7 +36,7 @@
         </button>
         <a class="navbar-brand" href="../index.html">
           arus</a>
-        <span class="navbar-text navbar-version pull-left"><b>0.6.1</b></span>
+        <span class="navbar-text navbar-version pull-left"><b>0.6.2</b></span>
       </div>
 
         <div class="collapse navbar-collapse nav-collapse">
@@ -113,7 +113,7 @@
 <h1>arus.core.stream.Stream<a class="headerlink" href="#arus-core-stream-stream" title="Permalink to this headline">¶</a></h1>
 <dl class="class">
 <dt id="arus.core.stream.Stream">
-<em class="property">class </em><code class="sig-prename descclassname">arus.core.stream.</code><code class="sig-name descname">Stream</code><span class="sig-paren">(</span><em class="sig-param">data_source</em>, <em class="sig-param">window_size</em>, <em class="sig-param">name='default-stream'</em>, <em class="sig-param">scheduler='thread'</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/arus/core/stream.html#Stream"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#arus.core.stream.Stream" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">arus.core.stream.</code><code class="sig-name descname">Stream</code><span class="sig-paren">(</span><em class="sig-param">data_source</em>, <em class="sig-param">window_size</em>, <em class="sig-param">name='default-stream'</em>, <em class="sig-param">scheduler='thread'</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/arus/core/stream/base_stream.html#Stream"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#arus.core.stream.Stream" title="Permalink to this definition">¶</a></dt>
 <dd><p>The base class for data stream</p>
 <p>Stream class is an abstraction of any data source that can be loaded into memory in arbitrary chunk size either asynchronously (currently only support threading) or synchronously.</p>
 <p>Subclass may implement loading mechanisms for different data sources. Such as files, large file, socket device, bluetooth device, remote server, and database.</p>

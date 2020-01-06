@@ -3,7 +3,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta charset="utf-8" />
-    <title>arus.core.stream.SlidingWindowStream &#8212; arus 0.6.1 documentation</title>
+    <title>arus.core.stream.SlidingWindowStream &#8212; arus 0.6.2 documentation</title>
     <link rel="stylesheet" href="../_static/bootstrap-sphinx.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
     <link rel="stylesheet" type="text/css" href="../_static/gallery.css" />
@@ -36,7 +36,7 @@
         </button>
         <a class="navbar-brand" href="../index.html">
           arus</a>
-        <span class="navbar-text navbar-version pull-left"><b>0.6.1</b></span>
+        <span class="navbar-text navbar-version pull-left"><b>0.6.2</b></span>
       </div>
 
         <div class="collapse navbar-collapse nav-collapse">
@@ -113,7 +113,7 @@
 <h1>arus.core.stream.SlidingWindowStream<a class="headerlink" href="#arus-core-stream-slidingwindowstream" title="Permalink to this headline">¶</a></h1>
 <dl class="class">
 <dt id="arus.core.stream.SlidingWindowStream">
-<em class="property">class </em><code class="sig-prename descclassname">arus.core.stream.</code><code class="sig-name descname">SlidingWindowStream</code><span class="sig-paren">(</span><em class="sig-param">data_source</em>, <em class="sig-param">window_size</em>, <em class="sig-param">start_time_col</em>, <em class="sig-param">stop_time_col</em>, <em class="sig-param">simulate_reality=False</em>, <em class="sig-param">name='sliding-window-stream'</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/arus/core/stream.html#SlidingWindowStream"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#arus.core.stream.SlidingWindowStream" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">arus.core.stream.</code><code class="sig-name descname">SlidingWindowStream</code><span class="sig-paren">(</span><em class="sig-param">data_source</em>, <em class="sig-param">window_size</em>, <em class="sig-param">start_time_col</em>, <em class="sig-param">stop_time_col</em>, <em class="sig-param">simulate_reality=False</em>, <em class="sig-param">name='sliding-window-stream'</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/arus/core/stream/base_stream.html#SlidingWindowStream"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#arus.core.stream.SlidingWindowStream" title="Permalink to this definition">¶</a></dt>
 <dd><p>Data stream to syncly or asyncly load sensor file or files with different storage formats.</p>
 <p>This class inherits <cite>Stream</cite> class to load data files.</p>
 <p>The stream will load a file or files in the <cite>data_source</cite> and separate them into chunks specified by <cite>window_size</cite> to be loaded in the data queue.</p>

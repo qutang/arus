@@ -52,17 +52,17 @@ The pipeline uses multiple metawear streams.
 
 
     def prepare_streams():
-        start_time = datetime.now()
+
         stream1 = MetaWearSlidingWindowStream("D2:C6:AF:2B:DB:22", sr=50, grange=8,
-                                              window_size=12.8, start_time=start_time, name='DW')
+                                              window_size=12.8, name='DW')
         stream2 = MetaWearSlidingWindowStream("FF:EE:B8:99:0C:64", sr=100, grange=8,
-                                              window_size=12.8, start_time=start_time, name='DA')
+                                              window_size=12.8, name='DA')
         return stream1, stream2
 
 
     if __name__ == "__main__":
         logging.basicConfig(
-            level=logging.DEBUG, format='[%(levelname)s]%(asctime)s <P%(process)d-%(threadName)s> %(message)s')
+            level=logging.INFO, format='[%(levelname)s]%(asctime)s <P%(process)d-%(threadName)s> %(message)s')
         muss = MUSSModel()
         model = train_test_classifier(muss)
         stream1, stream2 = prepare_streams()
@@ -77,15 +77,16 @@ The pipeline uses multiple metawear streams.
             'scheduler': 'processes',
             'max_processes': 2
         }
+        start_time = datetime.now()
         muss_pipeline = muss.get_inference_pipeline(
             stream1, stream2, name='muss-pipeline', **kwargs)
-        muss_pipeline.start()
+        muss_pipeline.start(start_time=start_time, process_start_time=start_time)
         i = 0
         for data, st, et, _, _, name in muss_pipeline.get_iterator(timeout=0.2):
             if data is None:
                 continue
             i = i + 1
-            print(str(st) + ' - ' + str(et))
+            print(str(datetime.now()) + ': ' + str(st) + ' - ' + str(et))
             print(model[0].classes_)
             print(data)
             if i == 5:

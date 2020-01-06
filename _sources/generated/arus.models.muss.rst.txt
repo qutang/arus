@@ -34,6 +34,8 @@ Functions
 .. autosummary::
     :toctree: .
     
+    muss_data_collection_processor
+    
     muss_inference_processor
     
 

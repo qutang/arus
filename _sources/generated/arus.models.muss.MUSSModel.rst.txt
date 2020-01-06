@@ -23,6 +23,7 @@ Methods
    MUSSModel.compute_features
    MUSSModel.get_classification_report
    MUSSModel.get_confusion_matrix
+   MUSSModel.get_data_collection_pipeline
    MUSSModel.get_feature_names
    MUSSModel.get_inference_pipeline
    MUSSModel.predict

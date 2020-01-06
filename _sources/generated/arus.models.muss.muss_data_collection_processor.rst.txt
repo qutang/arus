@@ -1,0 +1,6 @@
+arus.models.muss.muss\_data\_collection\_processor
+==================================================
+
+.. currentmodule:: arus.models.muss
+
+.. autofunction:: muss_data_collection_processor

@@ -10,6 +10,88 @@
 Stream using annotation generator
 =================================
 
+Imports
+--------
+
+
+.. code-block:: default
+
+    from arus.core.annotation.generator import normal_dist
+    from arus.core.stream import GeneratorSlidingWindowStream
+
+
+
+
+
+
+
+
+Set up annotation generator
+---------------------------
+
+`kwargs` will be passed to `normal_dist` when generating the stream
+The generated stream data will be stored as pandas DataFrame with mHealth Specification.
+
+
+.. code-block:: default
+
+    data_source = {
+        "generator": normal_dist,
+        "kwargs": {
+            "duration_mu": 5,
+            "duration_sigma": 1,
+            "num_mu": 3,
+            "labels": ['Sitting', 'Standing', 'Lying'],
+            "sleep_interval": 0
+        }
+    }
+
+
+
+
+
+
+
+
+Setup stream
+-------------------------------------------------
+
+
+.. code-block:: default
+
+    stream = GeneratorSlidingWindowStream(data_source,
+                                          window_size=12.8,
+                                          simulate_reality=False,
+                                          start_time_col=1,
+                                          stop_time_col=2, 
+                                          name='annotator-generator-stream')
+
+
+
+
+
+
+
+
+Start stream and read data from the stream
+------------------------------------------
+
+You may use `stream.get_iterator()` to return a generator to read data from a stream.
+
+
+.. code-block:: default
+
+    stream.start()
+    n = 5
+    for window, st, et, prev_st, prev_et, name in stream.get_iterator():
+        print("{}-{}-{}".format(window.iloc[0, 0],
+                                window.iloc[-1, 0], '-'.join(window.iloc[:, 3])))
+        n -= 1
+        if n == 0:
+            break
+
+
+
 
 
 
@@ -19,55 +101,33 @@ Stream using annotation generator
 
  .. code-block:: none
 
-    2019-12-31 20:30:10.634320-2019-12-31 20:30:19.651162668-Sitting-Standing-Standing
-    2019-12-31 20:30:19.651162668-2019-12-31 20:30:34.621064305-Standing-Lying-Sitting-Lying
-    2019-12-31 20:30:34.621064305-2019-12-31 20:30:46.181161277-Lying-Lying-Lying-Lying
-    2019-12-31 20:30:46.181161277-2019-12-31 20:30:59.201921702-Lying-Standing-Sitting
-    2019-12-31 20:30:59.201921702-2019-12-31 20:31:12.119143532-Sitting-Standing-Standing-Lying
+    2020-01-06 23:12:31.405741-2020-01-06 23:12:42.814140461-Standing-Standing-Lying
+    2020-01-06 23:12:42.814140461-2020-01-06 23:12:55.259535663-Lying-Lying-Sitting
+    2020-01-06 23:12:55.259535663-2020-01-06 23:13:08.969902183-Sitting-Standing-Standing-Standing
+    2020-01-06 23:13:08.969902183-2020-01-06 23:13:18.557491069-Standing-Sitting-Standing
+    2020-01-06 23:13:18.557491069-2020-01-06 23:13:34.724295650-Standing-Lying-Lying-Standing
 
 
 
 
-
-
-|
+Stop the stream
+------------------------------------------
 
 
 .. code-block:: default
 
+    stream.stop()
 
-    from arus.core.annotation.generator import normal_dist
-    from arus.core.stream.generator_stream import GeneratorSlidingWindowStream
 
-    if __name__ == "__main__":
-        data_source = {
-            "generator": normal_dist,
-            "kwargs": {
-                "duration_mu": 5,
-                "duration_sigma": 1,
-                "num_mu": 3,
-                "labels": ['Sitting', 'Standing', 'Lying'],
-                "sleep_interval": 0
-            }
-        }
 
-        stream = GeneratorSlidingWindowStream(data_source, window_size=12.8,
-                                              simulate_reality=False, start_time_col=1, stop_time_col=2, name='annotator-generator-stream')
-        stream.start()
 
-        n = 5
-        for window, st, et, prev_st, prev_et, name in stream.get_iterator():
-            print("{}-{}-{}".format(window.iloc[0, 0],
-                                    window.iloc[-1, 0], '-'.join(window.iloc[:, 3])))
-            n -= 1
-            if n == 0:
-                break
-        stream.stop()
+
+
 
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  0.100 seconds)
+   **Total running time of the script:** ( 0 minutes  0.352 seconds)
 
 
 .. _sphx_glr_download_examples_streams_run_annotation_generator_stream.py:

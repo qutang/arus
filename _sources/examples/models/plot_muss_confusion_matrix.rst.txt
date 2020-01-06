@@ -22,7 +22,6 @@ Plot confusion matrix
 
  .. code-block:: none
 
-    findfont: Font family ['serif'] not found. Falling back to DejaVu Sans.
            Sit  Stand  Walk
     Sit      1      0     0
     Stand    0      1     1
@@ -55,7 +54,7 @@ Plot confusion matrix
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  0.103 seconds)
+   **Total running time of the script:** ( 0 minutes  0.171 seconds)
 
 
 .. _sphx_glr_download_examples_models_plot_muss_confusion_matrix.py:

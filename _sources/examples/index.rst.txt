@@ -15,6 +15,339 @@ Examples
 
 
 
+.. _sphx_glr_examples_streams:
+
+Examples of streams
+-------------------------
+
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Stream using accelerometer generator">
+
+.. only:: html
+
+ .. figure:: /examples/streams/images/thumb/sphx_glr_run_sensor_generator_stream_thumb.png
+
+     :ref:`sphx_glr_examples_streams_run_sensor_generator_stream.py`
+
+.. raw:: html
+
+    </div>
+
+
+.. toctree::
+   :hidden:
+
+   /examples/streams/run_sensor_generator_stream
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Stream using annotation generator">
+
+.. only:: html
+
+ .. figure:: /examples/streams/images/thumb/sphx_glr_run_annotation_generator_stream_thumb.png
+
+     :ref:`sphx_glr_examples_streams_run_annotation_generator_stream.py`
+
+.. raw:: html
+
+    </div>
+
+
+.. toctree::
+   :hidden:
+
+   /examples/streams/run_annotation_generator_stream
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Stream using mhealth annotation files">
+
+.. only:: html
+
+ .. figure:: /examples/streams/images/thumb/sphx_glr_run_annotation_stream_thumb.png
+
+     :ref:`sphx_glr_examples_streams_run_annotation_stream.py`
+
+.. raw:: html
+
+    </div>
+
+
+.. toctree::
+   :hidden:
+
+   /examples/streams/run_annotation_stream
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Stream using Actigraph sensor files">
+
+.. only:: html
+
+ .. figure:: /examples/streams/images/thumb/sphx_glr_run_actigraph_sensor_stream_thumb.png
+
+     :ref:`sphx_glr_examples_streams_run_actigraph_sensor_stream.py`
+
+.. raw:: html
+
+    </div>
+
+
+.. toctree::
+   :hidden:
+
+   /examples/streams/run_actigraph_sensor_stream
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="This example demonstrates a stream that uses data files stored in mhealth specification as data...">
+
+.. only:: html
+
+ .. figure:: /examples/streams/images/thumb/sphx_glr_run_mhealth_sensor_stream_thumb.png
+
+     :ref:`sphx_glr_examples_streams_run_mhealth_sensor_stream.py`
+
+.. raw:: html
+
+    </div>
+
+
+.. toctree::
+   :hidden:
+
+   /examples/streams/run_mhealth_sensor_stream
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="This example shows how to simulate real-time sensor streaming using existing data files.">
+
+.. only:: html
+
+ .. figure:: /examples/streams/images/thumb/sphx_glr_run_mhealth_sensor_stream_with_realtime_delay_thumb.png
+
+     :ref:`sphx_glr_examples_streams_run_mhealth_sensor_stream_with_realtime_delay.py`
+
+.. raw:: html
+
+    </div>
+
+
+.. toctree::
+   :hidden:
+
+   /examples/streams/run_mhealth_sensor_stream_with_realtime_delay
+.. raw:: html
+
+    <div class="sphx-glr-clear"></div>
+
+
+
+.. _sphx_glr_examples_pipelines:
+
+Examples of pipelines
+--------------------------------------------
+
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="This example demonstrates using pipeline with a single sensor generator stream.">
+
+.. only:: html
+
+ .. figure:: /examples/pipelines/images/thumb/sphx_glr_pipeline_with_single_generator_stream_thumb.png
+
+     :ref:`sphx_glr_examples_pipelines_pipeline_with_single_generator_stream.py`
+
+.. raw:: html
+
+    </div>
+
+
+.. toctree::
+   :hidden:
+
+   /examples/pipelines/pipeline_with_single_generator_stream
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="This example shows how to pass previous output and input to processor for a pipeline.">
+
+.. only:: html
+
+ .. figure:: /examples/pipelines/images/thumb/sphx_glr_pipeline_with_single_sensor_generator_stream_preserve_status_thumb.png
+
+     :ref:`sphx_glr_examples_pipelines_pipeline_with_single_sensor_generator_stream_preserve_status.py`
+
+.. raw:: html
+
+    </div>
+
+
+.. toctree::
+   :hidden:
+
+   /examples/pipelines/pipeline_with_single_sensor_generator_stream_preserve_status
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="The pipeline uses multiple sensor streams.">
+
+.. only:: html
+
+ .. figure:: /examples/pipelines/images/thumb/sphx_glr_multi_stream_pipeline_thumb.png
+
+     :ref:`sphx_glr_examples_pipelines_multi_stream_pipeline.py`
+
+.. raw:: html
+
+    </div>
+
+
+.. toctree::
+   :hidden:
+
+   /examples/pipelines/multi_stream_pipeline
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="The pipeline uses one annotation stream and one sensor stream as input.">
+
+.. only:: html
+
+ .. figure:: /examples/pipelines/images/thumb/sphx_glr_different_type_stream_pipeline_thumb.png
+
+     :ref:`sphx_glr_examples_pipelines_different_type_stream_pipeline.py`
+
+.. raw:: html
+
+    </div>
+
+
+.. toctree::
+   :hidden:
+
+   /examples/pipelines/different_type_stream_pipeline
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="The pipeline uses one annotation stream and one sensor stream as input.">
+
+.. only:: html
+
+ .. figure:: /examples/pipelines/images/thumb/sphx_glr_mixed_stream_pipeline_pipeline_thumb.png
+
+     :ref:`sphx_glr_examples_pipelines_mixed_stream_pipeline_pipeline.py`
+
+.. raw:: html
+
+    </div>
+
+
+.. toctree::
+   :hidden:
+
+   /examples/pipelines/mixed_stream_pipeline_pipeline
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="This example shows how to start, stop, pause a pipeline.">
+
+.. only:: html
+
+ .. figure:: /examples/pipelines/images/thumb/sphx_glr_pipeline_flow_control_thumb.png
+
+     :ref:`sphx_glr_examples_pipelines_pipeline_flow_control.py`
+
+.. raw:: html
+
+    </div>
+
+
+.. toctree::
+   :hidden:
+
+   /examples/pipelines/pipeline_flow_control
+.. raw:: html
+
+    <div class="sphx-glr-clear"></div>
+
+
+
+.. _sphx_glr_examples_models:
+
+Examples of activity recognition models
+-----------------------------------------------
+
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Plot confusion matrix">
+
+.. only:: html
+
+ .. figure:: /examples/models/images/thumb/sphx_glr_plot_muss_confusion_matrix_thumb.png
+
+     :ref:`sphx_glr_examples_models_plot_muss_confusion_matrix.py`
+
+.. raw:: html
+
+    </div>
+
+
+.. toctree::
+   :hidden:
+
+   /examples/models/plot_muss_confusion_matrix
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="The pipeline uses a single sensor generator stream.">
+
+.. only:: html
+
+ .. figure:: /examples/models/images/thumb/sphx_glr_muss_single_generator_pipeline_thumb.png
+
+     :ref:`sphx_glr_examples_models_muss_single_generator_pipeline.py`
+
+.. raw:: html
+
+    </div>
+
+
+.. toctree::
+   :hidden:
+
+   /examples/models/muss_single_generator_pipeline
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="The pipeline uses multiple sensor generator streams.">
+
+.. only:: html
+
+ .. figure:: /examples/models/images/thumb/sphx_glr_muss_multiple_generator_pipeline_thumb.png
+
+     :ref:`sphx_glr_examples_models_muss_multiple_generator_pipeline.py`
+
+.. raw:: html
+
+    </div>
+
+
+.. toctree::
+   :hidden:
+
+   /examples/models/muss_multiple_generator_pipeline
+.. raw:: html
+
+    <div class="sphx-glr-clear"></div>
+
+
+
 .. _sphx_glr_examples_broadcasters:
 
 Examples of broadcasters
@@ -131,339 +464,6 @@ Examples of metawear devices
    :hidden:
 
    /examples/metawear/muss_multiple_metawear_pipeline
-.. raw:: html
-
-    <div class="sphx-glr-clear"></div>
-
-
-
-.. _sphx_glr_examples_models:
-
-Examples of activity recognition models
------------------------------------------------
-
-
-.. raw:: html
-
-    <div class="sphx-glr-thumbcontainer" tooltip="Plot confusion matrix">
-
-.. only:: html
-
- .. figure:: /examples/models/images/thumb/sphx_glr_plot_muss_confusion_matrix_thumb.png
-
-     :ref:`sphx_glr_examples_models_plot_muss_confusion_matrix.py`
-
-.. raw:: html
-
-    </div>
-
-
-.. toctree::
-   :hidden:
-
-   /examples/models/plot_muss_confusion_matrix
-.. raw:: html
-
-    <div class="sphx-glr-clear"></div>
-
-
-
-.. _sphx_glr_examples_pipelines:
-
-Examples of pipelines
---------------------------------------------
-
-
-.. raw:: html
-
-    <div class="sphx-glr-thumbcontainer" tooltip="The pipeline uses a single sensor generator stream.">
-
-.. only:: html
-
- .. figure:: /examples/pipelines/images/thumb/sphx_glr_single_stream_pipeline_thumb.png
-
-     :ref:`sphx_glr_examples_pipelines_single_stream_pipeline.py`
-
-.. raw:: html
-
-    </div>
-
-
-.. toctree::
-   :hidden:
-
-   /examples/pipelines/single_stream_pipeline
-
-.. raw:: html
-
-    <div class="sphx-glr-thumbcontainer" tooltip="This example shows how to pass previous output and input to processor for a pipeline.">
-
-.. only:: html
-
- .. figure:: /examples/pipelines/images/thumb/sphx_glr_single_stream_pipeline_preserve_status_thumb.png
-
-     :ref:`sphx_glr_examples_pipelines_single_stream_pipeline_preserve_status.py`
-
-.. raw:: html
-
-    </div>
-
-
-.. toctree::
-   :hidden:
-
-   /examples/pipelines/single_stream_pipeline_preserve_status
-
-.. raw:: html
-
-    <div class="sphx-glr-thumbcontainer" tooltip="The pipeline uses multiple sensor streams.">
-
-.. only:: html
-
- .. figure:: /examples/pipelines/images/thumb/sphx_glr_multi_stream_pipeline_thumb.png
-
-     :ref:`sphx_glr_examples_pipelines_multi_stream_pipeline.py`
-
-.. raw:: html
-
-    </div>
-
-
-.. toctree::
-   :hidden:
-
-   /examples/pipelines/multi_stream_pipeline
-
-.. raw:: html
-
-    <div class="sphx-glr-thumbcontainer" tooltip="The pipeline uses a single sensor generator stream.">
-
-.. only:: html
-
- .. figure:: /examples/pipelines/images/thumb/sphx_glr_muss_single_generator_pipeline_thumb.png
-
-     :ref:`sphx_glr_examples_pipelines_muss_single_generator_pipeline.py`
-
-.. raw:: html
-
-    </div>
-
-
-.. toctree::
-   :hidden:
-
-   /examples/pipelines/muss_single_generator_pipeline
-
-.. raw:: html
-
-    <div class="sphx-glr-thumbcontainer" tooltip="The pipeline uses one annotation stream and one sensor stream as input.">
-
-.. only:: html
-
- .. figure:: /examples/pipelines/images/thumb/sphx_glr_different_type_stream_pipeline_thumb.png
-
-     :ref:`sphx_glr_examples_pipelines_different_type_stream_pipeline.py`
-
-.. raw:: html
-
-    </div>
-
-
-.. toctree::
-   :hidden:
-
-   /examples/pipelines/different_type_stream_pipeline
-
-.. raw:: html
-
-    <div class="sphx-glr-thumbcontainer" tooltip="The pipeline uses multiple sensor generator streams.">
-
-.. only:: html
-
- .. figure:: /examples/pipelines/images/thumb/sphx_glr_muss_multiple_generator_pipeline_thumb.png
-
-     :ref:`sphx_glr_examples_pipelines_muss_multiple_generator_pipeline.py`
-
-.. raw:: html
-
-    </div>
-
-
-.. toctree::
-   :hidden:
-
-   /examples/pipelines/muss_multiple_generator_pipeline
-
-.. raw:: html
-
-    <div class="sphx-glr-thumbcontainer" tooltip="The pipeline uses one annotation stream and one sensor stream as input.">
-
-.. only:: html
-
- .. figure:: /examples/pipelines/images/thumb/sphx_glr_mixed_stream_pipeline_pipeline_thumb.png
-
-     :ref:`sphx_glr_examples_pipelines_mixed_stream_pipeline_pipeline.py`
-
-.. raw:: html
-
-    </div>
-
-
-.. toctree::
-   :hidden:
-
-   /examples/pipelines/mixed_stream_pipeline_pipeline
-
-.. raw:: html
-
-    <div class="sphx-glr-thumbcontainer" tooltip="This example shows how to start, stop, pause a pipeline.">
-
-.. only:: html
-
- .. figure:: /examples/pipelines/images/thumb/sphx_glr_pipeline_flow_control_thumb.png
-
-     :ref:`sphx_glr_examples_pipelines_pipeline_flow_control.py`
-
-.. raw:: html
-
-    </div>
-
-
-.. toctree::
-   :hidden:
-
-   /examples/pipelines/pipeline_flow_control
-.. raw:: html
-
-    <div class="sphx-glr-clear"></div>
-
-
-
-.. _sphx_glr_examples_streams:
-
-Examples of streams
--------------------------
-
-
-.. raw:: html
-
-    <div class="sphx-glr-thumbcontainer" tooltip="Demonstration of the usage of arus.core.stream.GeneratorSlidingWindowStream">
-
-.. only:: html
-
- .. figure:: /examples/streams/images/thumb/sphx_glr_sensor_generator_stream_thumb.png
-
-     :ref:`sphx_glr_examples_streams_sensor_generator_stream.py`
-
-.. raw:: html
-
-    </div>
-
-
-.. toctree::
-   :hidden:
-
-   /examples/streams/sensor_generator_stream
-
-.. raw:: html
-
-    <div class="sphx-glr-thumbcontainer" tooltip="Stream using annotation generator">
-
-.. only:: html
-
- .. figure:: /examples/streams/images/thumb/sphx_glr_run_annotation_generator_stream_thumb.png
-
-     :ref:`sphx_glr_examples_streams_run_annotation_generator_stream.py`
-
-.. raw:: html
-
-    </div>
-
-
-.. toctree::
-   :hidden:
-
-   /examples/streams/run_annotation_generator_stream
-
-.. raw:: html
-
-    <div class="sphx-glr-thumbcontainer" tooltip="Demonstration of the usage of arus.core.stream.AnnotationFileSlidingWindowStream">
-
-.. only:: html
-
- .. figure:: /examples/streams/images/thumb/sphx_glr_annotation_stream_thumb.png
-
-     :ref:`sphx_glr_examples_streams_annotation_stream.py`
-
-.. raw:: html
-
-    </div>
-
-
-.. toctree::
-   :hidden:
-
-   /examples/streams/annotation_stream
-
-.. raw:: html
-
-    <div class="sphx-glr-thumbcontainer" tooltip="Demonstration of the usage of arus.core.stream.SensorFileSlidingWindowStream">
-
-.. only:: html
-
- .. figure:: /examples/streams/images/thumb/sphx_glr_actigraph_stream_thumb.png
-
-     :ref:`sphx_glr_examples_streams_actigraph_stream.py`
-
-.. raw:: html
-
-    </div>
-
-
-.. toctree::
-   :hidden:
-
-   /examples/streams/actigraph_stream
-
-.. raw:: html
-
-    <div class="sphx-glr-thumbcontainer" tooltip="Demonstration of the usage of arus.core.stream.SensorFileSlidingWindowStream">
-
-.. only:: html
-
- .. figure:: /examples/streams/images/thumb/sphx_glr_mhealth_stream_thumb.png
-
-     :ref:`sphx_glr_examples_streams_mhealth_stream.py`
-
-.. raw:: html
-
-    </div>
-
-
-.. toctree::
-   :hidden:
-
-   /examples/streams/mhealth_stream
-
-.. raw:: html
-
-    <div class="sphx-glr-thumbcontainer" tooltip="Demonstration of the usage of arus.core.stream.GeneratorSlidingWindowStream">
-
-.. only:: html
-
- .. figure:: /examples/streams/images/thumb/sphx_glr_sensor_stream_simulated_reality_thumb.png
-
-     :ref:`sphx_glr_examples_streams_sensor_stream_simulated_reality.py`
-
-.. raw:: html
-
-    </div>
-
-
-.. toctree::
-   :hidden:
-
-   /examples/streams/sensor_stream_simulated_reality
 .. raw:: html
 
     <div class="sphx-glr-clear"></div>

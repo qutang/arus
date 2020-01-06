@@ -3,7 +3,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta charset="utf-8" />
-    <title>0.6.1 &#8212; arus 0.6.1 documentation</title>
+    <title>0.6.2 &#8212; arus 0.6.2 documentation</title>
     <link rel="stylesheet" href="_static/bootstrap-sphinx.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <link rel="stylesheet" type="text/css" href="_static/gallery.css" />
@@ -36,7 +36,7 @@
         </button>
         <a class="navbar-brand" href="index.html">
           arus</a>
-        <span class="navbar-text navbar-version pull-left"><b>0.6.1</b></span>
+        <span class="navbar-text navbar-version pull-left"><b>0.6.2</b></span>
       </div>
 
         <div class="collapse navbar-collapse nav-collapse">
@@ -87,14 +87,21 @@
   <div class="row">
       <div class="col-md-3">
         <div id="sidebar" class="bs-sidenav" role="complementary"><ul>
-<li><a class="reference internal" href="#">0.6.1</a><ul>
+<li><a class="reference internal" href="#">0.6.2</a><ul>
+<li><a class="reference internal" href="#improved">Improved</a></li>
+<li><a class="reference internal" href="#added">Added</a></li>
+<li><a class="reference internal" href="#changed">Changed</a></li>
+<li><a class="reference internal" href="#fix">Fix</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#id2">0.6.1</a><ul>
 <li><a class="reference internal" href="#build">Build</a></li>
 <li><a class="reference internal" href="#refactoring">Refactoring</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#id2">0.6.0</a><ul>
+<li><a class="reference internal" href="#id3">0.6.0</a><ul>
 <li><a class="reference internal" href="#features">Features</a></li>
-<li><a class="reference internal" href="#id3">Refactoring</a></li>
+<li><a class="reference internal" href="#id4">Refactoring</a></li>
 <li><a class="reference internal" href="#documentation">Documentation</a></li>
 </ul>
 </li>
@@ -116,7 +123,42 @@
     <div class="body col-md-9 content" role="main">
       
   <div class="section" id="id1">
-<h1>0.6.1<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h1>
+<h1>0.6.2<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="improved">
+<h2>Improved<a class="headerlink" href="#improved" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><p>Better flow control for model testing in arus demo app.</p></li>
+</ul>
+</div>
+<div class="section" id="added">
+<h2>Added<a class="headerlink" href="#added" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><p>New libs module for plotting helpers. Added <code class="docutils literal notranslate"><span class="pre">adjust_lightness</span></code> for color manipulation.</p></li>
+<li><p>New data collection pipeline for muss model. Support both active training scheme and passive data collection (no need for a model).</p></li>
+<li><p>Data collection functionality for arus demo app.</p></li>
+<li><p>Model updating functionality for arus demo app.</p></li>
+<li><p>Saving and restoring application state for arus demo app.</p></li>
+</ul>
+</div>
+<div class="section" id="changed">
+<h2>Changed<a class="headerlink" href="#changed" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><p>Adjust metawear stream retry interval to one second.</p></li>
+</ul>
+</div>
+<div class="section" id="fix">
+<h2>Fix<a class="headerlink" href="#fix" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><p>The first window will also delay in real time when setting <code class="docutils literal notranslate"><span class="pre">simulate_reality</span></code> as <code class="docutils literal notranslate"><span class="pre">True</span></code> in streams.</p></li>
+<li><p>Better multi-threading performance and flow control for pipeline.</p></li>
+<li><p>Resolve infinite waiting bug when stopping generator stream.</p></li>
+<li><p>Make sure stream is non-blocking when waiting for incoming data. This had a chance causing infinit loop when stopping the stream.</p></li>
+<li><p>Make sure pipeline is restarting process pool every time it starts in case stop and start got called multiple times.</p></li>
+</ul>
+</div>
+</div>
+<div class="section" id="id2">
+<h1>0.6.1<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="build">
 <h2>Build<a class="headerlink" href="#build" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
@@ -132,8 +174,8 @@
 </ul>
 </div>
 </div>
-<div class="section" id="id2">
-<h1>0.6.0<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="id3">
+<h1>0.6.0<a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="features">
 <h2>Features<a class="headerlink" href="#features" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
@@ -141,8 +183,8 @@
 <li><p>Add a sophisticated demo app to show case model training, real-time testing, active learning and active training.</p></li>
 </ul>
 </div>
-<div class="section" id="id3">
-<h2>Refactoring<a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id4">
+<h2>Refactoring<a class="headerlink" href="#id4" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li><p>Organize module imports with better and more convenient APIs.</p></li>
 </ul>
