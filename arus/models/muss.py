@@ -79,6 +79,7 @@ def muss_data_collection_processor(chunk_list, **kwargs):
     sorted_feature_dfs = []
 
     def _save_raw(chunk_data, output_folder, pid):
+        print('Saving task started.')
         df = chunk_data[0]
         name = chunk_data[-1]
         arus_mh.write_data_csv(df.iloc[:, 0:4], output_folder=output_folder, pid=pid, file_type='sensor', sensor_or_annotation_type='MetaWearR',
@@ -117,7 +118,7 @@ def muss_data_collection_processor(chunk_list, **kwargs):
         filtered_combined_df, feature_names = muss.combine_features(
             *feature_dfs, placement_names=placement_names)
         predicted_probs = None
-    save_task.get()
+    save_task.get(timeout=1)
     io_pool.close()
     io_pool.join()
     return predicted_probs, filtered_combined_df, raw_data_dfs
