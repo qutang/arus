@@ -29,9 +29,9 @@ def dashboard_description(text, key=None):
         text=text, font=('Helvetica', 10), size=(25, None), key=key)
 
 
-def dashboard_listbox(items, mode, key=None, right_click_menu=None):
+def dashboard_listbox(items, mode, key=None, right_click_menu=None, num_of_rows=20):
     return sg.Listbox(
-        values=items, select_mode=mode, font=('Helvetica', 10), size=(27, 20), key=key, enable_events=True, right_click_menu=right_click_menu)
+        values=items, select_mode=mode, font=('Helvetica', 10), size=(27, num_of_rows), key=key, enable_events=True, right_click_menu=right_click_menu)
 
 
 def dashboard_control_button(text, disabled, key=None):
@@ -94,6 +94,9 @@ class Dashboard:
         description = "Type a new activity class or select an activity class from the dropdown list that you want to collect data for. Hold 'Ctrl' to select multiple classes you would like to collect data for."
 
         text_combo_text = 'Add'
+
+        data_info = ''
+
         add_button_key = '_NEW_ACTIVITY_ADD_'
         new_activity_input_key = '_NEW_ACTIVITY_INPUT_'
 
@@ -101,6 +104,7 @@ class Dashboard:
 
         button_texts = ['Collect data', 'Check data']
         button_keys = ['_NEW_ACTIVITY_COLLECT_', '_NEW_ACTIVITY_CHECK_']
+        data_info_key = '_NEW_ACTIVITY_INFO_'
 
         header = [[dashboard_heading(text=heading)]]
         description = [[dashboard_description(text=description)]]
@@ -109,27 +113,41 @@ class Dashboard:
 
         class_labels_list = [[
             dashboard_listbox(
-                items=self._class_labels, mode=sg.LISTBOX_SELECT_MODE_EXTENDED, key=activity_list_key)
+                items=self._class_labels, mode=sg.LISTBOX_SELECT_MODE_EXTENDED, key=activity_list_key, num_of_rows=17)
         ]]
 
         buttons = [[dashboard_control_button(
             text=text, disabled=True, key=key)] for text, key in zip(button_texts, button_keys)]
 
-        return sg.Column(layout=header + description + text_combo + class_labels_list + buttons, scrollable=False)
+        info = [[
+                dashboard_description(text=data_info, key=data_info_key)
+                ]]
+
+        return sg.Column(layout=header + description + text_combo + class_labels_list + buttons + info, scrollable=False)
 
     def _init_dashboard_model_update(self):
         heading = 'Step 3 - Update model'
         description = "Hold 'Ctrl' to select multiple classes you would like to use the new data to update the model."
-        button_texts = ['Update model', 'Validate model']
+        button_texts = ['Update model', 'Validate model', 'Test model']
+        button_keys = ['_UPDATE_MODEL_UPDATE_',
+                       '_UPDATE_MODEL_VALIDATE_', '_UPDATE_MODEL_TEST_']
+        update_label_list_key = '_UPDATE_LABELS_'
+
+        new_data = self._app_state.collected_feature_set
+
+        if new_data is None:
+            update_labels = []
+        else:
+            update_labels = new_data['GT_LABEL'].unique().tolist()
 
         header = [[dashboard_heading(heading)]]
         description = [[dashboard_description(description)]]
-        class_label_list = [[dashboard_listbox(
-            items=self._class_labels, mode=sg.LISTBOX_SELECT_MODE_EXTENDED)]]
+        update_label_list = [[dashboard_listbox(
+            items=update_labels, mode=sg.LISTBOX_SELECT_MODE_EXTENDED, key=update_label_list_key)]]
         buttons = [[dashboard_control_button(
-            text, disabled=True)] for text in button_texts]
+            text, disabled=True, key=key)] for text, key in zip(button_texts, button_keys)]
 
-        return sg.Column(layout=header + description + class_label_list + buttons, scrollable=False)
+        return sg.Column(layout=header + description + update_label_list + buttons, scrollable=False)
 
     def _get_initial_class_labels(self):
         class_df = self._app_state.initial_dataset[1]
@@ -155,9 +173,16 @@ class Dashboard:
         self._initial_model_info_text = dashboard['_MODEL_INFO_INITIAL_']
 
         self._new_activity_add_button = dashboard['_NEW_ACTIVITY_ADD_']
+        self._new_activity_check_button = dashboard['_NEW_ACTIVITY_CHECK_']
         self._new_activity_input = dashboard['_NEW_ACTIVITY_INPUT_']
         self._new_activity_list = dashboard['_NEW_ACTIVITY_LIST_']
         self._new_activity_collect_button = dashboard['_NEW_ACTIVITY_COLLECT_']
+        self._new_activity_info = dashboard['_NEW_ACTIVITY_INFO_']
+
+        self._update_model_update_button = dashboard['_UPDATE_MODEL_UPDATE_']
+        self._update_model_validate_button = dashboard['_UPDATE_MODEL_VALIDATE_']
+        self._update_model_test_button = dashboard['_UPDATE_MODEL_TEST_']
+        self._update_label_list = dashboard['_UPDATE_LABELS_']
         return dashboard
 
     def _display_model_info(self):
@@ -186,6 +211,14 @@ class Dashboard:
             self._initial_model_test_button.Update(disabled=False)
             self._initial_model_validate_button.Update(disabled=False)
 
+    def _display_data_info(self):
+        new_data = self._app_state.collected_feature_set
+        labels = new_data['GT_LABEL'].unique().tolist()
+        num_of_windows = new_data.shape[0]
+        info = 'New data for labels:\n' + \
+            str(labels) + '\nTotal windows: ' + str(num_of_windows)
+        self._new_activity_info.Update(value=info)
+
     def _handle_initial_model_validation(self):
         panel = ModelValidationPanel("Initial model validation")
         panel.start()
@@ -197,6 +230,11 @@ class Dashboard:
     def _handle_data_collection(self):
         panel = DataCollectionPanel("Data collection for new activites")
         panel.start()
+        new_data = self._app_state.collected_feature_set
+        if new_data is not None:
+            self._display_data_info()
+            print(new_data)
+            self._new_activity_check_button.Update(disabled=False)
 
     def _handle_initial_model_training_label_changed(self, labels):
         num_classes = len(labels)

@@ -13,6 +13,7 @@ class AppState:
             self.initial_dataset = None
             self.initial_model_pipeline = None
             self.selected_activities_for_collection = None
+            self.collected_feature_set = None
             self.nearby_devices = None
             self.output_folder = os.path.join(
                 os.path.expanduser("~"), 'arus')

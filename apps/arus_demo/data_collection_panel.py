@@ -393,14 +393,25 @@ class DataCollectionPanel:
                         self._app_state.io_pool.join()
                         start_save_task = None
                 if process_task is not None:
-                    data, _, _, _, _, name = next(process_task)
-                    if data is not None and type(data) != bool:
-                        display_result = self._format_result(data)
-                        logging.info('Processed results: ' +
-                                     str(display_result))
-                        self._update_label_grid(display_result)
-                        sound_task = self.start_play_active_guidance(
-                            display_result)
+                    data, st, et, _, _, _ = next(process_task)
+                    if data is not None:
+                        if data[0] is not None:
+                            display_result = self._format_result(data[0])
+                            logging.info('Processed results: ' +
+                                         str(display_result))
+                            self._update_label_grid(display_result)
+                            sound_task = self.start_play_active_guidance(
+                                display_result)
+                        if st < self._current_annotation['START_TIME'][0]:
+                            data[1]['GT_LABEL'] = 'Transition'
+                        else:
+                            data[1]['GT_LABEL'] = self._test_label
+                        data[1]['PID'] = self._app_state.pid
+                        if self._app_state.collected_feature_set is None:
+                            self._app_state.collected_feature_set = data[1]
+                        else:
+                            self._app_state.collected_feature_set = self._app_state.collected_feature_set.append(
+                                data[1])
                 if sound_task is not None:
                     if sound_task.ready():
                         logging.info('Finish playing active guidance')
