@@ -3,6 +3,7 @@ import os
 import app_state as app
 try:
     import backend
+    import session_panel
     import dashboard
 except ImportError as e:
     msg = (
@@ -21,10 +22,7 @@ def start_app():
     logging.basicConfig(
         level=logging.INFO, format='[%(levelname)s]%(asctime)s <P%(process)d-%(threadName)s> %(message)s')
     os.chdir(os.path.dirname(os.path.realpath(__file__)))
-    app_state = app.AppState.getInstance()
-    app_state.initial_dataset = backend.load_initial_data()
-    demo = dashboard.Dashboard(title='Arus Demo - Dashboard')
-    demo.start()
+    session_panel.SessionSelectionPanel().start()
 
 
 if __name__ == "__main__":

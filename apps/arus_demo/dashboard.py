@@ -17,6 +17,7 @@ from model_training_panel import ModelTrainingPanel
 from model_validation_panel import ModelValidationPanel
 from model_testing_panel import ModelTestingPanel
 from data_collection_panel import DataCollectionPanel
+from model_update_panel import ModelUpdatePanel
 
 
 def dashboard_heading(text):
@@ -29,9 +30,9 @@ def dashboard_description(text, key=None):
         text=text, font=('Helvetica', 10), size=(25, None), key=key)
 
 
-def dashboard_listbox(items, mode, key=None, right_click_menu=None, num_of_rows=20):
+def dashboard_listbox(items, mode, defaults=None, key=None, right_click_menu=None, num_of_rows=20):
     return sg.Listbox(
-        values=items, select_mode=mode, font=('Helvetica', 10), size=(27, num_of_rows), key=key, enable_events=True, right_click_menu=right_click_menu)
+        values=items, default_values=defaults, select_mode=mode, font=('Helvetica', 10), size=(27, num_of_rows), key=key, enable_events=True, right_click_menu=right_click_menu)
 
 
 def dashboard_control_button(text, disabled, key=None):
@@ -62,7 +63,7 @@ class Dashboard:
         heading = 'Step 1 - Train initial model'
         description = "Hold 'Ctrl' to select multiple classes you would like to train for the model."
         button_texts = ['Train model', 'Validate model', 'Test model']
-        model_info = "No model available"
+        model_info = self._get_model_info()
 
         key_listbox = '_CLASS_LABELS_INITIAL_'
         key_buttons = ["_" + text.upper().replace(' ', '_') +
@@ -75,12 +76,17 @@ class Dashboard:
 
         class_label_list = [[dashboard_listbox(
             items=self._class_labels,
+            defaults=self._app_state.initial_model_training_labels,
             mode=sg.LISTBOX_SELECT_MODE_EXTENDED,
             key=key_listbox)
         ]]
-
+        button_disabled = [
+            self._app_state.initial_model_training_labels is None,
+            self._app_state.initial_model is None,
+            self._app_state.initial_model is None,
+        ]
         buttons = [
-            [dashboard_control_button(text=text, disabled=True, key=key)] for text, key in zip(button_texts, key_buttons)
+            [dashboard_control_button(text=text, disabled=disabled, key=key)] for text, key, disabled in zip(button_texts, key_buttons, button_disabled)
         ]
 
         info = [[
@@ -95,7 +101,7 @@ class Dashboard:
 
         text_combo_text = 'Add'
 
-        data_info = ''
+        data_info = self._get_data_info()
 
         add_button_key = '_NEW_ACTIVITY_ADD_'
         new_activity_input_key = '_NEW_ACTIVITY_INPUT_'
@@ -113,11 +119,16 @@ class Dashboard:
 
         class_labels_list = [[
             dashboard_listbox(
-                items=self._class_labels, mode=sg.LISTBOX_SELECT_MODE_EXTENDED, key=activity_list_key, num_of_rows=17)
+                items=self._class_labels, mode=sg.LISTBOX_SELECT_MODE_EXTENDED, defaults=self._app_state.selected_activities_for_collection, key=activity_list_key, num_of_rows=17)
         ]]
 
+        button_disabled = [
+            self._app_state.selected_activities_for_collection is None,
+            self._app_state.collected_feature_set is None,
+        ]
+
         buttons = [[dashboard_control_button(
-            text=text, disabled=True, key=key)] for text, key in zip(button_texts, button_keys)]
+            text=text, disabled=disabled, key=key)] for text, key, disabled in zip(button_texts, button_keys, button_disabled)]
 
         info = [[
                 dashboard_description(text=data_info, key=data_info_key)
@@ -132,8 +143,11 @@ class Dashboard:
         button_keys = ['_UPDATE_MODEL_UPDATE_',
                        '_UPDATE_MODEL_VALIDATE_', '_UPDATE_MODEL_TEST_']
         update_label_list_key = '_UPDATE_LABELS_'
+        update_info_key = '_UPDATE_INFO_'
 
         new_data = self._app_state.collected_feature_set
+
+        update_info = self._get_update_info()
 
         if new_data is None:
             update_labels = []
@@ -143,11 +157,21 @@ class Dashboard:
         header = [[dashboard_heading(heading)]]
         description = [[dashboard_description(description)]]
         update_label_list = [[dashboard_listbox(
-            items=update_labels, mode=sg.LISTBOX_SELECT_MODE_EXTENDED, key=update_label_list_key)]]
-        buttons = [[dashboard_control_button(
-            text, disabled=True, key=key)] for text, key in zip(button_texts, button_keys)]
+            items=update_labels, mode=sg.LISTBOX_SELECT_MODE_EXTENDED, defaults=self._app_state.selected_activities_for_update, key=update_label_list_key)]]
 
-        return sg.Column(layout=header + description + update_label_list + buttons, scrollable=False)
+        buttons_disabled = [
+            self._app_state.selected_activities_for_update is None,
+            self._app_state.updated_model is None,
+            self._app_state.updated_model is None
+        ]
+        buttons = [[dashboard_control_button(
+            text, disabled=disabled, key=key)] for text, key, disabled in zip(button_texts, button_keys, buttons_disabled)]
+
+        info = [[
+                dashboard_description(text=update_info, key=update_info_key)
+                ]]
+
+        return sg.Column(layout=header + description + update_label_list + buttons + info, scrollable=False)
 
     def _get_initial_class_labels(self):
         class_df = self._app_state.initial_dataset[1]
@@ -183,15 +207,18 @@ class Dashboard:
         self._update_model_validate_button = dashboard['_UPDATE_MODEL_VALIDATE_']
         self._update_model_test_button = dashboard['_UPDATE_MODEL_TEST_']
         self._update_label_list = dashboard['_UPDATE_LABELS_']
+        self._update_info_text = dashboard['_UPDATE_INFO_']
         return dashboard
 
-    def _display_model_info(self):
+    def _get_model_info(self):
         model = self._app_state.initial_model
-        name = ','.join(model[0].classes_)
-        acc = model[2]
-        info = 'Model:\n' + name + '\nTraining accuracy: ' + str(acc)[:5]
-        self._initial_model_info_text.Update(
-            value=info)
+        if model is not None:
+            name = ','.join(model[0].classes_)
+            acc = model[2]
+            info = 'Model:\n' + name + '\nTraining accuracy: ' + str(acc)[:5]
+        else:
+            info = 'No model is available'
+        return info
 
     def _handle_initial_model_training(self):
         if self._app_state.initial_model is not None:
@@ -207,17 +234,31 @@ class Dashboard:
             panel = ModelTrainingPanel("Initial model training")
             panel.start()
         if self._app_state.initial_model is not None:
-            self._display_model_info()
+            info = self._get_model_info()
+            self._initial_model_info_text.Update(value=info)
             self._initial_model_test_button.Update(disabled=False)
             self._initial_model_validate_button.Update(disabled=False)
 
-    def _display_data_info(self):
+    def _get_data_info(self):
         new_data = self._app_state.collected_feature_set
-        labels = new_data['GT_LABEL'].unique().tolist()
-        num_of_windows = new_data.shape[0]
-        info = 'New data for labels:\n' + \
-            str(labels) + '\nTotal windows: ' + str(num_of_windows)
-        self._new_activity_info.Update(value=info)
+        if new_data is not None:
+            labels = new_data['GT_LABEL'].unique().tolist()
+            num_of_windows = new_data.shape[0]
+            info = 'New data for labels:\n' + \
+                str(labels) + '\nTotal windows: ' + str(num_of_windows)
+        else:
+            info = 'No data is available'
+        return info
+
+    def _get_update_info(self):
+        model = self._app_state.updated_model
+        if model is not None:
+            name = ','.join(model[0].classes_)
+            acc = model[2]
+            info = 'Model:\n' + name + '\nTraining accuracy: ' + str(acc)[:5]
+        else:
+            info = 'No updated model is available'
+        return info
 
     def _handle_initial_model_validation(self):
         panel = ModelValidationPanel("Initial model validation")
@@ -232,9 +273,21 @@ class Dashboard:
         panel.start()
         new_data = self._app_state.collected_feature_set
         if new_data is not None:
-            self._display_data_info()
+            info = self._get_data_info()
+            self._new_activity_info.Update(value=info)
             print(new_data)
             self._new_activity_check_button.Update(disabled=False)
+            update_labels = new_data['GT_LABEL'].unique().tolist()
+            self._update_label_list.Update(update_labels, disabled=False)
+
+    def _handle_update_initial_model(self):
+        panel = ModelUpdatePanel("Update model with new collected data")
+        panel.start()
+        if self._app_state.updated_model is not None:
+            info = self._get_update_info()
+            self._update_info_text.Update(value=info)
+            self._update_model_validate_button.Update(disabled=False)
+            self._update_model_test_button.Update(disabled=False)
 
     def _handle_initial_model_training_label_changed(self, labels):
         num_classes = len(labels)
@@ -257,6 +310,16 @@ class Dashboard:
             self._class_labels = [name] + self._class_labels
             self._new_activity_list.Update(self._class_labels)
 
+    def _hanlde_activities_for_update_changed(self, labels):
+        num_classes = len(labels)
+        if num_classes >= 1:
+            self._update_model_update_button.Update(disabled=False)
+            self._update_model_validate_button.Update(disabled=False)
+        else:
+            self._update_model_update_button.Update(disabled=True)
+            self._update_model_validate_button.Update(disabled=True)
+        self._app_state.selected_activities_for_update = labels
+
     def handle_dashboard(self, event, values):
         if event == self._initial_model_train_button.Key:  # Train model
             self._handle_initial_model_training()
@@ -275,6 +338,11 @@ class Dashboard:
         elif event == self._new_activity_list.Key:
             self._handle_activities_for_collection_changed(
                 values[self._new_activity_list.Key])
+        elif event == self._update_label_list.Key:
+            self._hanlde_activities_for_update_changed(
+                values[self._update_label_list.Key])
+        elif event == self._update_model_update_button.Key:
+            self._handle_update_initial_model()
 
     def start(self):
         sg.ChangeLookAndFeel('Reddit')
@@ -288,13 +356,3 @@ class Dashboard:
             else:
                 self.handle_dashboard(event, values)
         self._dashboard_window.close()
-
-
-if __name__ == "__main__":
-    logging.basicConfig(
-        level=logging.DEBUG, format='[%(levelname)s]%(asctime)s <P%(process)d-%(threadName)s> %(message)s')
-    os.chdir(os.path.dirname(os.path.realpath(__file__)))
-    app_state = app.AppState.getInstance()
-    app_state.initial_dataset = backend.load_initial_data()
-    demo = Dashboard(title='Dashboard')
-    demo.start()

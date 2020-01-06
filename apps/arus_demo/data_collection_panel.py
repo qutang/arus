@@ -103,8 +103,6 @@ class DataCollectionPanel:
         else:
             training_labels = self._app_state.initial_model[0].classes_
         self._test_label = collect_labels[0]
-        if self._app_state.pid is None:
-            self._app_state.pid = 'ARUS_' + dt.datetime.now().strftime('%Y%m%d%H%M%S')
         heading = "Data collection"
         scan_button_text = 'Scan nearby metawears'
         scan_button_key = '_SCAN_'
@@ -395,6 +393,7 @@ class DataCollectionPanel:
                 if process_task is not None:
                     data, st, et, _, _, _ = next(process_task)
                     if data is not None:
+                        self._app_state.placement_names_collected_data = data[-1]
                         if data[0] is not None:
                             display_result = self._format_result(data[0])
                             logging.info('Processed results: ' +

@@ -84,6 +84,105 @@ def validate_initial_model(model, feature_df, class_df, pool):
     yield task
 
 
+def replace_original_data(origin_feature, origin_class, origin_labels, new_feature, new_class, new_labels):
+    labels_keep_in_origin = list(filter(
+        lambda l: l not in new_labels, origin_labels))
+    filter_condition = origin_class['MUSS_22_ACTIVITY_ABBRS'].isin(
+        labels_keep_in_origin)
+    origin_feature = origin_feature.loc[filter_condition, :]
+    origin_class = origin_class.loc[filter_condition, :]
+
+    input_feature = pd.concat(
+        [origin_feature, new_feature], sort=False, join='outer')
+    input_class = pd.concat([origin_class, new_class],
+                            sort=False, join='outer')
+    return input_feature, input_class
+
+
+def combine_original_data(origin_feature, origin_class, origin_labels, new_feature, new_class, new_labels):
+    labels_keep_in_origin = origin_labels
+    filter_condition = origin_class['MUSS_22_ACTIVITY_ABBRS'].isin(
+        labels_keep_in_origin)
+    origin_feature = origin_feature.loc[filter_condition, :]
+    origin_class = origin_class.loc[filter_condition, :]
+
+    input_feature = pd.concat(
+        [origin_feature, new_feature], sort=False, join='outer')
+    input_class = pd.concat([origin_class, new_class],
+                            sort=False, join='outer')
+    return input_feature, input_class
+
+
+def merge_features(feature_set, placement_names, muss):
+    placement_features = []
+    for placement in placement_names:
+        place_features = feature_set.loc[feature_set['SENSOR_PLACEMENT'] == placement, [
+            'HEADER_TIME_STAMP', 'START_TIME', 'STOP_TIME'] + muss.get_feature_names()]
+        placement_features.append(place_features)
+    combined_feature_set, combined_feature_names = muss.combine_features(
+        *placement_features, placement_names=placement_names)
+    return combined_feature_set, combined_feature_names
+
+
+def update_initial_model(init_model_or_labels, init_feature_df, init_class_df, new_feature_set, new_training_labels, placement_names, strategy, pool):
+    muss = MUSSModel()
+    origin_feature = init_feature_df
+    origin_class = init_class_df
+
+    if init_model_or_labels is None:
+        origin_labels = None
+    elif type(init_model_or_labels[0]) is str:
+        origin_labels = init_model_or_labels
+    else:
+        origin_labels = init_model_or_labels[0].classes_
+        placement_names = init_model_or_labels[-2]
+
+    yield 'Preparing feature and classes for the new collected data...'
+    new_feature = new_feature_set.iloc[:, :-2]
+    new_class = new_feature_set.iloc[:, [0, 1, 2, -2]]
+    new_class = new_class.rename(
+        columns={'GT_LABEL': 'MUSS_22_ACTIVITY_ABBRS'})
+    new_labels = new_training_labels
+
+    if strategy != '_NONE_':
+
+        yield 'Combining training data together...'
+        origin_feature, origin_feature_names = merge_features(
+            origin_feature, placement_names, muss)
+
+        origin_class = origin_class[['HEADER_TIME_STAMP',
+                                     'START_TIME', 'STOP_TIME', 'MUSS_22_ACTIVITY_ABBRS']]
+
+        yield 'Synchronizing training data and class labels...'
+        origin_feature, origin_class = muss.sync_feature_and_class(
+            origin_feature, origin_class)
+
+        if strategy == '_REPLACE_':
+            yield 'Replace original data with overlapping labels with new dataset'
+            input_feature, input_class = replace_original_data(origin_feature,
+                                                               origin_class,
+                                                               origin_labels,
+                                                               new_feature, new_class, new_labels)
+        else:
+            yield 'Combine original data with overlapping labels with new dataset'
+            input_feature, input_class = combine_original_data(origin_feature,
+                                                               origin_class,
+                                                               origin_labels,
+                                                               new_feature, new_class, new_labels)
+        feature_names = origin_feature_names
+    else:
+        feature_names = new_feature.columns[3:]
+        yield 'Filtering out unused class labels...'
+        filter_condition = new_class['MUSS_22_ACTIVITY_ABBRS'].isin(
+            new_labels)
+        input_feature = new_feature.loc[filter_condition, :]
+        input_class = new_class.loc[filter_condition, :]
+    yield 'Training SVM classifier...'
+    task = pool.apipe(muss.train_classifier, input_feature,
+                      input_class, class_col='MUSS_22_ACTIVITY_ABBRS', feature_names=feature_names, placement_names=placement_names)
+    yield task
+
+
 def get_confusion_matrix_figure(validation_result):
     muss = MUSSModel()
     labels = validation_result[-2]
