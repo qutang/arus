@@ -251,13 +251,15 @@ class Pipeline:
             if self._pool is None:
                 if self._scheduler == 'processes':
                     self._pool = ppools.ProcessPool(nodes=num_of_processors)
+                    self._pool.restart(force=True)
                 elif self._scheduler == 'threads':
                     self._pool = ppools.ThreadPool(nodes=num_of_processors)
+                    self._pool.restart(force=True)
                 else:
                     raise NotImplementedError(
                         'This scheduler is not supported: {}'.format(self._scheduler))
             else:
-                self._pool.restart()
+                self._pool.restart(force=True)
         while self._connected:
             if self._started:
                 for stream in self._streams:
@@ -345,13 +347,15 @@ class Pipeline:
                     del self._chunks[st.timestamp()]
                 elif self._pool is not None:
                     try:
-                        logging.info('Started a processing task.')
+                        logging.info('Starting a processing task...')
                         task = self._pool.apipe(self._processor, chunk_list,
                                                 **self._processor_kwargs)
+                        logging.info('Started a processing task...')
                         self._process_tasks.put(
                             (task, st, et, prev_st, prev_et, name))
                         del self._chunks[st.timestamp()]
-                    except ValueError as e:
+                    except Exception as e:
+                        logging.error(e)
                         return
 
     def _put_result_in_queue(self, result):
