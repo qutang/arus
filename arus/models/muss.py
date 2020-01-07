@@ -297,22 +297,66 @@ class MUSSModel:
         test_feature = test_features[model[-1]].values
         return self._predict(test_feature, classifier, scaler, output_prob=output_prob)
 
-    def validate_classifier(self, input_feature, input_class, class_col, feature_names, placement_names, group_col, **train_kwargs):
+    def replace_overlapped_classes(self, origin_feature_arr, origin_class_vec, origin_labels, new_feature_arr, new_class_vec, new_labels):
+        labels_keep_in_origin = list(filter(
+            lambda l: l not in new_labels, origin_labels))
+        filter_condition = np.isin(origin_class_vec,
+                                   labels_keep_in_origin)
+        origin_feature_arr = origin_feature_arr[filter_condition, :]
+        origin_class_vec = origin_class_vec[filter_condition]
+
+        input_feature_arr = np.concatenate(
+            (origin_feature_arr, new_feature_arr), axis=0)
+        input_class_vec = np.concatenate(
+            (origin_class_vec, new_class_vec), axis=0)
+        input_labels = np.unique(input_class_vec)
+        return input_feature_arr, input_class_vec, input_labels
+
+    def combine_overlapped_classes(self, origin_feature_arr, origin_class_vec, new_feature_arr, new_class_vec):
+        input_feature_arr = np.concatenate(
+            (origin_feature_arr, new_feature_arr), axis=0)
+        input_class_vec = np.concatenate(
+            (origin_class_vec, new_class_vec), axis=0)
+        input_labels = np.unique(input_class_vec)
+        return input_feature_arr, input_class_vec, input_labels
+
+    def validate_classifier(self, input_feature, input_class, class_col, feature_names, placement_names, group_col, new_input_feature=None, new_input_class=None, validate_strategy='NONE', **train_kwargs):
         input_feature_arr = input_feature[feature_names].values
         input_class_vec = input_class[class_col].values
         class_labels = np.unique(input_class_vec)
+        if new_input_feature is not None and new_input_class is not None:
+            new_feature_arr = new_input_feature[feature_names].values
+            new_class_vec = new_input_class[class_col].values
+            new_labels = np.unique(new_class_vec)
+        else:
+            validate_strategy = 'NONE'
+
         groups = input_class[group_col].values
         logo = sk_model_selection.LeaveOneGroupOut()
-        output_class_vec = input_class_vec.copy()
+
+        output_class_vec = np.copy(input_class_vec)
+
         for train_split, test_split in logo.split(input_feature_arr, input_class_vec, groups):
-            train_feature = input_feature_arr[train_split, :]
-            train_class = input_class_vec[train_split]
-            test_feature = input_feature_arr[test_split, :]
+            train_feature_arr = input_feature_arr[train_split, :]
+            train_class_vec = input_class_vec[train_split]
+            train_labels = np.unique(train_class_vec)
+            if validate_strategy == 'REPLACE_TRAIN':
+                train_feature_arr, train_class_vec, _ = self.replace_overlapped_classes(
+                    train_feature_arr, train_class_vec, train_labels, new_feature_arr, new_class_vec, new_labels)
+            elif validate_strategy == 'COMBINE_TRAIN':
+                train_feature_arr, train_class_vec, _ = self.combine_overlapped_classes(
+                    train_feature_arr, train_class_vec, new_feature_arr, new_class_vec)
+
+            test_feature_arr = input_feature_arr[test_split, :]
+
             model = self._train_classifier(
-                train_feature, train_class, feature_names=feature_names, placement_names=placement_names, ** train_kwargs)
-            predict_class = self._predict(
-                test_feature, classifier=model[0], scaler=model[1])
-            output_class_vec[test_split] = predict_class
+                train_feature_arr, train_class_vec, feature_names=feature_names, placement_names=placement_names, ** train_kwargs)
+
+            predict_class_vec = self._predict(
+                test_feature_arr, classifier=model[0], scaler=model[1])
+
+            output_class_vec[test_split] = predict_class_vec
+
         acc = sk_metrics.accuracy_score(input_class_vec, output_class_vec)
         return input_class_vec, output_class_vec, class_labels, acc
 
