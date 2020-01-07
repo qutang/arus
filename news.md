@@ -1,5 +1,10 @@
 # 0.6.3+9000
 
+## Added
+
+* Support replacement and combination LOSO validation with plugin-in data for muss model.
+* Support validating updated model for arus demo app.
+
 # 0.6.2
 
 ## Improved
