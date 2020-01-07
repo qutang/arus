@@ -113,14 +113,20 @@ def combine_original_data(origin_feature, origin_class, origin_labels, new_featu
     return input_feature, input_class
 
 
-def merge_features(feature_set, placement_names, muss):
+def merge_features(feature_set, placement_names, muss, group_col=None):
     placement_features = []
+    if group_col is None:
+        selected_cols = [
+            'HEADER_TIME_STAMP', 'START_TIME', 'STOP_TIME'] + muss.get_feature_names()
+    else:
+        selected_cols = [
+            'HEADER_TIME_STAMP', 'START_TIME', 'STOP_TIME', group_col] + muss.get_feature_names()
     for placement in placement_names:
-        place_features = feature_set.loc[feature_set['SENSOR_PLACEMENT'] == placement, [
-            'HEADER_TIME_STAMP', 'START_TIME', 'STOP_TIME'] + muss.get_feature_names()]
+        place_features = feature_set.loc[feature_set['SENSOR_PLACEMENT']
+                                         == placement, selected_cols]
         placement_features.append(place_features)
     combined_feature_set, combined_feature_names = muss.combine_features(
-        *placement_features, placement_names=placement_names)
+        *placement_features, placement_names=placement_names, group_col=group_col)
     return combined_feature_set, combined_feature_names
 
 
@@ -180,6 +186,50 @@ def update_initial_model(init_model_or_labels, init_feature_df, init_class_df, n
     yield 'Training SVM classifier...'
     task = pool.apipe(muss.train_classifier, input_feature,
                       input_class, class_col='MUSS_22_ACTIVITY_ABBRS', feature_names=feature_names, placement_names=placement_names)
+    yield task
+
+
+def validate_updated_model(init_feature_df, init_class_df, origin_labels, new_feature_set, new_labels, placement_names, strategy, pool):
+    muss = MUSSModel()
+    origin_feature = init_feature_df
+    origin_class = init_class_df
+
+    yield 'Preparing feature and classes for the new collected data...'
+    new_feature = new_feature_set.iloc[:, :-2]
+    new_class = new_feature_set.iloc[:, [0, 1, 2, -2]]
+    new_class = new_class.rename(
+        columns={'GT_LABEL': 'MUSS_22_ACTIVITY_ABBRS'})
+
+    yield 'Combining training data together...'
+    origin_feature, feature_names = merge_features(
+        origin_feature, placement_names, muss, group_col='PID')
+    origin_class = origin_class[['HEADER_TIME_STAMP',
+                                 'START_TIME', 'STOP_TIME', 'PID', 'MUSS_22_ACTIVITY_ABBRS']]
+
+    yield 'sort feature names for new data'
+    new_feature = new_feature.loc[:, ['HEADER_TIME_STAMP',
+                                      'START_TIME', 'STOP_TIME', 'PID'] + feature_names]
+
+    yield 'Synchronizing training data and class labels...'
+    origin_feature, origin_class = muss.sync_feature_and_class(
+        origin_feature, origin_class, group_col='PID')
+    # only use origin labels
+    yield 'Filtering out unused class labels for original data...'
+    filter_condition = origin_class['MUSS_22_ACTIVITY_ABBRS'].isin(
+        origin_labels)
+    origin_feature = origin_feature.loc[filter_condition, :]
+    origin_class = origin_class.loc[filter_condition, :]
+
+    # only use new labels
+    yield 'Filtering out unused class labels for new data...'
+    filter_condition = new_class['MUSS_22_ACTIVITY_ABBRS'].isin(
+        new_labels)
+    new_feature = new_feature.loc[filter_condition, :]
+    new_class = new_class.loc[filter_condition, :]
+
+    yield 'Validating SVM classifier...'
+    task = pool.apipe(muss.validate_classifier, origin_feature,
+                      origin_class, class_col='MUSS_22_ACTIVITY_ABBRS', feature_names=feature_names, placement_names=placement_names, new_input_feature=new_feature, new_input_class=new_class, validate_strategy=strategy, group_col='PID')
     yield task
 
 

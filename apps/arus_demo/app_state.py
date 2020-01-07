@@ -11,8 +11,10 @@ class _AppState:
         self.initial_model_is_training = False
         self.update_model_is_training = False
         self.initial_model_is_validating = False
+        self.update_model_is_validating = False
         self.initial_model_training_labels = None
         self.initial_model_validation_results = None
+        self.update_model_validation_results = None
         self.initial_dataset = None
         self.initial_model_pipeline = None
         self.selected_activities_for_collection = None
