@@ -35,13 +35,16 @@ jobs:
       run: |
         pip install --upgrade pip
         pip install poetry
-        poetry install
+        poetry install --extras "metawear demo"
 
     - name: Run tests
       run: poetry run pytest --cov --cov-report=xml arus
 
     - name: Test building package
       run: poetry build
+
+    - name: Test building apps
+      run: poetry run python build_apps.py
 
     - name: Test building website
       run: poetry run python build_website.py
