@@ -76,7 +76,7 @@ class UpdateModelValidationPanel:
             default_index = 2
             disableds = [True, True, True]
         self._validate_strategy_selection = panel_radioboxes(
-            ['Replace original', 'Combine original', 'No origin'], disableds=disableds, default_index=default_index, group_id='_VALIDATE_STRATEGY_', keys=['_REPLACE_', '_COMBINE_', '_NONE_'])
+            ['Replace original', 'Combine original'], disableds=disableds, default_index=default_index, group_id='_VALIDATE_STRATEGY_', keys=['_REPLACE_', '_COMBINE_'])
 
         layout = [
             [panel_heading(heading)],

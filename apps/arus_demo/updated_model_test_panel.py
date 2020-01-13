@@ -70,7 +70,7 @@ def panel_label_grid(labels):
     return sg.Column(layout=label_grid), label_grid_elements
 
 
-class ModelTestingPanel:
+class UpdatedModelTestingPanel:
     def __init__(self, title):
         self._title = title
         self._scan_button = None
@@ -82,7 +82,7 @@ class ModelTestingPanel:
         self._test_label = 'Any'
 
     def init_panel(self):
-        training_labels = self._app_state.initial_model[0].classes_
+        training_labels = self._app_state.updated_model[0].classes_
         heading = "Model testing"
         scan_button_text = 'Scan nearby metawears'
         scan_button_key = '_SCAN_'
@@ -150,7 +150,7 @@ class ModelTestingPanel:
         self._app_state.task_pool.restart(force=True)
         return self._app_state.io_pool.apipe(backend.test_model,
                                              devices=self._app_state.nearby_devices,
-                                             model=self._app_state.initial_model)
+                                             model=self._app_state.updated_model)
 
     def stop_start_connect_task(self):
         self._app_state.io_pool.close()
@@ -176,7 +176,7 @@ class ModelTestingPanel:
         self._app_state.task_pool.join()
 
     def _format_result(self, result):
-        training_labels = self._app_state.initial_model[0].classes_
+        training_labels = self._app_state.updated_model[0].classes_
         formatted = []
         for label, value in zip(training_labels, result[0]):
             formatted.append(label + ': ' + str(int(round(value, 2) * 100)))

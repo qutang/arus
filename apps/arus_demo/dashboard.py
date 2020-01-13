@@ -19,6 +19,7 @@ from model_testing_panel import ModelTestingPanel
 from data_collection_panel import DataCollectionPanel
 from model_update_panel import ModelUpdatePanel
 from updated_model_validate_panel import UpdateModelValidationPanel
+from updated_model_test_panel import UpdatedModelTestingPanel
 
 
 def dashboard_heading(text):
@@ -325,6 +326,10 @@ class Dashboard:
             self._update_model_validate_button.Update(disabled=True)
         self._app_state.selected_activities_for_update = labels
 
+    def _handle_test_updated_model(self):
+        panel = UpdatedModelTestingPanel("Updated model testing")
+        panel.start()
+
     def handle_dashboard(self, event, values):
         if event == self._initial_model_train_button.Key:  # Train model
             self._handle_initial_model_training()
@@ -350,6 +355,8 @@ class Dashboard:
             self._handle_update_initial_model()
         elif event == self._update_model_validate_button.Key:
             self._handle_validate_updated_model()
+        elif event == self._update_model_test_button.Key:
+            self._handle_test_updated_model()
 
     def start(self):
         sg.ChangeLookAndFeel('Reddit')
