@@ -92,6 +92,10 @@ def replace_original_data(origin_feature, origin_class, origin_labels, new_featu
     origin_feature = origin_feature.loc[filter_condition, :]
     origin_class = origin_class.loc[filter_condition, :]
 
+    new_filter_condition = new_class['MUSS_22_ACTIVITY_ABBRS'].isin(new_labels)
+    new_feature = new_feature.loc[new_filter_condition, :]
+    new_class = new_class.loc[new_filter_condition, :]
+
     input_feature = pd.concat(
         [origin_feature, new_feature], sort=False, join='outer')
     input_class = pd.concat([origin_class, new_class],
@@ -105,6 +109,10 @@ def combine_original_data(origin_feature, origin_class, origin_labels, new_featu
         labels_keep_in_origin)
     origin_feature = origin_feature.loc[filter_condition, :]
     origin_class = origin_class.loc[filter_condition, :]
+
+    new_filter_condition = new_class['MUSS_22_ACTIVITY_ABBRS'].isin(new_labels)
+    new_feature = new_feature.loc[new_filter_condition, :]
+    new_class = new_class.loc[new_filter_condition, :]
 
     input_feature = pd.concat(
         [origin_feature, new_feature], sort=False, join='outer')
@@ -177,7 +185,7 @@ def update_initial_model(init_model_or_labels, init_feature_df, init_class_df, n
                                                                new_feature, new_class, new_labels)
         feature_names = origin_feature_names
     else:
-        feature_names = new_feature.columns[3:]
+        feature_names = new_feature.columns[3:].tolist()
         yield 'Filtering out unused class labels...'
         filter_condition = new_class['MUSS_22_ACTIVITY_ABBRS'].isin(
             new_labels)
@@ -261,7 +269,7 @@ def get_classification_report_table(validation_result):
     return report_table
 
 
-def test_initial_model(devices, model):
+def test_model(devices, model):
     muss = MUSSModel()
     device_addrs = devices
     streams = []
