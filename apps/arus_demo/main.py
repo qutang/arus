@@ -2,6 +2,7 @@ import logging
 import os
 import app_state as app
 try:
+    import PySimpleGUI as sg
     import backend
     import session_panel
     import dashboard
@@ -21,6 +22,7 @@ import os
 def start_app():
     logging.basicConfig(
         level=logging.INFO, format='[%(levelname)s]%(asctime)s <P%(process)d-%(threadName)s> %(message)s')
+    sg.theme('Reddit')
     os.chdir(os.path.dirname(os.path.realpath(__file__)))
     session_panel.SessionSelectionPanel().start()
 

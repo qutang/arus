@@ -6,8 +6,20 @@ import datetime as dt
 
 class _AppState:
     def __init__(self):
-        self.initial_model = None
-        self.updated_model = None
+        self.origin_dataset = []
+        self.origin_labels = []
+        self.origin_label_candidates = []
+        self.origin_model = None
+
+        self.new_activity_name = ""
+        self.data_collection_labels = []
+        self.data_collection_label_candidates = []
+        self.new_dataset = None
+
+        self.new_labels = []
+        self.new_label_candidates = []
+        self.new_model = None
+
         self.initial_model_is_training = False
         self.update_model_is_training = False
         self.initial_model_is_validating = False
@@ -17,7 +29,6 @@ class _AppState:
         self.initial_model_training_labels = None
         self.initial_model_validation_results = None
         self.update_model_validation_results = None
-        self.initial_dataset = None
         self.initial_model_pipeline = None
         self.selected_activities_for_collection = None
         self.selected_activities_for_update = None

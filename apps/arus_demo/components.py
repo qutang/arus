@@ -1,0 +1,252 @@
+import PySimpleGUI as sg
+
+HEADING_FONT = ('Helvetica', 12, 'bold')
+PRIMARY_FONT = ('Helvetica', 10)
+SMALL_FONT = ('Helvetica', 8)
+BIG_FONT = ('Helvetica', 14, 'bold')
+
+
+def heading(text, fixed_column_width=None, key=None):
+    return sg.Text(text=text,
+                   relief=sg.RELIEF_FLAT,
+                   font=HEADING_FONT,
+                   auto_size_text=True,
+                   justification='center',
+                   size=(fixed_column_width, None),
+                   key=key)
+
+
+def text(text, fixed_column_width=None, text_color=None, background_color=None, key=None):
+    return sg.Text(text=text,
+                   font=PRIMARY_FONT,
+                   size=(fixed_column_width, None),
+                   text_color=text_color,
+                   background_color=background_color,
+                   key=key)
+
+
+def big_text(text, fixed_column_width=None, text_color=None, background_color=None, key=None):
+    return sg.Text(text=text,
+                   font=HEADING_FONT,
+                   size=(fixed_column_width, None),
+                   text_color=text_color,
+                   background_color=background_color,
+                   key=key)
+
+
+def selection_list(items, default_selections=None, mode='single', fixed_column_width=None, rows=20, key=None):
+    if mode == 'single':
+        mode = sg.LISTBOX_SELECT_MODE_SINGLE
+    else:
+        mode = sg.LISTBOX_SELECT_MODE_EXTENDED
+    return sg.Listbox(values=items,
+                      default_values=default_selections,
+                      select_mode=mode,
+                      font=PRIMARY_FONT,
+                      size=(fixed_column_width, rows),
+                      key=key,
+                      enable_events=False)
+
+
+def control_button(text, size='normal', fixed_column_width=None, disabled=False, key=None):
+    if size == 'normal':
+        font = PRIMARY_FONT
+    elif size == 'big':
+        font = HEADING_FONT
+    elif size == 'small':
+        font = SMALL_FONT
+    return sg.Button(button_text=text,
+                     font=font,
+                     auto_size_button=True,
+                     size=(fixed_column_width, None),
+                     key=key,
+                     disabled=disabled)
+
+
+class TextInput:
+    def __init__(self, confirm_button_text, candidate_items=[], fixed_column_width=None, confirm_button_disabled=False, text_input_disabled=False, confirm_button_key=None, text_input_key=None):
+        if fixed_column_width is not None:
+            button_width = int(fixed_column_width * 1 / 4)
+            input_width = int(fixed_column_width * 3 / 4)
+        else:
+            button_width = None
+            input_width = None
+        self._confirm_button = control_button(
+            confirm_button_text,
+            size='normal',
+            fixed_column_width=button_width,
+            disabled=confirm_button_disabled,
+            key=confirm_button_key)
+        self._text_input = sg.Combo(
+            values=candidate_items,
+            font=PRIMARY_FONT,
+            size=(input_width, None),
+            key=text_input_key,
+            disabled=text_input_disabled
+        )
+
+    def get_component_as_row(self):
+        return [self._text_input, self._confirm_button]
+
+    def update_button(self, **kwargs):
+        self._confirm_button.update(**kwargs)
+
+    def update_input(self, **kwargs):
+        self._text_input.update(**kwargs)
+
+
+class ProgressBar:
+    def __init__(self, text, fixed_column_width=None, text_key=None, bar_key=None):
+        self._progress_text = sg.Text(text,
+                                      key=text_key,
+                                      font=PRIMARY_FONT,
+                                      size=(fixed_column_width, None))
+
+        self._progress_bar = sg.ProgressBar(100,
+                                            orientation='h',
+                                            auto_size_text=True,
+                                            size=(fixed_column_width, 20),
+                                            key=bar_key)
+
+    def get_component(self):
+        return ([self._progress_text], [self._progress_bar])
+
+    def update(self, percentage, text):
+        self._progress_text.update(value=text)
+        self._progress_bar.update_bar(int(100 * percentage))
+
+
+def checkbox(text, fixed_column_width=None, default_checked=False, disabled=False, key=None):
+    return sg.Checkbox(text,
+                       default=default_checked,
+                       disabled=disabled,
+                       auto_size_text=True,
+                       size=(fixed_column_width, None),
+                       font=PRIMARY_FONT,
+                       key=key)
+
+
+class RadioGroup:
+    def __init__(self, group_id, n, default_index=0, direction='horizontal',
+                 fixed_column_width=None):
+        self._group_id = group_id
+        self._direction = direction
+        self._radio_boxes = []
+        self._n = n
+        self._default_index = default_index
+        if fixed_column_width is not None:
+            if self._direction == 'horizontal':
+                self._width = int(
+                    fixed_column_width / n)
+            else:
+                self._width = fixed_column_width
+        else:
+            self._width = None
+
+    def add_radiobox(self, text, key, disabled=False):
+        if len(self._radio_boxes) + 1 == self._default_index:
+            checked = True
+        else:
+            checked = False
+        box = sg.Radio(text, self._group_id, default=checked, disabled=disabled,
+                       auto_size_text=True, font=PRIMARY_FONT, size=(self._width, None), enable_events=True, key=key)
+        if self._direction == 'horizontal':
+            self._radio_boxes.append(box)
+        else:
+            self._radio_boxes = self._radio_boxes + [box]
+
+    def add_radioboxes(self, texts, keys, disable_states):
+        for text, key, disabled in zip(texts, keys, disable_states):
+            self.add_radiobox(text, key, disabled=disabled)
+
+    def get_component(self):
+        return self._radio_boxes
+
+
+def table(cells, headings, fixed_column_width=None, key=None):
+    return sg.Table(values=cells,
+                    headings=headings,
+                    size=(fixed_column_width, None),
+                    def_col_width=12,
+                    auto_size_columns=True,
+                    key=key)
+
+
+def image(img_url, key=None):
+    return sg.Image(img_url,
+                    enable_events=True,
+                    key=key)
+
+
+def canvas(fixed_column_width=None, rows=None, key=None):
+    return sg.Canvas(size=(fixed_column_width, rows), key=None)
+
+
+class DeviceInfo:
+    def __init__(self, device_name, device_address="", placement_img_url=None, fixed_column_width=None, placement_img_key=None, device_addr_key=None):
+        self._device_name = text(device_name,
+                                 fixed_column_width=fixed_column_width)
+        self._device_placement = image(placement_img_url,
+                                       key=placement_img_key)
+        self._device_addr = text(device_address,
+                                 fixed_column_width=fixed_column_width,
+                                 key=device_addr_key)
+
+    def get_component(self):
+        return (
+            [self._device_name],
+            [self._device_placement],
+            [self._device_addr]
+        )
+
+    def update_addr(self, addr):
+        self._device_addr.update(value=addr)
+
+
+class LabelGrid:
+    def __init__(self, n, fixed_column_width=None, default_background_color=None, default_text_color=None, n_cols=4):
+        self._n = n
+        if fixed_column_width is not None:
+            self._width = int(fixed_column_width / n_cols)
+        else:
+            self._width = None
+        self._default_background_color = default_background_color
+        self._default_text_color = default_text_color
+        self._n_cols = n_cols
+        self._label_grid = []
+
+    def add_label(self, label, key=None, background_color=None, text_color=None):
+        el = big_text(label,
+                      background_color=background_color or self._default_background_color, text_color=text_color or self._default_text_color, key=key)
+        last_row = self._label_grid[-1]
+        if len(last_row) < self._n_cols:
+            self._label_grid[-1].append(el)
+        else:
+            self._label_grid.append([el])
+
+    def add_labels(self, labels, keys, background_colors, text_colors):
+        for label, key, bcolor, tcolor in zip(labels, keys, background_colors, text_colors):
+            self.add_label(label, key, background_color=bcolor,
+                           text_color=tcolor)
+
+    def get_component(self):
+        return self._label_grid
+
+    def update_label_by_key(self, key, **kwargs):
+        for row in self._label_grid:
+            for el in row:
+                if el.Key == key:
+                    el.update(**kwargs)
+                    break
+            break
+
+    def update_label_by_index(self, i, j, **kwargs):
+        self._label_grid[i][j].update(**kwargs)
+
+    def update_labels(self, new_labels, new_b_colors, new_t_colors):
+        i = 0
+        for row in self._label_grid:
+            for el in row:
+                el.update(
+                    new_labels[i], background_color=new_b_colors[i], text_color=new_t_colors[i])
+                i = i + 1

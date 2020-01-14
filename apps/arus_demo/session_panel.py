@@ -39,11 +39,11 @@ class SessionSelectionPanel:
                     ready = True
                 else:
                     app_state = app.AppState.getInstance()
-                    app_state.initial_dataset = backend.load_initial_data()
+                    app_state.origin_dataset = backend.load_origin_dataset()
                     ready = True
             elif event == self._new_button.Key:
                 app_state = app.AppState.getInstance()
-                app_state.initial_dataset = backend.load_initial_data()
+                app_state.origin_dataset = backend.load_origin_dataset()
                 ready = True
             elif event is None:
                 break

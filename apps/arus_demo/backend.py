@@ -9,7 +9,7 @@ import datetime as dt
 import os
 
 
-def load_initial_data():
+def load_origin_dataset():
     class_filepath, _ = load_test_data(file_type='mhealth', sensor_type='class_labels',
                                        file_num='single', exception_type='multi_tasks')
     feature_filepath, _ = load_test_data(file_type='mhealth', sensor_type='feature',
@@ -19,6 +19,33 @@ def load_initial_data():
     feature_df = pd.read_csv(feature_filepath, parse_dates=[
         0, 1, 2], infer_datetime_format=True)
     return feature_df, class_df
+
+
+def get_class_label_candidates(dataset):
+    class_df = dataset[1]
+    return class_df['MUSS_22_ACTIVITY_ABBRS'].unique().tolist()
+
+
+def get_model_summary(model=None):
+    if model is not None:
+        name = ','.join(model[0].classes_)
+        acc = round(model[2], 2)
+        summary = 'Classes:\n' + name + '\n' + \
+            'Training accuracy:\n' + str(acc)
+    else:
+        summary = 'No model is available'
+    return summary
+
+
+def get_dataset_summary(dataset=None):
+    if dataset is not None:
+        labels = dataset['GT_LABEL'].unique().tolist()
+        num_of_windows = dataset.shape[0]
+        summary = 'Classes:\n' + \
+            str(labels) + '\n' + 'Total windows:\n' + str(num_of_windows)
+    else:
+        summary = 'No data is available'
+    return summary
 
 
 def train_initial_model(training_labels, feature_df, class_df, pool):
