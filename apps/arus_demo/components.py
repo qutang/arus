@@ -1,4 +1,6 @@
 import PySimpleGUI as sg
+import time
+import numpy as np
 
 HEADING_FONT = ('Helvetica', 12, 'bold')
 PRIMARY_FONT = ('Helvetica', 10)
@@ -109,11 +111,18 @@ class ProgressBar:
                                             key=bar_key)
 
     def get_component(self):
-        return ([self._progress_text], [self._progress_bar])
+        return [self._progress_text], [self._progress_bar]
 
-    def update(self, percentage, text):
-        self._progress_text.update(value=text)
+    def update(self, percentage, text=None):
+        if text is not None:
+            self._progress_text.update(value=text)
         self._progress_bar.update_bar(int(100 * percentage))
+
+    def increment(self, text=None):
+        if text is not None:
+            self._progress_text.update(value=text)
+        self._progress_bar.update_bar(
+            self._progress_bar.TKProgressBar.TKProgressBarForReal['value'] + 1)
 
 
 def checkbox(text, fixed_column_width=None, default_checked=False, disabled=False, key=None):
@@ -144,12 +153,12 @@ class RadioGroup:
             self._width = None
 
     def add_radiobox(self, text, key, disabled=False):
-        if len(self._radio_boxes) + 1 == self._default_index:
+        if len(self._radio_boxes) == self._default_index:
             checked = True
         else:
             checked = False
         box = sg.Radio(text, self._group_id, default=checked, disabled=disabled,
-                       auto_size_text=True, font=PRIMARY_FONT, size=(self._width, None), enable_events=True, key=key)
+                       auto_size_text=True, font=PRIMARY_FONT, size=(self._width, None), enable_events=False, key=key)
         if self._direction == 'horizontal':
             self._radio_boxes.append(box)
         else:
@@ -174,7 +183,7 @@ def table(cells, headings, fixed_column_width=None, key=None):
 
 def image(img_url, key=None):
     return sg.Image(img_url,
-                    enable_events=True,
+                    enable_events=False,
                     key=key)
 
 
@@ -213,11 +222,13 @@ class LabelGrid:
         self._default_background_color = default_background_color
         self._default_text_color = default_text_color
         self._n_cols = n_cols
-        self._label_grid = []
+        self._label_grid = [[]]
 
     def add_label(self, label, key=None, background_color=None, text_color=None):
         el = big_text(label,
-                      background_color=background_color or self._default_background_color, text_color=text_color or self._default_text_color, key=key)
+                      background_color=background_color or self._default_background_color,
+                      text_color=text_color or self._default_text_color, fixed_column_width=self._width,
+                      key=key)
         last_row = self._label_grid[-1]
         if len(last_row) < self._n_cols:
             self._label_grid[-1].append(el)
@@ -250,3 +261,86 @@ class LabelGrid:
                 el.update(
                     new_labels[i], background_color=new_b_colors[i], text_color=new_t_colors[i])
                 i = i + 1
+
+
+class Timer:
+    def __init__(self):
+        self.reset()
+
+    def is_running(self):
+        return len(self._start_time) > 0 and len(self._start_time) > len(self._stop_time)
+
+    def start(self):
+        self._start_time.append(time.time())
+        self._last_tick = self._start_time[0]
+
+    def get_total_lapsed_time(self, formatted=False):
+        if len(self._start_time) - len(self._stop_time) == 1:
+            stop_time = self._stop_time + [time.time()]
+        else:
+            stop_time = self._stop_time
+        total_time = 0
+        for st, et in zip(self._start_time, stop_time):
+            total_time += (et - st)
+        if formatted:
+            total_time = self.format_lapse_time(total_time)
+        return total_time
+
+    def get_lapsed_times(self, formatted=False):
+        lapse_times = []
+        if len(self._start_time) - len(self._stop_time) == 1:
+            stop_time = self._stop_time + [time.time()]
+        else:
+            stop_time = self._stop_time
+        for st, et in zip(self._start_time, stop_time):
+            if formatted:
+                ts = self.format_lapse_time(et - st)
+            else:
+                ts = et - st
+            lapse_times.append(ts)
+        return lapse_times
+
+    def get_last_lapse_time(self, formatted=False):
+        if len(self._start_time) - len(self._stop_time) == 1:
+            stop_time = self._stop_time + [time.time()]
+        else:
+            stop_time = self._stop_time
+        ts = stop_time[-1] - self._start_time[-1]
+        if formatted:
+            return self.format_lapse_time(ts)
+        else:
+            return ts
+
+    def format_lapse_time(self, ts):
+        seconds = np.floor(ts)
+        sec_digits = str(int(seconds % 60))
+        min_digits = str(int(np.floor(seconds / 60) % 60))
+        hour_digits = str(int(np.floor(seconds / 3600) % 60))
+
+        if len(sec_digits) == 1:
+            sec_digits = '0' + sec_digits
+        if len(min_digits) == 1:
+            min_digits = '0' + min_digits
+        if len(hour_digits) == 1:
+            hour_digits = '0' + hour_digits
+        return hour_digits + ':' + min_digits + ':' + sec_digits
+
+    def update(self):
+        self._marker_time.append(time.time())
+
+    def tick(self):
+        self._last_tick = time.time()
+
+    def stop(self):
+        if len(self._stop_time) == len(self._start_time):
+            return
+        self._stop_time.append(time.time())
+
+    def reset(self):
+        self._start_time = []
+        self._stop_time = []
+        self._marker_time = []
+        self._last_tick = None
+
+    def since_last_tick(self):
+        return time.time() - self._last_tick

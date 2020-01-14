@@ -7,6 +7,23 @@ from arus.core.libs import mhealth_format as arus_mh
 from playsound import playsound
 import datetime as dt
 import os
+import enum
+import queue
+
+muss = MUSSModel()
+
+
+class TRAIN_STRATEGY(enum.Enum):
+    REPLACE_ORIGIN = enum.auto()
+    COMBINE_ORIGIN = enum.auto()
+    USE_ORIGIN_ONLY = enum.auto()
+    USE_NEW_ONLY = enum.auto()
+
+
+class PROCESSOR_MODE(enum.Enum):
+    INFERENCE = enum.auto()
+    ACTIVE_TRAINING = enum.auto()
+    ACTIVE_LEARNING = enum.auto()
 
 
 def load_origin_dataset():
@@ -48,35 +65,131 @@ def get_dataset_summary(dataset=None):
     return summary
 
 
-def train_initial_model(training_labels, feature_df, class_df, pool):
-    muss = MUSSModel()
-    feature_set = feature_df
-    class_set = class_df
-    yield 'Extracting training data for DW...'
-    dw_features = feature_set.loc[feature_set['SENSOR_PLACEMENT'] == 'DW', [
-        'HEADER_TIME_STAMP', 'START_TIME', 'STOP_TIME'] + muss.get_feature_names()]
-    yield 'Extracting training data for DA...'
-    da_features = feature_set.loc[feature_set['SENSOR_PLACEMENT'] == 'DA', [
-        'HEADER_TIME_STAMP', 'START_TIME', 'STOP_TIME'] + muss.get_feature_names()]
-    yield 'Combining training data together...'
+def extract_placement_features(feature_df, placement_names):
+    placement_features = []
+    for placement in placement_names:
+        placement_feature = feature_df.loc[
+            feature_df['SENSOR_PLACEMENT'] == placement,
+            ['HEADER_TIME_STAMP', 'START_TIME', 'STOP_TIME'] +
+            muss.get_feature_names()
+        ]
+        placement_features.append(placement_feature)
+    return placement_features
+
+
+def train_model(origin_labels=None,
+                origin_dataset=None,
+                origin_model=None,
+                new_labels=None,
+                new_dataset=None,
+                progress_queue=None,
+                placement_names=['DW', 'DA'], class_col='MUSS_22_ACTIVITY_ABBRS',
+                strategy=TRAIN_STRATEGY.USE_ORIGIN_ONLY,
+                pool=None):
+    progress_queue = progress_queue or queue.Queue()
+
+    pool = pool or pools.ProcessPool(nodes=1)
+    pool.restart(force=True)
+
+    if origin_model is not None:
+        placement_names = origin_model[-2]
+        origin_labels = origin_labels or origin_model[0].classes_
+
+    if origin_dataset is not None:
+        origin_feature, origin_class, origin_feature_names = prepare_origin_dataset(
+            origin_dataset,
+            origin_labels,
+            placement_names,
+            class_col,
+            progress_queue
+        )
+
+    if new_dataset is not None:
+        new_feature, new_class, new_feature_names = prepare_new_dataset(
+            new_dataset,
+            new_labels,
+            class_col,
+            progress_queue
+        )
+
+    progress_queue.put('Select training strategy...')
+    if strategy == TRAIN_STRATEGY.USE_ORIGIN_ONLY:
+        input_feature = origin_feature
+        input_class = origin_class
+        feature_names = origin_feature_names
+    elif strategy == TRAIN_STRATEGY.USE_NEW_ONLY:
+        input_feature = new_feature
+        input_class = new_class
+        feature_names = new_feature_names
+    elif strategy == TRAIN_STRATEGY.REPLACE_ORIGIN:
+        input_feature, input_class = replace_original_data(
+            origin_feature,
+            origin_class,
+            origin_labels,
+            new_feature,
+            new_class,
+            new_labels
+        )
+        feature_names = origin_feature_names
+    elif strategy == TRAIN_STRATEGY.COMBINE_ORIGIN:
+        input_feature, input_class = combine_origin_data(
+            origin_feature,
+            origin_class,
+            origin_labels,
+            new_feature,
+            new_class,
+            new_labels
+        )
+        feature_names = origin_feature_names
+
+    progress_queue.put('Training SVM classifier...')
+    task = pool.apipe(muss.train_classifier, input_feature,
+                      input_class, class_col=class_col, feature_names=feature_names, placement_names=placement_names)
+    progress_queue.put(task)
+
+
+def prepare_origin_dataset(dataset, labels, placement_names, class_col, progress_queue):
+    origin_feature = dataset[0]
+    origin_class = dataset[1]
+
+    progress_queue.put('Extracting training data for each placement...')
+    placement_features = extract_placement_features(
+        origin_feature, placement_names)
+
+    progress_queue.put('Combining training data together...')
     combined_feature_set, combined_feature_names = muss.combine_features(
-        dw_features, da_features, placement_names=['DW', 'DA'])
-    cleared_class_set = class_set[['HEADER_TIME_STAMP',
-                                   'START_TIME', 'STOP_TIME', 'MUSS_22_ACTIVITY_ABBRS']]
-    yield 'Synchronizing training data and class labels...'
+        *placement_features, placement_names=placement_names)
+
+    cleared_class_set = origin_class[['HEADER_TIME_STAMP',
+                                      'START_TIME', 'STOP_TIME', class_col]]
+
+    progress_queue.put('Synchronizing training data and class labels...')
     synced_feature, synced_class = muss.sync_feature_and_class(
         combined_feature_set, cleared_class_set)
+
     # only use training labels
-    yield 'Filtering out unused class labels...'
-    filter_condition = synced_class['MUSS_22_ACTIVITY_ABBRS'].isin(
-        training_labels)
+    progress_queue.put('Filtering out unused class labels...')
+    filter_condition = synced_class[class_col].isin(
+        labels)
     input_feature = synced_feature.loc[filter_condition, :]
     input_class = synced_class.loc[filter_condition, :]
+    return input_feature, input_class, combined_feature_names
 
-    yield 'Training SVM classifier...'
-    task = pool.apipe(muss.train_classifier, input_feature,
-                      input_class, class_col='MUSS_22_ACTIVITY_ABBRS', feature_names=combined_feature_names, placement_names=['DW', 'DA'])
-    yield task
+
+def prepare_new_dataset(dataset, labels, class_col, progress_queue):
+    progress_queue.put(
+        'Preparing feature and classes for the new collected data...')
+    new_feature = dataset.iloc[:, :-2]
+    new_class = dataset.iloc[:, [0, 1, 2, -2]]
+    new_class = new_class.rename(
+        columns={'GT_LABEL': class_col})
+    progress_queue.put('Filtering out unused class labels...')
+    filter_condition = new_class[class_col].isin(
+        labels)
+    input_feature = new_feature.loc[filter_condition, :]
+    input_class = new_class.loc[filter_condition, :]
+    combined_feature_names = new_feature.columns[3:]
+    return input_feature, input_class, combined_feature_names
 
 
 def validate_initial_model(model, feature_df, class_df, pool):
@@ -118,10 +231,6 @@ def replace_original_data(origin_feature, origin_class, origin_labels, new_featu
         labels_keep_in_origin)
     origin_feature = origin_feature.loc[filter_condition, :]
     origin_class = origin_class.loc[filter_condition, :]
-
-    new_filter_condition = new_class['MUSS_22_ACTIVITY_ABBRS'].isin(new_labels)
-    new_feature = new_feature.loc[new_filter_condition, :]
-    new_class = new_class.loc[new_filter_condition, :]
 
     input_feature = pd.concat(
         [origin_feature, new_feature], sort=False, join='outer')
@@ -296,19 +405,47 @@ def get_classification_report_table(validation_result):
     return report_table
 
 
-def test_model(devices, model):
-    muss = MUSSModel()
+def connect_devices(devices, model, mode=PROCESSOR_MODE.INFERENCE, output_folder=None, pid=None, pool=None):
+    pool = pool or pools.ThreadPool(nodes=1)
+    pool.restart(force=True)
     device_addrs = devices
     streams = []
     start_time = dt.datetime.now()
-    for addr, placement in zip(device_addrs, ['DW', 'DA']):
+    for addr, placement in zip(device_addrs, model[-2]):
         stream = MetaWearSlidingWindowStream(
             addr, window_size=4, sr=50, grange=8, name=placement)
         streams.append(stream)
-    pipeline = muss.get_inference_pipeline(
-        *streams, name='muss-pipeline', model=model, DA={'sr': 50}, DW={'sr': 50}, max_processes=2, scheduler='processes')
-    pipeline.connect(start_time=start_time)
-    return pipeline
+    if mode == PROCESSOR_MODE.INFERENCE:
+        pipeline = muss.get_inference_pipeline(
+            *streams, name='muss-pipeline', model=model, DA={'sr': 50}, DW={'sr': 50}, max_processes=2, scheduler='processes')
+    elif mode == PROCESSOR_MODE.ACTIVE_TRAINING:
+        pipeline = muss.get_data_collection_pipeline(
+            *streams, name='muss-pipeline', model=model, DA={'sr': 50}, DW={'sr': 50}, max_processes=2, scheduler='processes', output_folder=output_folder, pid=pid
+        )
+    task = pool.apipe(pipeline.connect, start_time=start_time)
+    return task
+
+
+def disconnect_devices(pipeline, pool=None):
+    pool = pool or pools.ThreadPool(nodes=1)
+    pool.restart(force=True)
+    task = pool.apipe(pipeline.stop)
+    return task
+
+
+def start_test_model(pipeline, pool=None):
+    start_time = dt.datetime.now()
+    pool = pool or pools.ThreadPool(nodes=1)
+    pool.restart(force=True)
+    task = pool.apipe(pipeline.process, start_time=start_time)
+    return task
+
+
+def stop_test_model(pipeline, pool=None):
+    pool = pool or pools.ThreadPool(nodes=1)
+    pool.restart(force=True)
+    task = pool.apipe(pipeline.pause)
+    return task
 
 
 def collect_data(devices, output_folder, pid, model=None):
@@ -337,11 +474,15 @@ def save_current_annotation(current_annotation, output_folder, pid, pool, active
     return task
 
 
-def play_sound(text, pool):
+def play_sound(text, pool=None):
+    pool = pool or pools.ThreadPool(nodes=1)
+    pool.restart(force=True)
     return pool.apipe(playsound, text + '.mp3', block=True)
 
 
-def get_nearby_devices(pool):
+def get_nearby_devices(pool=None):
+    pool = pool or pools.ThreadPool(nodes=1)
+    pool.restart(force=True)
     scanner = MetaWearScanner()
     task = pool.apipe(scanner.get_nearby_devices, max_devices=2)
     return task

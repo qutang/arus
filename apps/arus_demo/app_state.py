@@ -20,23 +20,15 @@ class _AppState:
         self.new_label_candidates = []
         self.new_model = None
 
-        self.initial_model_is_training = False
-        self.update_model_is_training = False
-        self.initial_model_is_validating = False
-        self.update_model_is_validating = False
-        self.initial_model_is_testing = False
-        self.update_model_is_testing = False
-        self.initial_model_training_labels = None
-        self.initial_model_validation_results = None
-        self.update_model_validation_results = None
-        self.initial_model_pipeline = None
-        self.selected_activities_for_collection = None
-        self.selected_activities_for_update = None
-        self.collected_feature_set = None
-        self.placement_names_collected_data = None
+        self.train_strategy = None
+
         self.nearby_devices = None
+
+        self.test_stack = []
+
         self.output_folder = AppState._path
         self.pid = 'ARUS_' + dt.datetime.now().strftime('%Y%m%d%H%M%S')
+
         self.task_pool = pools.ProcessPool(nodes=6)
         self.task_pool.close()
         self.io_pool = pools.ThreadPool(nodes=4)
