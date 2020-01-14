@@ -693,6 +693,17 @@ version = "0.9.1"
 requests = ">=2.0.1,<3.0.0"
 
 [[package]]
+category = "dev"
+description = "a python refactoring library..."
+name = "rope"
+optional = false
+python-versions = "*"
+version = "0.16.0"
+
+[package.extras]
+dev = ["pytest"]
+
+[[package]]
 category = "main"
 description = "A set of python modules for machine learning and data mining"
 name = "scikit-learn"
@@ -977,7 +988,7 @@ demo = ["pysimplegui", "playsound"]
 metawear = ["pymetawear"]
 
 [metadata]
-content-hash = "afe92d5de0e5931879bb950bb01fe4d46dbd0c3efb608fd2fac21b055e2090e0"
+content-hash = "e04bee594c10f6031ab5e64748bd1718ea0e4d2850ae63ab4cabb55015d0c2bc"
 python-versions = "^3.6"
 
 [metadata.files]
@@ -1399,6 +1410,11 @@ requests = [
 requests-toolbelt = [
     {file = "requests-toolbelt-0.9.1.tar.gz", hash = "sha256:968089d4584ad4ad7c171454f0a5c6dac23971e9472521ea3b6d49d610aa6fc0"},
     {file = "requests_toolbelt-0.9.1-py2.py3-none-any.whl", hash = "sha256:380606e1d10dc85c3bd47bf5a6095f815ec007be7a8b69c878507068df059e6f"},
+]
+rope = [
+    {file = "rope-0.16.0-py2-none-any.whl", hash = "sha256:ae1fa2fd56f64f4cc9be46493ce54bed0dd12dee03980c61a4393d89d84029ad"},
+    {file = "rope-0.16.0-py3-none-any.whl", hash = "sha256:52423a7eebb5306a6d63bdc91a7c657db51ac9babfb8341c9a1440831ecf3203"},
+    {file = "rope-0.16.0.tar.gz", hash = "sha256:d2830142c2e046f5fc26a022fe680675b6f48f81c7fc1f03a950706e746e9dfe"},
 ]
 scikit-learn = [
     {file = "scikit-learn-0.22.1.tar.gz", hash = "sha256:51ee25330fc244107588545c70e2f3570cfc4017cff09eed69d6e1d82a212b7d"},
