@@ -387,7 +387,7 @@ class Pipeline:
         self._sender_thread.start()
         for stream in self._streams:
             stream.start(start_time=start_time)
-        return True
+        return self
 
     def process(self, start_time=None):
         """Start processing the connected incoming stream data.

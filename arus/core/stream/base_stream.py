@@ -136,9 +136,9 @@ class Stream:
         """
         self.started = False
         time.sleep(0.1)
-        self._chunking_thread.join(timeout=1.5)
+        self._chunking_thread.join(timeout=1)
         time.sleep(0.1)
-        self._loading_thread.join(timeout=1.5)
+        self._loading_thread.join(timeout=1)
         with self._queue.mutex:
             self._queue.queue.clear()
         with self._buffer.mutex:
