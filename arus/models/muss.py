@@ -21,6 +21,7 @@ from sklearn import utils as sk_utils
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 import seaborn as sns
+import enum
 
 from ..core.accelerometer.features import activation as accel_activation
 from ..core.accelerometer.features import orientation as accel_ori
@@ -122,6 +123,13 @@ def muss_data_collection_processor(chunk_list, **kwargs):
     io_pool.close()
     io_pool.join()
     return predicted_probs, filtered_combined_df, raw_data_dfs
+
+
+class Strategy(enum.Enum):
+    REPLACE_ORIGIN = enum.auto()
+    COMBINE_ORIGIN = enum.auto()
+    USE_ORIGIN_ONLY = enum.auto()
+    USE_NEW_ONLY = enum.auto()
 
 
 class MUSSModel:
@@ -320,7 +328,7 @@ class MUSSModel:
         input_labels = np.unique(input_class_vec)
         return input_feature_arr, input_class_vec, input_labels
 
-    def validate_classifier(self, input_feature, input_class, class_col, feature_names, placement_names, group_col, new_input_feature=None, new_input_class=None, validate_strategy='NONE', **train_kwargs):
+    def validate_classifier(self, input_feature, input_class, class_col, feature_names, placement_names, group_col, new_input_feature=None, new_input_class=None, strategy=Strategy.USE_ORIGIN_ONLY, **train_kwargs):
         input_feature_arr = input_feature[feature_names].values
         input_class_vec = input_class[class_col].values
         class_labels = np.unique(input_class_vec)
@@ -329,7 +337,7 @@ class MUSSModel:
             new_class_vec = new_input_class[class_col].values
             new_labels = np.unique(new_class_vec)
         else:
-            validate_strategy = 'NONE'
+            strategy = Strategy.USE_ORIGIN_ONLY
 
         groups = input_class[group_col].values
         logo = sk_model_selection.LeaveOneGroupOut()
@@ -340,10 +348,10 @@ class MUSSModel:
             train_feature_arr = input_feature_arr[train_split, :]
             train_class_vec = input_class_vec[train_split]
             train_labels = np.unique(train_class_vec)
-            if validate_strategy == 'REPLACE_TRAIN':
+            if strategy == Strategy.REPLACE_ORIGIN:
                 train_feature_arr, train_class_vec, _ = self.replace_overlapped_classes(
                     train_feature_arr, train_class_vec, train_labels, new_feature_arr, new_class_vec, new_labels)
-            elif validate_strategy == 'COMBINE_TRAIN':
+            elif strategy == Strategy.COMBINE_ORIGIN:
                 train_feature_arr, train_class_vec, _ = self.combine_overlapped_classes(
                     train_feature_arr, train_class_vec, new_feature_arr, new_class_vec)
 
@@ -360,30 +368,36 @@ class MUSSModel:
         acc = sk_metrics.accuracy_score(input_class_vec, output_class_vec)
         return input_class_vec, output_class_vec, class_labels, acc
 
-    def _plot_confusion_matrix(self, conf_matrix, size):
-        # plot confusion matrix
+    def _plot_confusion_matrix(self, conf_matrix, size, fig=None):
+        sns.set_style({
+            'font.family': 'serif',
+            'font.size': 8,
+            'font.serif': 'Times New Roman'
+        })
         mpl.rcParams['font.family'] = 'serif'
         mpl.rcParams['font.size'] = 8
         mpl.rcParams['font.serif'] = ['Times New Roman']
-        plt.subplots(figsize=(4, 4))
-        sns.set_style({
-            'font.family': 'serif',
-            'font.size': 8
-        })
+        if fig is not None:
+            plt.figure(fig.number)
+            plt.gcf()
+            plt.cla()
+        else:
+            plt.subplots(figsize=(4, 4))
+        # plot confusion matrix
         g = sns.heatmap(conf_matrix, annot=True, cmap="Greys",
                         cbar=False, fmt='d', robust=True, linewidths=0.2)
         g.set(xlabel="Prediction", ylabel="Ground truth")
         plt.tight_layout()
         return plt.gcf()
 
-    def get_confusion_matrix(self, input_class, predict_class, labels, graph=False):
+    def get_confusion_matrix(self, input_class, predict_class, labels, graph=False, fig=None):
         conf_mat = sk_metrics.confusion_matrix(
             input_class, predict_class, labels=labels)
         conf_df = pd.DataFrame(conf_mat, columns=labels, index=labels)
         conf_df.index.rename(name='Ground Truth')
         if graph:
             result = self._plot_confusion_matrix(
-                conf_df, size=(len(labels), len(labels)))
+                conf_df, size=(len(labels), len(labels)), fig=fig)
         else:
             result = conf_df
         return result
