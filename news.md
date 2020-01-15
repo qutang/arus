@@ -4,6 +4,11 @@
 
 * Support replacement and combination LOSO validation with plugin-in data for muss model.
 * Support validating updated model for arus demo app.
+* Support draw on an existing figure for plot_confusion_matrix.
+
+## Improved
+
+* Stability and better code structure for arus demo app.
 
 # 0.6.2
 
