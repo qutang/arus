@@ -29,11 +29,13 @@ class Event(enum.Enum):
     NOT_ENOUGH_DATA_COLLECTION_LABELS = enum.auto(),
     ENOUGH_DATA_COLLECTION_LABELS = enum.auto(),
     COLLECT_NEW_DATA = enum.auto(),
+    NEW_DATASET_READY = enum.auto(),
     CHECK_NEW_DATA = enum.auto(),
     NEW_LABELS_CHANGED = enum.auto(),
     NOT_ENOUGH_NEW_LABELS = enum.auto(),
     ENOUGH_NEW_LABELS = enum.auto(),
     TRAIN_NEW_MODEL = enum.auto(),
+    NEW_MODEL_READY = enum.auto(),
     TEST_NEW_MODEL = enum.auto(),
     VALIDATE_NEW_MODEL = enum.auto()
 
@@ -54,6 +56,8 @@ class Dashboard(base.BaseWindow):
 
     def init_views(self):
         self._train_window_origin_model = None
+        self._process_window_data_collection = None
+        self._train_window_new_model = None
         origin_model_column = self.init_origin_model_view()
         data_collection_column = self.init_data_collection_view()
         new_model_column = self.init_new_model_view()
@@ -111,6 +115,23 @@ class Dashboard(base.BaseWindow):
                 self._train_window_origin_model = None
                 self._events.put(Event.ORIGIN_MODEL_READY)
 
+        if self._process_window_data_collection is not None:
+            new_dataset = self._process_window_data_collection.get_new_dataset()
+            if new_dataset is not None:
+                if self._state.new_dataset is not None:
+                    self._state.new_dataset.append(new_dataset)
+                else:
+                    self._state.new_dataset = new_dataset
+                self._process_window_data_collection = None
+                self._events.put(Event.NEW_DATASET_READY)
+
+        if self._train_window_new_model is not None:
+            new_model = self._train_window_new_model.get_trained_model()
+            if new_model is not None:
+                self._state.new_model = new_model
+                self._train_window_new_model = None
+                self._events.put(Event.NEW_MODEL_READY)
+
     def _dispatch_events(self, event):
         if event == Event.ENOUGH_ORIGIN_LABELS:
             self.enable_train_origin_model()
@@ -135,9 +156,20 @@ class Dashboard(base.BaseWindow):
             self.open_test_window(event)
         elif event == Event.COLLECT_NEW_DATA:
             self.open_data_collection_window()
+        elif event == Event.NEW_DATASET_READY:
+            self.enable_check_data_button()
+            self.display_dataset_summary(event)
+            self.update_new_label_list()
         elif event == Event.ADD_NEW_ACTIVITY:
             self.update_data_collection_label_list()
             self.reset_new_activity_input()
+        elif event == Event.TRAIN_NEW_MODEL:
+            self.open_train_window(event)
+        elif event == Event.NEW_MODEL_READY:
+            self.enable_test_new_model()
+            self.display_model_summary(event)
+        elif event == Event.TEST_NEW_MODEL:
+            self.open_test_window(event)
 
     def init_origin_model_view(self):
         heading = 'Step 1 - Use origin data'
@@ -333,15 +365,16 @@ class Dashboard(base.BaseWindow):
             )
         ]
 
+        self._new_label_list = comp.selection_list(
+            items=new_label_candidates,
+            default_selections=self._state.new_labels,
+            fixed_column_width=self._column_width,
+            mode='multiple',
+            key=Event.NEW_LABELS_CHANGED,
+            rows=20
+        )
         label_selection_row = [
-            comp.selection_list(
-                items=new_label_candidates,
-                default_selections=self._state.new_labels,
-                fixed_column_width=self._column_width,
-                mode='multiple',
-                key=Event.NEW_LABELS_CHANGED,
-                rows=20
-            )
+            self._new_label_list
         ]
 
         self._train_button_new_model = comp.control_button(
@@ -407,13 +440,23 @@ class Dashboard(base.BaseWindow):
                 backend.TRAIN_STRATEGY.USE_NEW_ONLY
             ]
             self._train_window_new_model = train_window.TrainWindow(
-                'Train new model', new_dataset=self._state.new_dataset, new_labels=self._state.new_labels, train_strategies=train_strategies)
+                'Train new model',
+                train_strategies=train_strategies
+            )
             self._train_window_new_model.start()
 
     def display_model_summary(self, event):
         if event == Event.ORIGIN_MODEL_READY:
             summary = backend.get_model_summary(self._state.origin_model)
             self._text_origin_model.update(summary)
+        elif event == Event.NEW_MODEL_READY:
+            summary = backend.get_model_summary(self._state.new_model)
+            self._text_new_model.update(summary)
+
+    def display_dataset_summary(self, event):
+        if event == Event.NEW_DATASET_READY:
+            summary = backend.get_dataset_summary(self._state.new_dataset)
+            self._text_new_data.update(summary)
 
     def open_validate_window(self, event):
         if event == Event.VALIDATE_ORIGIN_MODEL:
@@ -425,18 +468,36 @@ class Dashboard(base.BaseWindow):
     def open_test_window(self, event):
         if event == Event.TEST_ORIGIN_MODEL:
             panel = process_window.ProcessWindow(
-                "Test origin model", model=self._state.origin_model, mode=backend.PROCESSOR_MODE.INFERENCE)
+                "Test origin model",
+                model=self._state.origin_model,
+                support_modes=[
+                    backend.PROCESSOR_MODE.TEST_ONLY,
+                    backend.PROCESSOR_MODE.TEST_AND_SAVE
+                ]
+            )
         elif event == Event.TEST_NEW_MODEL:
             panel = process_window.ProcessWindow(
-                "Test new model", model=self._state.new_model, mode=backend.PROCESSOR_MODE.INFERENCE)
+                "Test new model",
+                model=self._state.new_model,
+                support_modes=[
+                    backend.PROCESSOR_MODE.TEST_ONLY,
+                    backend.PROCESSOR_MODE.TEST_AND_SAVE
+                ]
+            )
         panel.start()
 
     def open_data_collection_window(self):
-        panel = process_window.ProcessWindow('Collect new data',
-                                             model=self._state.origin_model,
-                                             labels=self._state.data_collection_labels, mode=backend.PROCESSOR_MODE.ACTIVE_TRAINING
-                                             )
-        panel.start()
+        self._process_window_data_collection = process_window.ProcessWindow(
+            'Collect new data',
+            model=self._state.origin_model,
+            labels=self._state.data_collection_labels,
+            support_modes=[
+                backend.PROCESSOR_MODE.TEST_AND_COLLECT,
+                backend.PROCESSOR_MODE.COLLECT_ONLY,
+                backend.PROCESSOR_MODE.ACTIVE_COLLECT
+            ]
+        )
+        self._process_window_data_collection.start()
 
     def enable_train_origin_model(self):
         self._train_button_origin_model.update(disabled=False)
@@ -448,6 +509,9 @@ class Dashboard(base.BaseWindow):
 
     def enable_test_origin_model(self):
         self._test_button_origin_model.update(disabled=False)
+
+    def enable_test_new_model(self):
+        self._test_button_new_model.update(disabled=False)
 
     def enable_collect_data(self):
         self._collect_button_new_data.update(disabled=False)
@@ -463,8 +527,17 @@ class Dashboard(base.BaseWindow):
     def disable_test_origin_model(self):
         self._test_button_origin_model.update(disabled=False)
 
+    def disable_test_new_model(self):
+        self._test_button_new_model.update(disabled=False)
+
     def disable_collect_data(self):
         self._collect_button_new_data.update(disabled=True)
+
+    def disable_check_data_button(self):
+        self._check_button_new_data.update(disabled=True)
+
+    def enable_check_data_button(self):
+        self._check_button_new_data.update(disabled=False)
 
     def update_data_collection_label_list(self):
         self._data_collection_label_list.update(
@@ -472,3 +545,8 @@ class Dashboard(base.BaseWindow):
 
     def reset_new_activity_input(self):
         self._input_new_activity.update_input(value="")
+
+    def update_new_label_list(self):
+        new_label_candidates = self._state.new_dataset['GT_LABEL'].unique(
+        ).tolist()
+        self._new_label_list.update(new_label_candidates)

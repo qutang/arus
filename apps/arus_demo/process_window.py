@@ -2,6 +2,8 @@ import enum
 import logging
 import queue
 import time
+import datetime as dt
+import copy
 
 import PySimpleGUI as sg
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
@@ -29,36 +31,69 @@ class Event(enum.Enum):
     TEST_LABEL_CHANGED = enum.auto()
     TIMER_UPDATE = enum.auto()
     GUIDANCE_PLAYED = enum.auto()
+    SAVE_ANNOTATION = enum.auto()
+    ANNOTATION_SAVED = enum.auto()
 
 
 class ProcessWindow(base.BaseWindow):
-    def __init__(self, title, model=None, labels=None, mode=backend.PROCESSOR_MODE.INFERENCE):
+    def __init__(
+        self,
+        title,
+        model=None,
+        labels=None,
+        support_modes=[
+            backend.PROCESSOR_MODE.TEST_ONLY,
+            backend.PROCESSOR_MODE.TEST_AND_SAVE
+        ]
+    ):
         super().__init__(title, 100)
         self._test_model = model
         self._labels = labels
-        self._mode = mode
+        self._support_modes = support_modes
+        self._selected_mode = None
+
         self._scan_task = None
         self._connect_task = None
         self._disconnect_task = None
         self._start_task = None
         self._stop_task = None
         self._guide_task = None
+        self._save_task = None
+
         self._pipeline = None
         self._latest_inference = None
+        self._inference_queue = []
+
+        self._new_dataset = None
+
         self._selected_test_label = None
         self._timer = comp.Timer()
+
+        self._current_annotation = {
+            "HEADER_TIME_STAMP": None, "START_TIME": None, "STOP_TIME": None, "LABEL_NAME": None
+        }
+        self._annotation_save_queue = queue.Queue()
+
+        self._current_guidance = {
+            "HEADER_TIME_STAMP": None, "START_TIME": None, "STOP_TIME": None, "LABEL_NAME": None
+        }
+
+    def get_new_dataset(self):
+        return self._new_dataset
 
     def init_states(self):
         state = app.AppState.getInstance()
         if self._test_model is not None:
             self._labels = self._labels or self._test_model[0].classes_.tolist(
             )
+        self._selected_mode = self._support_modes[0]
+        self._new_dataset = None
         return state
 
     def init_views(self):
         header_row = [
             comp.heading(
-                "Test model",
+                self._title,
                 fixed_column_width=self._column_width
             )
         ]
@@ -87,16 +122,18 @@ class ProcessWindow(base.BaseWindow):
         )
 
         self._start_button = comp.control_button(
-            "Start test",
+            "Start " + self._title,
             disabled=True,
             key=Event.START_TEST
         )
 
         self._stop_button = comp.control_button(
-            "Stop test",
+            "Stop " + self._title,
             disabled=True,
             key=Event.STOP_TEST
         )
+
+        control_mode_row = self.init_mode_controls()
 
         self._timer_view = comp.text('00:00:00')
         self._guidance_view = comp.text('', fixed_column_width=25)
@@ -115,6 +152,7 @@ class ProcessWindow(base.BaseWindow):
             scan_button_row,
             device_info_row,
             button_row,
+            control_mode_row,
             info_row,
             test_info_row
         ]
@@ -158,23 +196,59 @@ class ProcessWindow(base.BaseWindow):
                 self._events.put(Event.GUIDANCE_PLAYED)
                 self._guide_task = None
 
+        if self._save_task is not None:
+            if self._save_task.ready():
+                self._events.put(Event.ANNOTATION_SAVED)
+                self._save_task = None
+
+        for mode in self._support_modes:
+            if values[mode]:
+                self._selected_mode = mode
+                break
+
         if self._pipeline is not None:
             self._latest_inference, st, et, _, _, _ = next(
                 self._pipeline.get_iterator(timeout=0.02))
             if self._latest_inference is not None:
-                if self._mode == backend.PROCESSOR_MODE.ACTIVE_TRAINING:
+                if self._selected_mode in [
+                    backend.PROCESSOR_MODE.COLLECT_ONLY,
+                    backend.PROCESSOR_MODE.ACTIVE_COLLECT,
+                    backend.PROCESSOR_MODE.TEST_AND_COLLECT
+                ]:
                     self._latest_inference[1]['GT_LABEL'] = self._selected_test_label
                     self._latest_inference[1]['PID'] = self._state.pid
-                    if self._state.new_dataset is None:
-                        self._state.new_dataset = self._latest_inference[1]
+                    if self._new_dataset is None:
+                        self._new_dataset = self._latest_inference[1]
                     else:
-                        self._state.new_dataset = self._state.new_dataset.append(
+                        self._new_dataset = self._new_dataset.append(
                             self._latest_inference[1]
                         )
                 self._events.put(Event.INFERENCE_UPDATE)
 
+        if event == Event.START_TEST:
+            self._timer.start()
+            if self._selected_mode != backend.PROCESSOR_MODE.TEST_ONLY:
+                self._annotation_save_queue.queue.clear()
+                self.start_new_annotation()
+
+        if event == Event.STOP_TEST:
+            self._timer.stop()
+            if self._selected_mode != backend.PROCESSOR_MODE.TEST_ONLY:
+                self.complete_new_annotation()
+                self._events.put(Event.SAVE_ANNOTATION)
+
+        if event == Event.DISCONNECT_DEVICES:
+            self._timer.stop()
+            self._timer.reset()
+
         if len(values[Event.TEST_LABEL_CHANGED]) > 0:
-            self._selected_test_label = values[Event.TEST_LABEL_CHANGED][0]
+            if self._selected_test_label != values[Event.TEST_LABEL_CHANGED][0] and self._selected_mode != backend.PROCESSOR_MODE.TEST_ONLY and self._timer.is_running():
+                self.complete_new_annotation()
+                self._events.put(Event.SAVE_ANNOTATION)
+                self._selected_test_label = values[Event.TEST_LABEL_CHANGED][0]
+                self.start_new_annotation()
+            elif self._selected_test_label != values[Event.TEST_LABEL_CHANGED][0]:
+                self._selected_test_label = values[Event.TEST_LABEL_CHANGED][0]
 
         if self._timer.is_running() and self._timer.since_last_tick() >= 1:
             self._events.put(Event.TIMER_UPDATE)
@@ -195,39 +269,44 @@ class ProcessWindow(base.BaseWindow):
             self.enable_disconnect_button()
             self.disable_connect_button(finished=True)
             self.enable_start_button()
+            self._control_modes.disable_all()
         elif event == Event.DISCONNECT_DEVICES:
             self.disconnect_devices()
             self.disable_disconnect_button()
             self.disable_start_button()
-            self._timer.stop()
-            self._timer.reset()
         elif event == Event.DEVICE_DISCONNECTED:
             self.enable_connect_button()
             self.disable_disconnect_button(finished=True)
             self.disable_start_button(finished=True)
             self.disable_stop_button(finished=True)
+            self._control_modes.enable_all()
         elif event == Event.START_TEST:
             self.start_test()
             self.disable_start_button()
-            self._timer.start()
+            self.disable_disconnect_button()
         elif event == Event.TEST_STARTED:
             self.disable_start_button(finished=True)
             self.enable_stop_button()
         elif event == Event.STOP_TEST:
             self.stop_test()
             self.disable_stop_button()
-            self._timer.stop()
         elif event == Event.TEST_STOPPED:
             self.disable_stop_button(finished=True)
             self.enable_start_button()
+            self.enable_disconnect_button()
         elif event == Event.INFERENCE_UPDATE:
-            self.update_test_view()
-            if self._mode == backend.PROCESSOR_MODE.ACTIVE_TRAINING:
+            if self._selected_mode != backend.PROCESSOR_MODE.COLLECT_ONLY:
+                self.update_test_view()
+            if self._selected_mode == backend.PROCESSOR_MODE.ACTIVE_COLLECT:
                 self.play_active_guidance()
         elif event == Event.TIMER_UPDATE:
             self.update_timer_view()
         elif event == Event.GUIDANCE_PLAYED:
             self._guidance_view.update('')
+        elif event == Event.SAVE_ANNOTATION:
+            self.save_annotation()
+        elif event == Event.ANNOTATION_SAVED:
+            logging.info('Annotation is saved.')
 
     def init_devices_view(self):
         self._info_wrist = comp.DeviceInfo(device_name='Dominant Wrist',
@@ -238,13 +317,21 @@ class ProcessWindow(base.BaseWindow):
         return [sg.Column(layout=self._info_wrist.get_component(), scrollable=False), sg.Column(layout=self._info_ankle.get_component(), scrollable=False)]
 
     def init_test_view(self):
-        if self._mode == backend.PROCESSOR_MODE.INFERENCE:
-            model_labels = self._test_model[0].classes_.tolist()
+        if self._selected_mode in [
+            backend.PROCESSOR_MODE.TEST_AND_SAVE,
+            backend.PROCESSOR_MODE.TEST_ONLY
+        ]:
             extra_label = 'Any'
-        elif self._mode == backend.PROCESSOR_MODE.ACTIVE_TRAINING:
-            model_labels = self._test_model[0].classes_.tolist()
+        elif self._selected_mode in [
+            backend.PROCESSOR_MODE.ACTIVE_COLLECT,
+            backend.PROCESSOR_MODE.COLLECT_ONLY,
+            backend.PROCESSOR_MODE.TEST_AND_COLLECT
+        ]:
             extra_label = 'Sync'
-
+        if self._test_model is not None:
+            model_labels = self._test_model[0].classes_.tolist()
+        else:
+            model_labels = self._labels
         n = len(model_labels)
 
         self._test_label_list = comp.selection_list(
@@ -273,12 +360,43 @@ class ProcessWindow(base.BaseWindow):
             )
         ]
 
+    def init_mode_controls(self):
+        mode_names = [mode.name for mode in self._support_modes]
+        disable_states = [False] * len(self._support_modes)
+        default_index = 0
+        if self._test_model is None:
+            i = self._support_modes.index(
+                backend.PROCESSOR_MODE.ACTIVE_COLLECT
+            )
+            if default_index == i:
+                default_index += 1
+            disable_states[i] = True
+            i = self._support_modes.index(
+                backend.PROCESSOR_MODE.TEST_AND_COLLECT
+            )
+            if default_index == i:
+                default_index += 1
+            disable_states[i] = True
+
+        self._control_modes = comp.RadioGroup(
+            'PROCESS_MODE',
+            len(self._support_modes),
+            default_index=default_index,
+            fixed_column_width=self._column_width
+        )
+        self._control_modes.add_radioboxes(
+            mode_names,
+            keys=self._support_modes,
+            disable_states=disable_states
+        )
+        return self._control_modes.get_component()
+
     def scan_devices(self):
         self._scan_task = backend.get_nearby_devices()
 
     def connect_devices(self):
         self._connect_task = backend.connect_devices(
-            self._state.nearby_devices, model=self._test_model, mode=self._mode, output_folder=self._state.output_folder, pid=self._state.pid)
+            self._state.nearby_devices, model=self._test_model, mode=self._selected_mode, output_folder=self._state.output_folder, pid=self._state.pid)
 
     def start_test(self):
         self._start_task = backend.start_test_model(self._pipeline)
@@ -287,10 +405,10 @@ class ProcessWindow(base.BaseWindow):
         self._stop_task = backend.stop_test_model(self._pipeline)
 
     def play_active_guidance(self):
-        if (np.all(self._state.test_stack[-2:]) and len(self._state.test_stack) > 1) or len(self._state.test_stack) == 4:
+        if (np.all(self._inference_queue[-2:]) and len(self._inference_queue) > 1) or len(self._inference_queue) >= 4:
             text = 'Switch now!'
             self._guide_task = backend.play_sound('./assets/switch_now')
-            self._state.test_stack.clear()
+            self._inference_queue.clear()
         else:
             text = 'Keep going!'
             self._guide_task = backend.play_sound('./assets/keep_going')
@@ -298,6 +416,28 @@ class ProcessWindow(base.BaseWindow):
 
     def disconnect_devices(self):
         self._disconnect_task = backend.disconnect_devices(self._pipeline)
+
+    def save_annotation(self):
+        annotation = self._annotation_save_queue.get()
+        session_name = None
+        if self._selected_mode == backend.PROCESSOR_MODE.COLLECT_ONLY:
+            session_name = 'PassiveSensing'
+        elif self._selected_mode == backend.PROCESSOR_MODE.TEST_AND_COLLECT:
+            session_name = 'PassiveSensing'
+        elif self._selected_mode == backend.PROCESSOR_MODE.ACTIVE_COLLECT:
+            session_name = 'ActiveTraining'
+        elif self._selected_mode == backend.PROCESSOR_MODE.TEST_AND_SAVE:
+            if self._test_model == self._state.origin_model:
+                session_name = 'TestOriginModel'
+            elif self._test_model == self._state.new_model:
+                session_name = 'TestNewModel'
+        self._save_task = backend.save_annotation(
+            annotation,
+            output_folder=self._state.output_folder,
+            pid=self._state.pid,
+            session_name=session_name
+        )
+        logging.info('Saving annotation...')
 
     def disable_scan_button(self):
         self._scan_button.update('Scanning...', disabled=True)
@@ -317,7 +457,7 @@ class ProcessWindow(base.BaseWindow):
     def update_test_view(self):
         values = self.format_inference_result(self._latest_inference)
         correct = self.parse_inference_result(values)
-        self._state.test_stack.append(correct)
+        self._inference_queue.append(correct)
         base_color = 'g' if correct else 'r'
         new_b_colors = []
         new_t_colors = []
@@ -388,3 +528,19 @@ class ProcessWindow(base.BaseWindow):
         else:
             text = 'Stopping...'
         self._stop_button.update(text, disabled=True)
+
+    def start_new_annotation(self):
+        start_time = dt.datetime.now()
+        self._current_annotation['LABEL_NAME'] = [self._selected_test_label]
+        self._current_annotation['START_TIME'] = [start_time]
+        self._current_annotation['HEADER_TIME_STAMP'] = [start_time]
+        self._current_annotation['STOP_TIME'] = None
+
+    def complete_new_annotation(self):
+        stop_time = dt.datetime.now()
+        self._current_annotation['STOP_TIME'] = [stop_time]
+        self._annotation_save_queue.put(
+            copy.deepcopy(self._current_annotation))
+
+    def is_annotation_incomplete(self):
+        return self._current_annotation['STOP_TIME'] is None

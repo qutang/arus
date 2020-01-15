@@ -21,9 +21,11 @@ class TRAIN_STRATEGY(enum.Enum):
 
 
 class PROCESSOR_MODE(enum.Enum):
-    INFERENCE = enum.auto()
-    ACTIVE_TRAINING = enum.auto()
-    ACTIVE_LEARNING = enum.auto()
+    TEST_ONLY = enum.auto()
+    TEST_AND_SAVE = enum.auto()
+    COLLECT_ONLY = enum.auto()
+    TEST_AND_COLLECT = enum.auto()
+    ACTIVE_COLLECT = enum.auto()
 
 
 def load_origin_dataset():
@@ -132,7 +134,7 @@ def train_model(origin_labels=None,
         )
         feature_names = origin_feature_names
     elif strategy == TRAIN_STRATEGY.COMBINE_ORIGIN:
-        input_feature, input_class = combine_origin_data(
+        input_feature, input_class = combine_original_data(
             origin_feature,
             origin_class,
             origin_labels,
@@ -188,7 +190,7 @@ def prepare_new_dataset(dataset, labels, class_col, progress_queue):
         labels)
     input_feature = new_feature.loc[filter_condition, :]
     input_class = new_class.loc[filter_condition, :]
-    combined_feature_names = new_feature.columns[3:]
+    combined_feature_names = new_feature.columns[3:].values.tolist()
     return input_feature, input_class, combined_feature_names
 
 
@@ -405,22 +407,27 @@ def get_classification_report_table(validation_result):
     return report_table
 
 
-def connect_devices(devices, model, mode=PROCESSOR_MODE.INFERENCE, output_folder=None, pid=None, pool=None):
+def connect_devices(devices, model, placement_names=['DW', 'DA'], mode=PROCESSOR_MODE.TEST_ONLY, output_folder=None, pid=None, pool=None):
     pool = pool or pools.ThreadPool(nodes=1)
     pool.restart(force=True)
     device_addrs = devices
     streams = []
     start_time = dt.datetime.now()
-    for addr, placement in zip(device_addrs, model[-2]):
+    output_folder = os.path.join(output_folder, 'data')
+    if model is not None:
+        placement_names = model[-2]
+    kwargs = {}
+    for addr, placement in zip(device_addrs, placement_names):
         stream = MetaWearSlidingWindowStream(
             addr, window_size=4, sr=50, grange=8, name=placement)
         streams.append(stream)
-    if mode == PROCESSOR_MODE.INFERENCE:
+        kwargs[placement] = {'sr': 50}
+    if mode == PROCESSOR_MODE.TEST_ONLY:
         pipeline = muss.get_inference_pipeline(
-            *streams, name='muss-pipeline', model=model, DA={'sr': 50}, DW={'sr': 50}, max_processes=2, scheduler='processes')
-    elif mode == PROCESSOR_MODE.ACTIVE_TRAINING:
+            *streams, name='muss-pipeline', model=model, max_processes=2, scheduler='processes', **kwargs)
+    else:
         pipeline = muss.get_data_collection_pipeline(
-            *streams, name='muss-pipeline', model=model, DA={'sr': 50}, DW={'sr': 50}, max_processes=2, scheduler='processes', output_folder=output_folder, pid=pid
+            *streams, name='muss-pipeline', model=model, max_processes=2, scheduler='processes', output_folder=output_folder, pid=pid, **kwargs
         )
     task = pool.apipe(pipeline.connect, start_time=start_time)
     return task
@@ -448,29 +455,23 @@ def stop_test_model(pipeline, pool=None):
     return task
 
 
-def collect_data(devices, output_folder, pid, model=None):
-    muss = MUSSModel()
-    device_addrs = devices
-    streams = []
-    window_size = 4
-    sr = 50
-    output_folder = os.path.join(output_folder, 'data')
-    start_time = dt.datetime.now()
-    for addr, placement in zip(device_addrs, ['DW', 'DA']):
-        stream = MetaWearSlidingWindowStream(
-            addr, window_size=window_size, sr=sr, grange=8, name=placement)
-        streams.append(stream)
-    pipeline = muss.get_data_collection_pipeline(
-        *streams, model=model, DA={'sr': sr}, DW={'sr': sr}, max_processes=2, scheduler='processes', output_folder=output_folder, pid=pid)
-    pipeline.connect(start_time=start_time)
-    return pipeline
-
-
-def save_current_annotation(current_annotation, output_folder, pid, pool, active=False):
+def save_annotation(current_annotation, output_folder, pid, session_name, pool=None):
+    pool = pool or pools.ThreadPool(nodes=1)
+    pool.restart(force=True)
     output_folder = os.path.join(output_folder, 'data')
     df = pd.DataFrame.from_dict(current_annotation)
-    task = pool.apipe(arus_mh.write_data_csv, df, output_folder=output_folder,                  pid=pid, file_type='annotation',
-                      sensor_or_annotation_type='ActiveSession' if active else 'PassiveSession', sensor_or_annotator_id='ARUS', split_hours=False, flat=True, append=True)
+    task = pool.apipe(
+        arus_mh.write_data_csv,
+        df,
+        output_folder=output_folder,
+        pid=pid,
+        file_type='annotation',
+        sensor_or_annotation_type=session_name,
+        sensor_or_annotator_id='ARUS',
+        split_hours=False,
+        flat=True,
+        append=True
+    )
     return task
 
 

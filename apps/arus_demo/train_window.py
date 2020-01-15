@@ -24,10 +24,11 @@ class TrainWindow(base.BaseWindow):
         self._progress_queue = queue.Queue()
         self._task = None
         self._trained_model = None
+        self._selected_strategy = None
 
     def init_states(self):
         state = app.AppState.getInstance()
-        state.train_strategy = state.train_strategy or self._train_strategies[0]
+        self._selected_strategy = self._selected_strategy or self._train_strategies[0]
         self._progress_text = "Training is not started..."
         self._timer = comp.Timer()
         return state
@@ -86,7 +87,7 @@ class TrainWindow(base.BaseWindow):
     def _update_states_and_events(self, event, values):
         for strategy in self._train_strategies:
             if values[strategy]:
-                self._state.train_strategy = strategy
+                self._selected_strategy = strategy
                 break
         try:
             progress = self._progress_queue.get(timeout=0.02)
@@ -132,14 +133,12 @@ class TrainWindow(base.BaseWindow):
 
     def init_strategy_controls(self):
         default_strategy_index = self._train_strategies.index(
-            self._state.train_strategy)
+            self._selected_strategy)
         self._control_strategies = comp.RadioGroup(
             'TRAIN_STRATEGY',
             len(self._train_strategies),
             default_index=default_strategy_index,
-            fixed_column_width=int(
-                self._column_width / len(self._train_strategies)
-            )
+            fixed_column_width=self._column_width
         )
         strategy_names = [strategy.name for strategy in self._train_strategies]
         self._control_strategies.add_radioboxes(
@@ -159,8 +158,10 @@ class TrainWindow(base.BaseWindow):
         backend.train_model(
             origin_labels=self._state.origin_labels,
             origin_dataset=self._state.origin_dataset,
+            new_dataset=self._state.new_dataset,
+            new_labels=self._state.new_labels,
             progress_queue=self._progress_queue,
-            strategy=self._state.train_strategy,
+            strategy=self._selected_strategy,
             pool=self._state.task_pool
         )
 

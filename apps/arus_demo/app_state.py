@@ -17,10 +17,7 @@ class _AppState:
         self.new_dataset = None
 
         self.new_labels = []
-        self.new_label_candidates = []
         self.new_model = None
-
-        self.train_strategy = None
 
         self.nearby_devices = None
 

@@ -141,6 +141,7 @@ class RadioGroup:
         self._group_id = group_id
         self._direction = direction
         self._radio_boxes = []
+        self._els = []
         self._n = n
         self._default_index = default_index
         if fixed_column_width is not None:
@@ -159,6 +160,7 @@ class RadioGroup:
             checked = False
         box = sg.Radio(text, self._group_id, default=checked, disabled=disabled,
                        auto_size_text=True, font=PRIMARY_FONT, size=(self._width, None), enable_events=False, key=key)
+        self._els.append(box)
         if self._direction == 'horizontal':
             self._radio_boxes.append(box)
         else:
@@ -167,6 +169,14 @@ class RadioGroup:
     def add_radioboxes(self, texts, keys, disable_states):
         for text, key, disabled in zip(texts, keys, disable_states):
             self.add_radiobox(text, key, disabled=disabled)
+
+    def disable_all(self):
+        for el in self._els:
+            el.update(disabled=True)
+
+    def enable_all(self):
+        for el in self._els:
+            el.update(disabled=False)
 
     def get_component(self):
         return self._radio_boxes
