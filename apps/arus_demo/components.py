@@ -2,6 +2,11 @@ import PySimpleGUI as sg
 import time
 import numpy as np
 
+from matplotlib import pyplot as plt
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, FigureCanvasAgg
+import tkinter as Tk
+import matplotlib.backends.tkagg as tkagg
+
 HEADING_FONT = ('Helvetica', 12, 'bold')
 PRIMARY_FONT = ('Helvetica', 10)
 SMALL_FONT = ('Helvetica', 8)
@@ -186,8 +191,8 @@ def table(cells, headings, fixed_column_width=None, key=None):
     return sg.Table(values=cells,
                     headings=headings,
                     size=(fixed_column_width, None),
-                    def_col_width=12,
-                    auto_size_columns=True,
+                    def_col_width=int(fixed_column_width/len(headings)),
+                    auto_size_columns=False,
                     key=key)
 
 
@@ -197,8 +202,29 @@ def image(img_url, key=None):
                     key=key)
 
 
-def canvas(fixed_column_width=None, rows=None, key=None):
-    return sg.Canvas(size=(fixed_column_width, rows), key=None)
+class Plot:
+    def __init__(self, fixed_column_width=None, rows=None, key=None):
+        self._el = sg.Canvas(size=(fixed_column_width, rows), key=None)
+        self._graph = None
+        self._fig = None
+
+    def update_plot(self, fig=None):
+        if fig is not None:
+            self._fig = fig
+            _, _, figure_w, figure_h = fig.bbox.bounds
+            self._el.set_size((figure_w, figure_h))
+            self._graph = FigureCanvasTkAgg(fig, self._el.TKCanvas)
+            self._graph.draw()
+            self._graph.get_tk_widget().pack(side='top', fill='both', expand=1)
+        else:
+            self._graph.draw()
+            self._graph.get_tk_widget().pack(side='top', fill='both', expand=1)
+
+    def get_figure(self):
+        return self._fig
+
+    def get_component(self):
+        return self._el
 
 
 class DeviceInfo:

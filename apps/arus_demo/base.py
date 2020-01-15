@@ -33,7 +33,6 @@ class BaseWindow:
 
     def update_states_and_events(self):
         inherited_window_event, new_values = self._window.read(timeout=20)
-        self._events.queue.clear()
         if inherited_window_event == sg.TIMEOUT_KEY:
             pass
         elif inherited_window_event is not None:
@@ -52,6 +51,7 @@ class BaseWindow:
                 return True
             else:
                 self._dispatch_events(event)
+        self._events.queue.clear()
         return False
 
     def _update_states_and_events(self, event, values):

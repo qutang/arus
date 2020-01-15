@@ -10,6 +10,7 @@ class _AppState:
         self.origin_labels = []
         self.origin_label_candidates = []
         self.origin_model = None
+        self.origin_validate_results = None
 
         self.new_activity_name = ""
         self.data_collection_labels = []
@@ -18,6 +19,7 @@ class _AppState:
 
         self.new_labels = []
         self.new_model = None
+        self.new_validate_results = None
 
         self.nearby_devices = None
 

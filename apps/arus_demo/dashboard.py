@@ -6,13 +6,9 @@ import app_state as app
 import backend
 import base
 import components as comp
-import train_window
-import process_window
-
-from data_collection_panel import DataCollectionPanel
-from model_update_panel import ModelUpdatePanel
-from model_validation_panel import ModelValidationPanel
-from updated_model_validate_panel import UpdateModelValidationPanel
+import task_window
+import stream_window
+from arus.models.muss import Strategy
 
 
 class Event(enum.Enum):
@@ -37,7 +33,9 @@ class Event(enum.Enum):
     TRAIN_NEW_MODEL = enum.auto(),
     NEW_MODEL_READY = enum.auto(),
     TEST_NEW_MODEL = enum.auto(),
-    VALIDATE_NEW_MODEL = enum.auto()
+    VALIDATE_NEW_MODEL = enum.auto(),
+    ORIGIN_VALIDATE_RESULT_READY = enum.auto(),
+    NEW_VALIDATE_RESULT_READY = enum.auto()
 
 
 class Dashboard(base.BaseWindow):
@@ -55,9 +53,11 @@ class Dashboard(base.BaseWindow):
         return state
 
     def init_views(self):
-        self._train_window_origin_model = None
-        self._process_window_data_collection = None
-        self._train_window_new_model = None
+        self._window_train_origin = None
+        self._window_data_collection = None
+        self._window_train_new = None
+        self._window_validate_origin = None
+        self._window_validate_new = None
         origin_model_column = self.init_origin_model_view()
         data_collection_column = self.init_data_collection_view()
         new_model_column = self.init_new_model_view()
@@ -108,29 +108,43 @@ class Dashboard(base.BaseWindow):
                 self._state.data_collection_label_candidates = [
                     self._state.new_activity_name] + self._state.data_collection_label_candidates
 
-        if self._train_window_origin_model is not None:
-            origin_model = self._train_window_origin_model.get_trained_model()
+        if self._window_train_origin is not None:
+            origin_model = self._window_train_origin.get_result()
             if origin_model is not None:
                 self._state.origin_model = origin_model
-                self._train_window_origin_model = None
+                self._window_train_origin = None
                 self._events.put(Event.ORIGIN_MODEL_READY)
 
-        if self._process_window_data_collection is not None:
-            new_dataset = self._process_window_data_collection.get_new_dataset()
+        if self._window_data_collection is not None:
+            new_dataset = self._window_data_collection.get_new_dataset()
             if new_dataset is not None:
                 if self._state.new_dataset is not None:
                     self._state.new_dataset.append(new_dataset)
                 else:
                     self._state.new_dataset = new_dataset
-                self._process_window_data_collection = None
+                self._window_data_collection = None
                 self._events.put(Event.NEW_DATASET_READY)
 
-        if self._train_window_new_model is not None:
-            new_model = self._train_window_new_model.get_trained_model()
+        if self._window_train_new is not None:
+            new_model = self._window_train_new.get_result()
             if new_model is not None:
                 self._state.new_model = new_model
-                self._train_window_new_model = None
+                self._window_train_new = None
                 self._events.put(Event.NEW_MODEL_READY)
+
+        if self._window_validate_origin is not None:
+            origin_validate_results = self._window_validate_origin.get_result()
+            if origin_validate_results is not None:
+                self._state.origin_validate_results = origin_validate_results
+                self._window_validate_origin = None
+                self._events.put(Event.ORIGIN_VALIDATE_RESULT_READY)
+
+        if self._window_validate_new is not None:
+            new_validate_results = self._window_validate_new.get_result()
+            if new_validate_results is not None:
+                self._state.new_validate_results = new_validate_results
+                self._window_validate_new = None
+                self._events.put(Event.NEW_VALIDATE_RESULT_READY)
 
     def _dispatch_events(self, event):
         if event == Event.ENOUGH_ORIGIN_LABELS:
@@ -146,16 +160,16 @@ class Dashboard(base.BaseWindow):
         elif event == Event.NOT_ENOUGH_NEW_LABELS:
             self.disable_train_new_model()
         elif event == Event.TRAIN_ORIGIN_MODEL:
-            self.open_train_window(event)
+            self.open_task_window(event)
         elif event == Event.ORIGIN_MODEL_READY:
             self.enable_test_origin_model()
             self.display_model_summary(event)
         elif event == Event.VALIDATE_ORIGIN_MODEL:
-            self.open_validate_window(event)
+            self.open_task_window(event)
         elif event == Event.TEST_ORIGIN_MODEL:
-            self.open_test_window(event)
+            self.open_stream_window(event)
         elif event == Event.COLLECT_NEW_DATA:
-            self.open_data_collection_window()
+            self.open_stream_window(event)
         elif event == Event.NEW_DATASET_READY:
             self.enable_check_data_button()
             self.display_dataset_summary(event)
@@ -164,12 +178,14 @@ class Dashboard(base.BaseWindow):
             self.update_data_collection_label_list()
             self.reset_new_activity_input()
         elif event == Event.TRAIN_NEW_MODEL:
-            self.open_train_window(event)
+            self.open_task_window(event)
+        elif event == Event.VALIDATE_NEW_MODEL:
+            self.open_task_window(event)
         elif event == Event.NEW_MODEL_READY:
             self.enable_test_new_model()
             self.display_model_summary(event)
         elif event == Event.TEST_NEW_MODEL:
-            self.open_test_window(event)
+            self.open_stream_window(event)
 
     def init_origin_model_view(self):
         heading = 'Step 1 - Use origin data'
@@ -428,22 +444,34 @@ class Dashboard(base.BaseWindow):
 
         return sg.Column(layout=layout, scrollable=False, element_justification='center')
 
-    def open_train_window(self, event):
+    def open_task_window(self, event):
         if event == Event.TRAIN_ORIGIN_MODEL:
-            self._train_window_origin_model = train_window.TrainWindow(
+            self._window_train_origin = task_window.TaskWindow(
                 "Train origin model")
-            self._train_window_origin_model.start()
+            self._window_train_origin.start()
         elif event == Event.TRAIN_NEW_MODEL:
             train_strategies = [
-                backend.TRAIN_STRATEGY.REPLACE_ORIGIN,
-                backend.TRAIN_STRATEGY.COMBINE_ORIGIN,
-                backend.TRAIN_STRATEGY.USE_NEW_ONLY
+                Strategy.REPLACE_ORIGIN,
+                Strategy.COMBINE_ORIGIN,
+                Strategy.USE_NEW_ONLY
             ]
-            self._train_window_new_model = train_window.TrainWindow(
+            self._window_train_new = task_window.TaskWindow(
                 'Train new model',
-                train_strategies=train_strategies
+                strategies=train_strategies
             )
-            self._train_window_new_model.start()
+            self._window_train_new.start()
+        elif event == Event.VALIDATE_ORIGIN_MODEL:
+            self._window_validate_origin = task_window.TaskWindow(
+                "Validate origin model", mode=task_window.Mode.LOSO)
+            self._window_validate_origin.start()
+        elif event == Event.VALIDATE_NEW_MODEL:
+            strategies = [
+                Strategy.REPLACE_ORIGIN,
+                Strategy.COMBINE_ORIGIN
+            ]
+            self._window_validate_new = task_window.TaskWindow(
+                "Validate new model", strategies=strategies, mode=task_window.Mode.LOSO)
+            self._window_validate_new.start()
 
     def display_model_summary(self, event):
         if event == Event.ORIGIN_MODEL_READY:
@@ -458,16 +486,9 @@ class Dashboard(base.BaseWindow):
             summary = backend.get_dataset_summary(self._state.new_dataset)
             self._text_new_data.update(summary)
 
-    def open_validate_window(self, event):
-        if event == Event.VALIDATE_ORIGIN_MODEL:
-            panel = ModelValidationPanel("Validate origin model")
-        elif event == Event.VALIDATE_NEW_MODEL:
-            panel = UpdateModelValidationPanel("Validate new model")
-        panel.start()
-
-    def open_test_window(self, event):
+    def open_stream_window(self, event):
         if event == Event.TEST_ORIGIN_MODEL:
-            panel = process_window.ProcessWindow(
+            panel = stream_window.StreamWindow(
                 "Test origin model",
                 model=self._state.origin_model,
                 support_modes=[
@@ -475,8 +496,9 @@ class Dashboard(base.BaseWindow):
                     backend.PROCESSOR_MODE.TEST_AND_SAVE
                 ]
             )
+            panel.start()
         elif event == Event.TEST_NEW_MODEL:
-            panel = process_window.ProcessWindow(
+            panel = stream_window.StreamWindow(
                 "Test new model",
                 model=self._state.new_model,
                 support_modes=[
@@ -484,20 +506,19 @@ class Dashboard(base.BaseWindow):
                     backend.PROCESSOR_MODE.TEST_AND_SAVE
                 ]
             )
-        panel.start()
-
-    def open_data_collection_window(self):
-        self._process_window_data_collection = process_window.ProcessWindow(
-            'Collect new data',
-            model=self._state.origin_model,
-            labels=self._state.data_collection_labels,
-            support_modes=[
-                backend.PROCESSOR_MODE.TEST_AND_COLLECT,
-                backend.PROCESSOR_MODE.COLLECT_ONLY,
-                backend.PROCESSOR_MODE.ACTIVE_COLLECT
-            ]
-        )
-        self._process_window_data_collection.start()
+            panel.start()
+        elif event == Event.COLLECT_NEW_DATA:
+            self._window_data_collection = stream_window.StreamWindow(
+                'Collect new data',
+                model=self._state.origin_model,
+                labels=self._state.data_collection_labels,
+                support_modes=[
+                    backend.PROCESSOR_MODE.TEST_AND_COLLECT,
+                    backend.PROCESSOR_MODE.COLLECT_ONLY,
+                    backend.PROCESSOR_MODE.ACTIVE_COLLECT
+                ]
+            )
+            self._window_data_collection.start()
 
     def enable_train_origin_model(self):
         self._train_button_origin_model.update(disabled=False)

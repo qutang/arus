@@ -35,7 +35,7 @@ class Event(enum.Enum):
     ANNOTATION_SAVED = enum.auto()
 
 
-class ProcessWindow(base.BaseWindow):
+class StreamWindow(base.BaseWindow):
     def __init__(
         self,
         title,
