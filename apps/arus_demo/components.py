@@ -3,9 +3,7 @@ import time
 import numpy as np
 
 from matplotlib import pyplot as plt
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, FigureCanvasAgg
-import tkinter as Tk
-import matplotlib.backends.tkagg as tkagg
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 HEADING_FONT = ('Helvetica', 12, 'bold')
 PRIMARY_FONT = ('Helvetica', 10)
