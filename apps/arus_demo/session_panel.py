@@ -36,6 +36,8 @@ class SessionSelectionPanel:
                 logging.info('Restoring application status..')
                 file_path = sg.PopupGetFile('Select the pkl file to restore session', title='Continue a session',
                                             default_extension='.pkl', initial_folder=app.AppState._snapshot_path)
+                if file_path is None:
+                    continue
                 if app.AppState.restore(file_path):
                     app_state = app.AppState.getInstance()
                     ready = True
@@ -52,6 +54,8 @@ class SessionSelectionPanel:
                     default_text=app_state.pid,
                     keep_on_top=True
                 )
+                if new_pid is None:
+                    continue
                 app_state.pid = new_pid
                 app_state.origin_dataset = backend.load_origin_dataset()
                 ready = True
