@@ -390,7 +390,7 @@ class MUSSModel:
         plt.tight_layout()
         return plt.gcf()
 
-    def get_confusion_matrix(self, input_class, predict_class, labels, graph=False, fig=None):
+    def get_confusion_matrix(self, input_class, predict_class, labels=None, graph=False, fig=None):
         conf_mat = sk_metrics.confusion_matrix(
             input_class, predict_class, labels=labels)
         conf_df = pd.DataFrame(conf_mat, columns=labels, index=labels)
