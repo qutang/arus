@@ -34,7 +34,9 @@ class SessionSelectionPanel:
             event, _ = window.read()
             if event == self._continue_button.Key:
                 logging.info('Restoring application status..')
-                if app.AppState.restore():
+                file_path = sg.PopupGetFile('Select the pkl file to restore session', title='Continue a session',
+                                            default_extension='.pkl', initial_folder=app.AppState._snapshot_path)
+                if app.AppState.restore(file_path):
                     app_state = app.AppState.getInstance()
                     ready = True
                 else:
@@ -42,7 +44,15 @@ class SessionSelectionPanel:
                     app_state.origin_dataset = backend.load_origin_dataset()
                     ready = True
             elif event == self._new_button.Key:
+                app.AppState.reset()
                 app_state = app.AppState.getInstance()
+                new_pid = sg.PopupGetText(
+                    'Set new participant ID',
+                    title='Create a new session',
+                    default_text=app_state.pid,
+                    keep_on_top=True
+                )
+                app_state.pid = new_pid
                 app_state.origin_dataset = backend.load_origin_dataset()
                 ready = True
             elif event is None:

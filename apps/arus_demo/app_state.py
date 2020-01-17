@@ -44,7 +44,7 @@ class AppState:
         os.path.expanduser("~"), 'arus')
 
     _snapshot_path = os.path.join(
-        _path, 'snapshot.pkl')
+        _path, 'snapshots')
 
     @staticmethod
     def getInstance():
@@ -54,19 +54,18 @@ class AppState:
 
     @staticmethod
     def snapshot():
-        output_path = AppState._snapshot_path
+        output_path = os.path.join(
+            AppState._snapshot_path, AppState._instance.pid + '.pkl')
+        os.makedirs(os.path.dirname(output_path), exist_ok=True)
         with open(output_path, 'wb') as f:
             dill.dump(AppState._instance, f)
 
     @staticmethod
-    def restore():
-        input_path = AppState._snapshot_path
-        if os.path.exists(input_path):
-            with open(input_path, 'rb') as f:
-                AppState._instance = dill.load(f)
-            return True
-        else:
-            return False
+    def restore(file_path):
+        input_path = file_path
+        with open(input_path, 'rb') as f:
+            AppState._instance = dill.load(f)
+        return True
 
     @staticmethod
     def reset():
