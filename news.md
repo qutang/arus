@@ -7,6 +7,7 @@
 * Support draw on an existing figure for plot_confusion_matrix.
 * Support snapshot and restore application states for different PIDs.
 * Support set custom PID when starting a new session.
+* Support real-time data summary in stream window for arus demo app.
 
 ## Improved
 
