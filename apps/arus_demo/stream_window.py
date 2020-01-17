@@ -8,6 +8,7 @@ import copy
 import PySimpleGUI as sg
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import numpy as np
+import pandas as pd
 
 import app_state as app
 import backend
@@ -64,7 +65,7 @@ class StreamWindow(base.BaseWindow):
         self._latest_inference = None
         self._inference_queue = []
 
-        self._new_dataset = None
+        self._result = None
 
         self._selected_test_label = None
         self._timer = comp.Timer()
@@ -78,16 +79,24 @@ class StreamWindow(base.BaseWindow):
             "HEADER_TIME_STAMP": None, "START_TIME": None, "STOP_TIME": None, "LABEL_NAME": None
         }
 
-    def get_new_dataset(self):
-        return self._new_dataset
+    def get_result(self):
+        return self._result
 
     def init_states(self):
         state = app.AppState.getInstance()
         if self._test_model is not None:
             self._labels = self._labels or self._test_model[0].classes_.tolist(
             )
-        self._selected_mode = self._support_modes[0]
-        self._new_dataset = None
+            self._selected_mode = self._support_modes[0]
+        else:
+            self._selected_mode = backend.PROCESSOR_MODE.COLLECT_ONLY
+        if self._selected_mode in [
+                backend.PROCESSOR_MODE.COLLECT_ONLY,
+                backend.PROCESSOR_MODE.TEST_AND_COLLECT,
+                backend.PROCESSOR_MODE.ACTIVE_COLLECT]:
+            self._result = state.new_dataset
+        else:
+            self._result = None
         return state
 
     def init_views(self):
@@ -147,6 +156,8 @@ class StreamWindow(base.BaseWindow):
 
         test_info_row = self.init_test_view()
 
+        data_summary_row = self.init_data_summary_view()
+
         layout = [
             header_row,
             scan_button_row,
@@ -154,7 +165,8 @@ class StreamWindow(base.BaseWindow):
             button_row,
             control_mode_row,
             info_row,
-            test_info_row
+            test_info_row,
+            data_summary_row
         ]
 
         return sg.Window(
@@ -210,19 +222,8 @@ class StreamWindow(base.BaseWindow):
             self._latest_inference, st, et, _, _, _ = next(
                 self._pipeline.get_iterator(timeout=0.02))
             if self._latest_inference is not None:
-                if self._selected_mode in [
-                    backend.PROCESSOR_MODE.COLLECT_ONLY,
-                    backend.PROCESSOR_MODE.ACTIVE_COLLECT,
-                    backend.PROCESSOR_MODE.TEST_AND_COLLECT
-                ]:
-                    self._latest_inference[1]['GT_LABEL'] = self._selected_test_label
-                    self._latest_inference[1]['PID'] = self._state.pid
-                    if self._new_dataset is None:
-                        self._new_dataset = self._latest_inference[1]
-                    else:
-                        self._new_dataset = self._new_dataset.append(
-                            self._latest_inference[1]
-                        )
+                self.format_inference_result()
+                self.add_to_result()
                 self._events.put(Event.INFERENCE_UPDATE)
 
         if event == Event.START_TEST:
@@ -299,6 +300,7 @@ class StreamWindow(base.BaseWindow):
                 self.update_test_view()
             if self._selected_mode == backend.PROCESSOR_MODE.ACTIVE_COLLECT:
                 self.play_active_guidance()
+            self.update_data_summary_view()
         elif event == Event.TIMER_UPDATE:
             self.update_timer_view()
         elif event == Event.GUIDANCE_PLAYED:
@@ -359,6 +361,14 @@ class StreamWindow(base.BaseWindow):
                 scrollable=False
             )
         ]
+
+    def init_data_summary_view(self):
+        cells = backend.get_data_summary_table(
+            self._result)
+        cells = cells or [["", "", ""]]
+        self._data_summary = comp.table(
+            cells, headings=["Activity", "# of windows", "Accuracy"], fixed_column_width=self._column_width)
+        return [self._data_summary]
 
     def init_mode_controls(self):
         mode_names = [mode.name for mode in self._support_modes]
@@ -449,19 +459,27 @@ class StreamWindow(base.BaseWindow):
         self._info_wrist.update_addr(self._state.nearby_devices[0])
         self._info_ankle.update_addr(self._state.nearby_devices[1])
 
-    def parse_inference_result(self, values):
-        correct = values[0].split(
+    def add_to_result(self):
+        if self._result is None:
+            self._result = self._latest_inference[1]
+        else:
+            self._result = pd.concat([self._result,
+                                      self._latest_inference[1]], sort=False
+                                     )
+        self._result.reset_index(drop=True)
+
+    def parse_inference_result(self):
+        correct = self._latest_inference[0][0].split(
             ':')[0] == self._selected_test_label or self._selected_test_label == 'Any'
         return correct
 
     def update_test_view(self):
-        values = self.format_inference_result(self._latest_inference)
-        correct = self.parse_inference_result(values)
+        correct = self.parse_inference_result()
         self._inference_queue.append(correct)
         base_color = 'g' if correct else 'r'
         new_b_colors = []
         new_t_colors = []
-        for value in values:
+        for value in self._latest_inference[0]:
             name = value.split(':')[0]
             num = float(value.split(':')[1])
             if not correct and name == self._selected_test_label:
@@ -473,21 +491,40 @@ class StreamWindow(base.BaseWindow):
                 text_color = "white" if num > 20 else "gray"
             new_b_colors.append(new_color)
             new_t_colors.append(text_color)
-        self._labelgrid.update_labels(values, new_b_colors, new_t_colors)
+        self._labelgrid.update_labels(
+            self._latest_inference[0], new_b_colors, new_t_colors)
+
+    def update_data_summary_view(self):
+        cells = backend.get_data_summary_table(
+            self._result)
+        cells = cells or [["", "", ""]]
+        self._data_summary.update(cells)
 
     def update_timer_view(self):
         self._timer_view.update(
             self._timer.get_total_lapsed_time(formatted=True) + ' seconds')
 
-    def format_inference_result(self, result):
-        model_labels = self._test_model[0].classes_.tolist()
-        pred_probs = result[0][0].tolist()
-        formatted = []
-        for label, value in zip(model_labels, pred_probs):
-            formatted.append(label + ': ' + str(int(round(value, 2) * 100)))
-        sort_formatted = sorted(
-            formatted, key=lambda v: int(v.split(':')[1]), reverse=True)
-        return sort_formatted
+    def format_inference_result(self):
+        self._latest_inference = list(self._latest_inference)
+        # sort probs
+        if self._selected_mode != backend.PROCESSOR_MODE.COLLECT_ONLY:
+            model_labels = self._test_model[0].classes_.tolist()
+            pred_probs = self._latest_inference[0][0].tolist()
+            formatted = []
+            for label, value in zip(model_labels, pred_probs):
+                formatted.append(
+                    label + ': ' + str(int(round(value, 2) * 100)))
+            sort_formatted = list(sorted(
+                formatted, key=lambda v: int(v.split(':')[1]), reverse=True))
+            self._latest_inference[0] = sort_formatted
+            # add labels to feature dataframe
+            self._latest_inference[1]['GT_LABEL'] = self._selected_test_label
+            self._latest_inference[1]['PREDICTION'] = self._latest_inference[0][0].split(":")[
+                0]
+            self._latest_inference[1]['PID'] = self._state.pid
+        else:
+            self._latest_inference[1]['GT_LABEL'] = self._selected_test_label
+            self._latest_inference[1]['PID'] = self._state.pid
 
     def disable_connect_button(self, finished=False):
         if finished:

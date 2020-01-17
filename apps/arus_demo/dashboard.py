@@ -116,12 +116,9 @@ class Dashboard(base.BaseWindow):
                 self._events.put(Event.ORIGIN_MODEL_READY)
 
         if self._window_data_collection is not None:
-            new_dataset = self._window_data_collection.get_new_dataset()
+            new_dataset = self._window_data_collection.get_result()
             if new_dataset is not None:
-                if self._state.new_dataset is not None:
-                    self._state.new_dataset.append(new_dataset)
-                else:
-                    self._state.new_dataset = new_dataset
+                self._state.new_dataset = new_dataset
                 self._window_data_collection = None
                 self._events.put(Event.NEW_DATASET_READY)
 

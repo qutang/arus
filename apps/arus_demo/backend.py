@@ -9,6 +9,7 @@ import datetime as dt
 import os
 import enum
 import queue
+import numpy as np
 
 muss = MUSSModel()
 
@@ -58,6 +59,34 @@ def get_dataset_summary(dataset=None):
     else:
         summary = 'No data is available'
     return summary
+
+
+def get_data_summary_table(dataset=None):
+    def _summarize(df):
+        if 'PREDICTION' not in df:
+            windows = df.shape[0]
+            accuracy = np.nan
+        else:
+            correct = np.sum(df['PREDICTION'] == df.name)
+            incorrect = np.sum(df['PREDICTION'] != df.name)
+            accuracy = correct / (correct + incorrect)
+            windows = correct + incorrect
+        return pd.DataFrame(data={'a': [windows], 'b': [accuracy]})
+
+    if dataset is None:
+        return None
+    else:
+        result = dataset.groupby(by=['GT_LABEL']).apply(
+            _summarize).reset_index(drop=False)
+        result = result[['GT_LABEL', 'a', 'b']]
+        if 'PREDICTION' in dataset:
+            accuracy = np.sum(dataset['PREDICTION'] ==
+                              dataset['GT_LABEL']) / dataset.shape[0]
+        else:
+            accuracy = np.nan
+        result = result.append(
+            {'GT_LABEL': 'Total', 'a': dataset.shape[0], 'b': accuracy}, ignore_index=True)
+        return result.values.tolist()
 
 
 def extract_placement_features(feature_df, placement_names, group_col=[]):
