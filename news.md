@@ -8,10 +8,16 @@
 * Support snapshot and restore application states for different PIDs.
 * Support set custom PID when starting a new session.
 * Support real-time data summary in stream window for arus demo app.
+* Support thigh placement.
+* Support select placements for training, testing, validating and data collection.
 
 ## Improved
 
 * Stability and better code structure for arus demo app.
+
+## Fix
+
+* Now muss model combines feature sets for each placement correctly when there are more than two placements involved.
 
 # 0.6.2
 
