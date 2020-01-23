@@ -142,6 +142,15 @@ class MUSSModel:
     def get_feature_names(self):
         return self._FEATURE_NAMES
 
+    def append_placement_suffix(self, input_feature, placement_name):
+        new_cols = []
+        for col in input_feature.columns:
+            if col in self.get_feature_names() and placement_name != '':
+                col = col + '_' + placement_name
+            new_cols.append(col)
+        input_feature.columns = new_cols
+        return(input_feature)
+
     def combine_features(self, *input_features, placement_names=None, group_col=None):
         if group_col is None:
             group_col = []
@@ -152,14 +161,23 @@ class MUSSModel:
         if len(placement_names) != len(input_features):
             raise ValueError(
                 'placement_names should have the same length as the number of input_features')
+
         sequence = zip(input_features, placement_names)
 
         def _combine(left, right):
-            return pd.merge(left[0], right[0], on=['HEADER_TIME_STAMP', 'START_TIME',
-                                                   'STOP_TIME'] + group_col, suffixes=('_' + str(left[1]), '_' + str(right[1])))
-        combined_df = functools.reduce(_combine, sequence)
-        combined_feature_names = list(filter(lambda name: name.split('_')
-                                             [-1] in placement_names, combined_df.columns))
+            left_df = self.append_placement_suffix(left[0], left[1])
+            right_df = self.append_placement_suffix(right[0], right[1])
+            merged = left_df.merge(
+                right_df, on=['HEADER_TIME_STAMP', 'START_TIME', 'STOP_TIME'] + group_col)
+            return (merged, '')
+        if len(placement_names) == 1:
+            combined_df = input_features[0]
+            combined_feature_names = self.get_feature_names()
+        else:
+            tuple_results = functools.reduce(_combine, sequence)
+            combined_df = tuple_results[0]
+            combined_feature_names = list(filter(lambda name: name.split('_')
+                                                 [-1] in placement_names, combined_df.columns))
         return combined_df, combined_feature_names
 
     def select_features(self, input_feature, feature_names='All', group_col=None):
@@ -170,8 +188,8 @@ class MUSSModel:
         if feature_names == 'All':
             return input_feature
         else:
-            selected_cols = ['HEADER_TIME_STAMP', 'START_TIME', 'STOP_TIME'] + \
-                group_col + feature_names
+            selected_cols = ['HEADER_TIME_STAMP', 'START_TIME',
+                             'STOP_TIME'] + group_col + feature_names
             return input_feature[selected_cols]
 
     def sync_feature_and_class(self, input_feature, input_class, group_col=None):
