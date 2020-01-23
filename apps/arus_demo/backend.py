@@ -10,6 +10,7 @@ import os
 import enum
 import queue
 import numpy as np
+import logging
 
 muss = MUSSModel()
 
@@ -107,7 +108,7 @@ def train_model(origin_labels=None,
                 new_labels=None,
                 new_dataset=None,
                 progress_queue=None,
-                placement_names=['DW', 'DA'], class_col='MUSS_22_ACTIVITY_ABBRS',
+                placement_names=['DW', 'DA', 'DT'], class_col='MUSS_22_ACTIVITY_ABBRS',
                 strategy=Strategy.USE_ORIGIN_ONLY,
                 pool=None):
     progress_queue = progress_queue or queue.Queue()
@@ -345,6 +346,8 @@ def get_classification_report_table(validation_result):
 
 
 def connect_devices(devices, model, placement_names=['DW', 'DA'], mode=PROCESSOR_MODE.TEST_ONLY, output_folder=None, pid=None, pool=None):
+    logging.info('device addrs: ' + str(devices))
+    logging.info('device placements: ' + str(placement_names))
     pool = pool or pools.ThreadPool(nodes=1)
     pool.restart(force=True)
     device_addrs = devices
@@ -422,5 +425,5 @@ def get_nearby_devices(pool=None):
     pool = pool or pools.ThreadPool(nodes=1)
     pool.restart(force=True)
     scanner = MetaWearScanner()
-    task = pool.apipe(scanner.get_nearby_devices, max_devices=2)
+    task = pool.apipe(scanner.get_nearby_devices, max_devices=3)
     return task

@@ -22,6 +22,7 @@ class Event(enum.Enum):
     DEVICE_CONNECTED = enum.auto()
     DISCONNECT_DEVICES = enum.auto()
     DEVICE_DISCONNECTED = enum.auto()
+    MODE_CHANGED = enum.auto()
     SCAN_DEVICES = enum.auto()
     SCAN_COMPLETED = enum.auto()
     START_TEST = enum.auto()
@@ -52,6 +53,8 @@ class StreamWindow(base.BaseWindow):
         self._labels = labels
         self._support_modes = support_modes
         self._selected_mode = None
+        self._selected_placements = None
+        self._selected_devices = None
 
         self._scan_task = None
         self._connect_task = None
@@ -88,8 +91,10 @@ class StreamWindow(base.BaseWindow):
             self._labels = self._labels or self._test_model[0].classes_.tolist(
             )
             self._selected_mode = self._support_modes[0]
+            self._selected_placements = self._test_model[-2][:]
         else:
             self._selected_mode = backend.PROCESSOR_MODE.COLLECT_ONLY
+            self._selected_placements = []
         if self._selected_mode in [
                 backend.PROCESSOR_MODE.COLLECT_ONLY,
                 backend.PROCESSOR_MODE.TEST_AND_COLLECT,
@@ -215,8 +220,25 @@ class StreamWindow(base.BaseWindow):
 
         for mode in self._support_modes:
             if values[mode]:
-                self._selected_mode = mode
-                break
+                if mode != self._selected_mode:
+                    if mode != backend.PROCESSOR_MODE.COLLECT_ONLY:
+                        self._selected_placements = self._test_model[-2][:]
+
+                    self._events.put(Event.MODE_CHANGED)
+                    self._selected_mode = mode
+                    break
+
+        if event in ['DW', 'DA', 'DT']:
+            if values[event]:
+                self._selected_placements.append(event)
+            else:
+                self._selected_placements.remove(event)
+            logging.info('Selected placements: ' +
+                         str(self._selected_placements))
+
+        if self._state.nearby_devices is not None:
+            self._selected_devices = [self._state.nearby_devices[[
+                'DW', 'DA', 'DT'].index(placement)] for placement in self._selected_placements]
 
         if self._pipeline is not None:
             self._latest_inference, st, et, _, _, _ = next(
@@ -309,14 +331,51 @@ class StreamWindow(base.BaseWindow):
             self.save_annotation()
         elif event == Event.ANNOTATION_SAVED:
             logging.info('Annotation is saved.')
+        elif event == Event.MODE_CHANGED:
+            if self._selected_mode == backend.PROCESSOR_MODE.COLLECT_ONLY:
+                self.enable_device_selections()
+            else:
+                self.update_device_selections()
+                self.disable_device_selections()
 
     def init_devices_view(self):
+        if 'DW' in self._selected_placements and self._selected_mode != backend.PROCESSOR_MODE.COLLECT_ONLY:
+            dw_selected = True
+            dw_disabled = True
+        elif self._selected_mode == backend.PROCESSOR_MODE.COLLECT_ONLY:
+            dw_selected = False
+            dw_disabled = False
+        else:
+            dw_selected = False
+            dw_disabled = True
         self._info_wrist = comp.DeviceInfo(device_name='Dominant Wrist',
-                                           placement_img_url='./assets/dom_wrist.png', fixed_column_width=25)
+                                           placement_img_url='./assets/dom_wrist.png', fixed_column_width=30, device_name_key="DW", device_selected=dw_selected,
+                                           device_selection_disabled=dw_disabled)
+        if 'DA' in self._selected_placements and self._selected_mode != backend.PROCESSOR_MODE.COLLECT_ONLY:
+            da_selected = True
+            da_disabled = True
+        elif self._selected_mode == backend.PROCESSOR_MODE.COLLECT_ONLY:
+            da_selected = False
+            da_disabled = False
+        else:
+            da_selected = False
+            da_disabled = True
         self._info_ankle = comp.DeviceInfo(device_name='Right Ankle',
                                            placement_img_url='./assets/right_ankle.png',
-                                           fixed_column_width=25)
-        return [sg.Column(layout=self._info_wrist.get_component(), scrollable=False), sg.Column(layout=self._info_ankle.get_component(), scrollable=False)]
+                                           fixed_column_width=30, device_name_key="DA", device_selected=da_selected, device_selection_disabled=da_disabled)
+        if 'DT' in self._selected_placements and self._selected_mode != backend.PROCESSOR_MODE.COLLECT_ONLY:
+            dt_selected = True
+            dt_disabled = True
+        elif self._selected_mode == backend.PROCESSOR_MODE.COLLECT_ONLY:
+            dt_selected = False
+            dt_disabled = False
+        else:
+            dt_selected = False
+            dt_disabled = True
+        self._info_thigh = comp.DeviceInfo(device_name='Dominant Thigh',
+                                           placement_img_url='./assets/dom_thigh.png',
+                                           fixed_column_width=30, device_name_key="DT", device_selected=dt_selected, device_selection_disabled=dt_disabled)
+        return [sg.Column(layout=self._info_wrist.get_component(), scrollable=False), sg.Column(layout=self._info_ankle.get_component(), scrollable=False), sg.Column(layout=self._info_thigh.get_component(), scrollable=False)]
 
     def init_test_view(self):
         if self._selected_mode in [
@@ -406,7 +465,7 @@ class StreamWindow(base.BaseWindow):
 
     def connect_devices(self):
         self._connect_task = backend.connect_devices(
-            self._state.nearby_devices, model=self._test_model, mode=self._selected_mode, output_folder=self._state.output_folder, pid=self._state.pid)
+            self._selected_devices, model=self._test_model, mode=self._selected_mode, output_folder=self._state.output_folder, pid=self._state.pid, placement_names=self._selected_placements)
 
     def start_test(self):
         self._start_task = backend.start_test_model(self._pipeline)
@@ -458,6 +517,7 @@ class StreamWindow(base.BaseWindow):
     def update_device_addrs(self):
         self._info_wrist.update_addr(self._state.nearby_devices[0])
         self._info_ankle.update_addr(self._state.nearby_devices[1])
+        self._info_thigh.update_addr(self._state.nearby_devices[2])
 
     def add_to_result(self):
         if self._result is None:
@@ -581,3 +641,21 @@ class StreamWindow(base.BaseWindow):
 
     def is_annotation_incomplete(self):
         return self._current_annotation['STOP_TIME'] is None
+
+    def enable_device_selections(self):
+        self._info_wrist.enable_selection()
+        self._info_ankle.enable_selection()
+        self._info_thigh.enable_selection()
+
+    def disable_device_selections(self):
+        self._info_wrist.disable_selection()
+        self._info_ankle.disable_selection()
+        self._info_thigh.disable_selection()
+
+    def update_device_selections(self):
+        selected = 'DW' in self._selected_placements
+        self._info_wrist.update_selection(selected)
+        selected = 'DA' in self._selected_placements
+        self._info_ankle.update_selection(selected)
+        selected = 'DT' in self._selected_placements
+        self._info_thigh.update_selection(selected)

@@ -18,6 +18,7 @@ class Event(enum.Enum):
     PROGRESS_UPDATE = enum.auto()
     TASK_COMPLETED = enum.auto()
     RESULT_READY = enum.auto()
+    PLACEMENT_SELECTED = enum.auto()
 
 
 class Mode(enum.Enum):
@@ -33,6 +34,7 @@ class TaskWindow(base.BaseWindow):
         self._task = None
         self._result = None
         self._selected_strategy = None
+        self._selected_placements = None
         self._mode = mode
 
     def init_states(self):
@@ -71,6 +73,12 @@ class TaskWindow(base.BaseWindow):
             self._start_button
         ]
 
+        placements = ['DW', 'DA', 'DT']
+        placement_list_row = [
+            comp.selection_list(placements, default_selections=placements,
+                                mode='multiple', fixed_column_width=self._column_width, rows=len(placements), key=Event.PLACEMENT_SELECTED)
+        ]
+
         strategy_row = self.init_strategy_controls()
 
         self._progress_bar = comp.ProgressBar(
@@ -89,6 +97,7 @@ class TaskWindow(base.BaseWindow):
         layout = [
             header_row,
             start_button_row,
+            placement_list_row,
             strategy_row,
             progress_text_row,
             progress_bar_row,
@@ -102,6 +111,7 @@ class TaskWindow(base.BaseWindow):
         )
 
     def _update_states_and_events(self, event, values):
+        self._selected_placements = values[Event.PLACEMENT_SELECTED]
         for strategy in self._strategies:
             if values[strategy]:
                 self._selected_strategy = strategy
@@ -206,7 +216,8 @@ class TaskWindow(base.BaseWindow):
                 new_labels=self._state.new_labels,
                 progress_queue=self._progress_queue,
                 strategy=self._selected_strategy,
-                pool=self._state.task_pool
+                pool=self._state.task_pool,
+                placement_names=self._selected_placements
             )
         elif self._mode == Mode.LOSO:
             backend.validate_model(
@@ -216,7 +227,8 @@ class TaskWindow(base.BaseWindow):
                 new_labels=self._state.new_labels,
                 progress_queue=self._progress_queue,
                 strategy=self._selected_strategy,
-                pool=self._state.task_pool
+                pool=self._state.task_pool,
+                placement_names=self._selected_placements
             )
 
     def increment_progress(self, percentage=None):
