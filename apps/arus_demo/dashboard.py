@@ -87,7 +87,7 @@ class Dashboard(base.BaseWindow):
 
         if self._state.new_labels != values[Event.NEW_LABELS_CHANGED]:
             self._state.new_labels = values[Event.NEW_LABELS_CHANGED][:]
-            if len(self._state.new_labels) >= 2:
+            if len(self._state.new_labels) >= 1:
                 self._events.put(Event.ENOUGH_NEW_LABELS)
             else:
                 self._events.put(Event.NOT_ENOUGH_NEW_LABELS)
@@ -95,7 +95,7 @@ class Dashboard(base.BaseWindow):
         if self._state.data_collection_labels != values[Event.DATA_COLLECTION_LABELS_CHANGED]:
             self._state.data_collection_labels = values[
                 Event.DATA_COLLECTION_LABELS_CHANGED][:]
-            if len(self._state.data_collection_labels) >= 2:
+            if len(self._state.data_collection_labels) >= 1:
                 self._events.put(Event.ENOUGH_DATA_COLLECTION_LABELS)
             else:
                 self._events.put(Event.NOT_ENOUGH_DATA_COLLECTION_LABELS)
