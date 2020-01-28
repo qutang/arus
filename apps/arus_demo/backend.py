@@ -205,7 +205,7 @@ def prepare_new_dataset(dataset, labels, class_col, progress_queue):
     progress_queue.put(
         'Preparing feature and classes for the new collected data...')
     new_feature = dataset.iloc[:, :-2]
-    new_class = dataset.iloc[:, [0, 1, 2, -2]]
+    new_class = dataset.iloc[:, [0, 1, 2, -3]]
     new_class = new_class.rename(
         columns={'GT_LABEL': class_col})
     progress_queue.put('Filtering out unused class labels...')
