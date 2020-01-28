@@ -10,6 +10,7 @@
 * Support real-time data summary in stream window for arus demo app.
 * Support thigh placement.
 * Support select placements for training, testing, validating and data collection.
+* Support select device addrs for different placements via a dropdown list.
 
 ## Improved
 
