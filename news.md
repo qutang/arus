@@ -19,6 +19,8 @@
 ## Fix
 
 * Now muss model combines feature sets for each placement correctly when there are more than two placements involved.
+* Now new model is correctly trained with new data of user-added activitiy labels.
+* Now collecting and training new data requires only one activity label being selected.
 
 # 0.6.2
 
