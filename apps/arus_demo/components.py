@@ -54,7 +54,7 @@ def selection_list(items, default_selections=None, mode='single', fixed_column_w
 
 
 def dropdown_list(items, default_item=None, fixed_column_width=None, key=None):
-    return sg.Combo(items, default_value=default_item, size=(fixed_column_width, None), key=key)
+    return sg.Combo(items, default_value=default_item, size=(fixed_column_width, None), key=key, enable_events=True)
 
 
 def control_button(text, size='normal', fixed_column_width=None, disabled=False, key=None):
@@ -230,30 +230,38 @@ class Plot:
 
 
 class DeviceInfo:
-    def __init__(self, device_name, device_address="", placement_img_url=None, fixed_column_width=None, device_name_key=None, placement_img_key=None, device_addr_key=None, device_selected=True, device_selection_disabled=False):
+    def __init__(self, device_name, device_addr_list=[], placement_img_url=None, fixed_column_width=None, device_name_key=None, placement_img_key=None, device_addr_key=None, device_selected=True, device_selection_disabled=False):
         self._device_name = checkbox(device_name,
                                      fixed_column_width=fixed_column_width, default_checked=device_selected, key=device_name_key, disabled=device_selection_disabled)
         self._device_placement = image(placement_img_url,
                                        key=placement_img_key)
-        self._device_addr = text(device_address,
-                                 fixed_column_width=fixed_column_width,
-                                 key=device_addr_key)
+        self._device_addr_list = dropdown_list(
+            items=device_addr_list, default_item=None, fixed_column_width=fixed_column_width, key=device_addr_key)
 
     def get_component(self):
         return (
             [self._device_name],
             [self._device_placement],
-            [self._device_addr]
+            [self._device_addr_list]
         )
 
-    def update_addr(self, addr):
-        self._device_addr.update(value=addr)
+    def update_addr_list(self, addrs, index):
+        self._device_addr_list.update(values=addrs, set_to_index=index)
+
+    def update_addr_selection(self, index):
+        self._device_addr_list.update(set_to_index=index)
 
     def enable_selection(self):
         self._device_name.update(disabled=False)
 
     def disable_selection(self):
         self._device_name.update(disabled=True)
+
+    def disable_addr_list(self):
+        self._device_addr_list.update(disabled=True)
+
+    def enable_addr_list(self):
+        self._device_addr_list.update(disabled=False)
 
     def update_selection(self, selected=False):
         self._device_name.update(selected)

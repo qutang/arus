@@ -54,7 +54,8 @@ class StreamWindow(base.BaseWindow):
         self._support_modes = support_modes
         self._selected_mode = None
         self._selected_placements = None
-        self._selected_devices = None
+        self._selected_devices = ['', '', '']
+        self._selected_placement_addrs = None
 
         self._scan_task = None
         self._connect_task = None
@@ -184,6 +185,7 @@ class StreamWindow(base.BaseWindow):
         if self._scan_task is not None:
             if self._scan_task.ready():
                 self._state.nearby_devices = sorted(self._scan_task.get())
+                self._selected_devices = self._state.nearby_devices[:3]
                 self._events.put(Event.SCAN_COMPLETED)
                 self._scan_task = None
 
@@ -228,6 +230,13 @@ class StreamWindow(base.BaseWindow):
                     self._selected_mode = mode
                     break
 
+        if event == 'DW_ADDR':
+            self._selected_devices[0] = values[event]
+        if event == 'DA_ADDR':
+            self._selected_devices[1] = values[event]
+        if event == 'DT_ADDR':
+            self._selected_devices[2] = values[event]
+
         if event in ['DW', 'DA', 'DT']:
             if values[event]:
                 self._selected_placements.append(event)
@@ -237,7 +246,7 @@ class StreamWindow(base.BaseWindow):
                          str(self._selected_placements))
 
         if self._state.nearby_devices is not None:
-            self._selected_devices = [self._state.nearby_devices[[
+            self._selected_placement_addrs = [self._selected_devices[[
                 'DW', 'DA', 'DT'].index(placement)] for placement in self._selected_placements]
 
         if self._pipeline is not None:
@@ -286,8 +295,13 @@ class StreamWindow(base.BaseWindow):
             self.enable_scan_button()
             self.enable_connect_button()
         elif event == Event.CONNECT_DEVICES:
-            self.connect_devices()
-            self.disable_connect_button()
+            if len(set(self._selected_devices)) != len(self._selected_devices):
+                sg.Popup(
+                    'Please make sure the selected device addresses are all different', title='Warning')
+            else:
+                self.connect_devices()
+                self.disable_connect_button()
+                self.disable_device_selections()
         elif event == Event.DEVICE_CONNECTED:
             self.enable_disconnect_button()
             self.disable_connect_button(finished=True)
@@ -299,6 +313,7 @@ class StreamWindow(base.BaseWindow):
             self.disable_start_button()
         elif event == Event.DEVICE_DISCONNECTED:
             self.enable_connect_button()
+            self.enable_device_selections()
             self.disable_disconnect_button(finished=True)
             self.disable_start_button(finished=True)
             self.disable_stop_button(finished=True)
@@ -333,10 +348,10 @@ class StreamWindow(base.BaseWindow):
             logging.info('Annotation is saved.')
         elif event == Event.MODE_CHANGED:
             if self._selected_mode == backend.PROCESSOR_MODE.COLLECT_ONLY:
-                self.enable_device_selections()
+                self.enable_placement_selections()
             else:
-                self.update_device_selections()
-                self.disable_device_selections()
+                self.update_placement_selections()
+                self.disable_placement_selections()
 
     def init_devices_view(self):
         if 'DW' in self._selected_placements and self._selected_mode != backend.PROCESSOR_MODE.COLLECT_ONLY:
@@ -349,7 +364,9 @@ class StreamWindow(base.BaseWindow):
             dw_selected = False
             dw_disabled = True
         self._info_wrist = comp.DeviceInfo(device_name='Dominant Wrist',
-                                           placement_img_url='./assets/dom_wrist.png', fixed_column_width=30, device_name_key="DW", device_selected=dw_selected,
+                                           placement_img_url='./assets/dom_wrist.png', fixed_column_width=30, device_name_key="DW",
+                                           device_addr_key="DW_ADDR",
+                                           device_selected=dw_selected,
                                            device_selection_disabled=dw_disabled)
         if 'DA' in self._selected_placements and self._selected_mode != backend.PROCESSOR_MODE.COLLECT_ONLY:
             da_selected = True
@@ -362,7 +379,9 @@ class StreamWindow(base.BaseWindow):
             da_disabled = True
         self._info_ankle = comp.DeviceInfo(device_name='Right Ankle',
                                            placement_img_url='./assets/right_ankle.png',
-                                           fixed_column_width=30, device_name_key="DA", device_selected=da_selected, device_selection_disabled=da_disabled)
+                                           fixed_column_width=30, device_name_key="DA",
+                                           device_addr_key="DA_ADDR",
+                                           device_selected=da_selected, device_selection_disabled=da_disabled)
         if 'DT' in self._selected_placements and self._selected_mode != backend.PROCESSOR_MODE.COLLECT_ONLY:
             dt_selected = True
             dt_disabled = True
@@ -374,7 +393,9 @@ class StreamWindow(base.BaseWindow):
             dt_disabled = True
         self._info_thigh = comp.DeviceInfo(device_name='Dominant Thigh',
                                            placement_img_url='./assets/dom_thigh.png',
-                                           fixed_column_width=30, device_name_key="DT", device_selected=dt_selected, device_selection_disabled=dt_disabled)
+                                           fixed_column_width=30, device_name_key="DT",
+                                           device_addr_key='DT_ADDR',
+                                           device_selected=dt_selected, device_selection_disabled=dt_disabled)
         return [sg.Column(layout=self._info_wrist.get_component(), scrollable=False), sg.Column(layout=self._info_ankle.get_component(), scrollable=False), sg.Column(layout=self._info_thigh.get_component(), scrollable=False)]
 
     def init_test_view(self):
@@ -465,7 +486,7 @@ class StreamWindow(base.BaseWindow):
 
     def connect_devices(self):
         self._connect_task = backend.connect_devices(
-            self._selected_devices, model=self._test_model, mode=self._selected_mode, output_folder=self._state.output_folder, pid=self._state.pid, placement_names=self._selected_placements)
+            self._selected_placement_addrs, model=self._test_model, mode=self._selected_mode, output_folder=self._state.output_folder, pid=self._state.pid, placement_names=self._selected_placements)
 
     def start_test(self):
         self._start_task = backend.start_test_model(self._pipeline)
@@ -515,9 +536,9 @@ class StreamWindow(base.BaseWindow):
         self._scan_button.update('Scan devices', disabled=False)
 
     def update_device_addrs(self):
-        self._info_wrist.update_addr(self._state.nearby_devices[0])
-        self._info_ankle.update_addr(self._state.nearby_devices[1])
-        self._info_thigh.update_addr(self._state.nearby_devices[2])
+        self._info_wrist.update_addr_list(self._state.nearby_devices, index=0)
+        self._info_ankle.update_addr_list(self._state.nearby_devices, index=1)
+        self._info_thigh.update_addr_list(self._state.nearby_devices, index=2)
 
     def add_to_result(self):
         if self._result is None:
@@ -642,20 +663,30 @@ class StreamWindow(base.BaseWindow):
     def is_annotation_incomplete(self):
         return self._current_annotation['STOP_TIME'] is None
 
-    def enable_device_selections(self):
+    def enable_placement_selections(self):
         self._info_wrist.enable_selection()
         self._info_ankle.enable_selection()
         self._info_thigh.enable_selection()
 
-    def disable_device_selections(self):
+    def disable_placement_selections(self):
         self._info_wrist.disable_selection()
         self._info_ankle.disable_selection()
         self._info_thigh.disable_selection()
 
-    def update_device_selections(self):
+    def update_placement_selections(self):
         selected = 'DW' in self._selected_placements
         self._info_wrist.update_selection(selected)
         selected = 'DA' in self._selected_placements
         self._info_ankle.update_selection(selected)
         selected = 'DT' in self._selected_placements
         self._info_thigh.update_selection(selected)
+
+    def disable_device_selections(self):
+        self._info_wrist.disable_addr_list()
+        self._info_ankle.disable_addr_list()
+        self._info_thigh.disable_addr_list()
+
+    def enable_device_selections(self):
+        self._info_wrist.enable_addr_list()
+        self._info_ankle.enable_addr_list()
+        self._info_thigh.enable_addr_list()
