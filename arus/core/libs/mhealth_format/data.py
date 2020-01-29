@@ -248,3 +248,20 @@ def append_edge_data(df, before_df=None, after_df=None, duration=120,
         redge_df = pd.DataFrame()
 
     return pd.concat((ledge_df, df, redge_df))
+
+
+def create_accel_dataframe(ts, values):
+    result = pd.DataFrame(index=ts, data=values, columns=['X', 'Y', 'Z'])
+    result = result.reset_index(drop=False)
+    result = result.rename(columns={'index': 'HEADER_TIME_STAMP'})
+    return result
+
+
+def create_annotation_dataframe(start_times, stop_times, label_names):
+    result = pd.DataFrame.from_dict({
+        'HEADER_TIME_STAMP': start_times,
+        'START_TIME': start_times,
+        'STOP_TIME': stop_times,
+        'LABEL_NAME': label_names
+    })
+    return result

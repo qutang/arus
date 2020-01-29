@@ -18,3 +18,9 @@ def parse_timestamp(ts):
 
 def datetime2unix(ts):
     return (ts - dt.datetime(1970, 1, 1)) / dt.timedelta(seconds=1)
+
+def get_timestamp_sequence(st, sr, N):
+    N = N + 1
+    freq = str(int(1000000 / sr)) + 'us'
+    ts = pd.date_range(start=st, periods=N, freq=freq)
+    return ts
