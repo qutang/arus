@@ -259,7 +259,7 @@ def extract_sid(filepath):
 
 def extract_file_type(filepath):
     # assert is_mhealth_filepath(filepath) or is_mhealth_flat_filepath(
-        # filepath) or is_mhealth_filename(os.path.basename(filepath))
+    # filepath) or is_mhealth_filename(os.path.basename(filepath))
     filename = os.path.basename(filepath)
     if filename.endswith('gz'):
         return filename.split('.')[-3]
@@ -304,7 +304,7 @@ def extract_existing_hourly_filepaths(filepath):
                                                  data_type=data_type, version_code=version_code, sensor_or_annotator_id=sensor_or_annotator_id)
 
     found_files = glob.glob(os.path.join(pid_path, "MasterSynced",
-                                    "**", hourly_file_pattern), recursive=True)
+                                         "**", hourly_file_pattern), recursive=True)
     if len(found_files) == 0:
         return []
     else:
