@@ -17,11 +17,11 @@ except ImportError as e:
 import multiprocessing
 import sys
 import os
+from arus import developer
 
 
 def start_app():
-    logging.basicConfig(
-        level=logging.INFO, format='[%(levelname)s]%(asctime)s <P%(process)d-%(threadName)s> %(message)s')
+    developer.set_default_logging()
     sg.theme('Reddit')
     os.chdir(os.path.dirname(os.path.realpath(__file__)))
     session_panel.SessionSelectionPanel().start()
