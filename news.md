@@ -14,11 +14,14 @@
 
 - Add dataset module for sample dataset loading and reproducing.
 - Add env module for managing environment variables and paths related to the package.
+- Add mhealth_format module for manipulating mhealth dataset.
+- Add developer module to provide utilities for arus developers. 
 
 ### Arus models
 
 - Support replacement and combination LOSO validation with plugin-in data for muss model.
 - Support draw on an existing figure for plot_confusion_matrix.
+- Add new pipeline processor to process mhealth dataset as feature set file.
 
 ### Arus demo app
 
@@ -37,6 +40,10 @@
 - Stability and better code structure.
 
 ## Fix
+
+### Arus core
+
+- Now pipeline stops correctly when all streams finishes serving data.
 
 ### Arus models
 
