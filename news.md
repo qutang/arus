@@ -5,6 +5,10 @@
 ### Console
 
 - Add a console to replace independent scripts to provide utility commands for developers.
+- Developer console now supports
+    - Bump package version
+    - Build website and app
+    - Compress dataset
 
 ### Arus core
 
