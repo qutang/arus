@@ -23,16 +23,22 @@ import importlib
 
 def compress_dataset(source_dir, out_dir, out_name):
     os.makedirs(out_dir, exist_ok=True)
-    logging.info('Use Python tar module to compress dataset...')
+    if command_is_available('tar --version'):
+        logging.info('Use tar to compress dataset...')
+        output_path = os.path.join(out_dir, out_name)
+        subprocess.run(
+            'tar --exclude=".git" --exclude="DerivedCrossParticipants" --exclude=".gitignore" -zcvf {} {}'.format(output_path, source_dir), shell=True)
+    else:
+        logging.info('Use Python tar module to compress dataset...')
 
-    def exclude(tarinfo):
-        if 'DerivedCrossParticipants' in tarinfo.name:
-            return None
-        else:
-            return tarinfo
-    with tarfile.open(os.path.join(out_dir, out_name), "w:gz") as tar:
-        tar.add(source_dir, arcname=os.path.basename(
-            source_dir), filter=exclude)
+        def exclude(tarinfo):
+            if 'DerivedCrossParticipants' in tarinfo.name or '.git' in tarinfo.name or '.gitignore' in tarinfo.name:
+                return None
+            else:
+                return tarinfo
+        with tarfile.open(os.path.join(out_dir, out_name), "w:gz") as tar:
+            tar.add(source_dir, arcname=os.path.basename(
+                source_dir), filter=exclude)
 
     logging.info('Compression is completed.')
 
