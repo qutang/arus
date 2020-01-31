@@ -36,3 +36,19 @@ def website(root, folder):
 @click.argument('version')
 def app(root, name, version):
     developer.build_arus_app(root, name, version)
+
+
+@main.group(short_help="manipulate dataset")
+@click.argument('name')
+@click.pass_context
+def dataset(ctx, name):
+    ctx.ensure_object(dict)
+    ctx.obj['name'] = name
+
+
+@dataset.command(short_help='compress dataset')
+@click.argument('src')
+@click.argument('dest')
+@click.pass_context
+def compress(ctx, src, dest):
+    developer.compress_dataset(src, dest, ctx.obj['name'] + '.tar.gz')
