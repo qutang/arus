@@ -60,6 +60,7 @@ class Pipeline:
             preserve_status (bool, optional): whether to preserve the previous input and output in the processor. If `True`, the second and third argument of processor function would be `prev_input` and `prev_output`. Defaults to `False`. When it is `True`, processors will run in sequence, meaning the next processor will start only when the previous one has completed.
             name (str, optional): the name of the pipeline. It will also be used as a prefix for all threads spawned by the class. Defaults to 'default-pipeline'.
         """
+        self._started = False
         self._scheduler = scheduler
         self._max_processes = max_processes
         self._process_tasks = queue.Queue()
@@ -70,7 +71,7 @@ class Pipeline:
         self._streams = []
         self._chunks = dict()
         self._stream_pointer = dict()
-        self._started = False
+        self._streams_running = False
         self._process_cond = threading.Condition(threading.Lock())
         self._connected = False
         self._stop_sender = False
@@ -263,23 +264,28 @@ class Pipeline:
         while self._connected:
             if self._started:
                 for stream in self._streams:
-                    for data, st, et, prev_st, prev_et, name in stream.get_iterator():
+                    if stream.started:
+                        for data, st, et, prev_st, prev_et, name in stream.get_iterator():
+                            if self._is_data_after_start_time(st):
+                                logging.debug(
+                                    'recieved data window from ' + name)
+                                self._chunks[st.timestamp()] = [] if st.timestamp(
+                                ) not in self._chunks else self._chunks[st.timestamp()]
+                                self._chunks[st.timestamp()].append(
+                                    (data, st, et, prev_st, prev_et, name))
+                                self._stream_pointer[name] = st.timestamp()
+                                break
+                            else:
+                                pass
                         if self._is_data_after_start_time(st):
-                            logging.info('recieved data window from ' + name)
-                            self._chunks[st.timestamp()] = [] if st.timestamp(
-                            ) not in self._chunks else self._chunks[st.timestamp()]
-                            self._chunks[st.timestamp()].append(
-                                (data, st, et, prev_st, prev_et, name))
-                            self._stream_pointer[name] = st.timestamp()
-                            break
+                            self._process_synced_chunks(
+                                st, et, prev_st, prev_et, self.name)
                         else:
-                            pass
-                    if self._is_data_after_start_time(st):
-                        self._process_synced_chunks(
-                            st, et, prev_st, prev_et, self.name)
-                    else:
-                        logging.debug('Discard one stream window' + str(
-                            st) + 'coming before process start time: ' + str(self._process_start_time))
+                            logging.debug('Discard one stream window' + str(
+                                st) + 'coming before process start time: ' + str(self._process_start_time))
+                if np.all([not stream.started for stream in self._streams]):
+                    self._streams_running = False
+                    break
             else:
                 with self._process_cond:
                     # ignore the incoming stream data, the thread will stand by
@@ -302,7 +308,9 @@ class Pipeline:
                     self._put_result_in_queue(
                         (result, st, et, prev_st, prev_et, name))
                 except queue.Empty:
-                    pass
+                    if not self._streams_running:
+                        self._put_result_in_queue(None)
+                        break
             else:
                 with self._process_cond:
                     # ignore if the pipeline is just connected but not started
@@ -387,6 +395,7 @@ class Pipeline:
         self._sender_thread.start()
         for stream in self._streams:
             stream.start(start_time=start_time)
+        self._streams_running = True
         return self
 
     def process(self, start_time=None):
