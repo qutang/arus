@@ -125,6 +125,28 @@ def muss_data_collection_processor(chunk_list, **kwargs):
     return predicted_probs, filtered_combined_df, raw_data_dfs
 
 
+def muss_mhealth_dataset_processor(chunk_list, **kwargs):
+    import pandas as pd
+    from .muss import MUSSModel
+    muss = MUSSModel()
+    feature_dfs = []
+    for df, st, et, prev_st, prev_et, name in chunk_list:
+        if df.empty:
+            continue
+        placement = name
+        feature_df = muss.compute_features(
+            df, sr=kwargs[name]['sr'], st=st, et=et)
+        feature_df['PLACEMENT'] = placement
+        feature_dfs.append(feature_df)
+    if len(feature_dfs) == 0:
+        combined_df = pd.DataFrame()
+    elif len(feature_dfs) == 1:
+        combined_df = feature_dfs[0]
+    else:
+        combined_df = pd.concat(feature_dfs, axis=0, sort=False)
+    return combined_df
+
+
 class Strategy(enum.Enum):
     REPLACE_ORIGIN = enum.auto()
     COMBINE_ORIGIN = enum.auto()
@@ -204,48 +226,53 @@ class MUSSModel:
         return synced_feature, synced_class
 
     def compute_features(self, input_data, sr, st, et, subwin_secs=2, ori_unit='rad', activation_threshold=0.2):
-        subwin_samples = subwin_secs * sr
-        X = arus_num.format_arr(input_data.values[:, 1:4])
-        vm_feature_funcs = [
-            accel_stats.mean,
-            accel_stats.std,
-            accel_stats.max_value,
-            accel_stats.max_minus_min,
-            functools.partial(accel_spectrum.spectrum_features,
-                              sr=sr, n=1, preset='muss'),
-            functools.partial(accel_activation.stats_active_samples,
-                              threshold=activation_threshold)
-        ]
-
-        axis_feature_funcs = [
-            functools.partial(accel_ori.gravity_angle_stats,
-                              subwin_samples=subwin_samples, unit=ori_unit)
-        ]
-
-        X_vm = accel_transform.vector_magnitude(X)
-
-        X_vm_filtered = arus_filtering.butterworth(
-            X_vm, sr=sr, cut_offs=20, order=4, filter_type='low')
-        X_filtered = arus_filtering.butterworth(X, sr=sr, cut_offs=20,
-                                                order=4, filter_type='low')
-
         result = {
             'HEADER_TIME_STAMP': [st],
             'START_TIME': [st],
             'STOP_TIME': [et]
         }
-        for func in vm_feature_funcs:
-            values, names = func(X_vm_filtered)
-            for value, name in zip(values.transpose(), names):
-                if name in self._FEATURE_NAMES:
-                    result[name] = value.tolist()
 
-        for func in axis_feature_funcs:
-            values, names = func(X_filtered)
-            for value, name in zip(values.transpose(), names):
-                if name in self._FEATURE_NAMES:
-                    result[name] = value.tolist()
+        subwin_samples = subwin_secs * sr
+        X = arus_num.format_arr(input_data.values[:, 1:4])
 
+        if input_data.shape[0] < sr:
+            for name in self._FEATURE_NAMES:
+                result[name] = [np.nan]
+        else:
+            vm_feature_funcs = [
+                accel_stats.mean,
+                accel_stats.std,
+                accel_stats.max_value,
+                accel_stats.max_minus_min,
+                functools.partial(accel_spectrum.spectrum_features,
+                                  sr=sr, n=1, preset='muss'),
+                functools.partial(accel_activation.stats_active_samples,
+                                  threshold=activation_threshold)
+            ]
+
+            axis_feature_funcs = [
+                functools.partial(accel_ori.gravity_angle_stats,
+                                  subwin_samples=subwin_samples, unit=ori_unit)
+            ]
+
+            X_vm = accel_transform.vector_magnitude(X)
+
+            X_vm_filtered = arus_filtering.butterworth(
+                X_vm, sr=sr, cut_offs=20, order=4, filter_type='low')
+            X_filtered = arus_filtering.butterworth(X, sr=sr, cut_offs=20,
+                                                    order=4, filter_type='low')
+
+            for func in vm_feature_funcs:
+                values, names = func(X_vm_filtered)
+                for value, name in zip(values.transpose(), names):
+                    if name in self._FEATURE_NAMES:
+                        result[name] = value.tolist()
+
+            for func in axis_feature_funcs:
+                values, names = func(X_filtered)
+                for value, name in zip(values.transpose(), names):
+                    if name in self._FEATURE_NAMES:
+                        result[name] = value.tolist()
         result = pd.DataFrame.from_dict(result)
         return result
 
@@ -439,4 +466,13 @@ class MUSSModel:
         for stream in streams:
             pipeline.add_stream(stream)
         pipeline.set_processor(muss_data_collection_processor, **kwargs)
+        return pipeline
+
+    @staticmethod
+    def get_mhealth_dataset_pipeline(*streams, name, **kwargs):
+        pipeline = arus_pipeline.Pipeline(
+            max_processes=kwargs['max_processes'], scheduler=kwargs['scheduler'], name=name)
+        for stream in streams:
+            pipeline.add_stream(stream)
+        pipeline.set_processor(muss_mhealth_dataset_processor, **kwargs)
         return pipeline
