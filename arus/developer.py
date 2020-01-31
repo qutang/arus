@@ -19,6 +19,7 @@ import subprocess
 import pathlib
 import shutil
 import importlib
+import pprint
 
 
 def compress_dataset(source_dir, out_dir, out_name):
@@ -175,6 +176,10 @@ def build_arus_app(root, app_name, version):
     subprocess.run("zip -r " + app_path +
                    " ./", shell=True, cwd=cwd)
     shutil.rmtree('./apps/{}/build'.format(app_name), ignore_errors=True)
+
+
+def print_dict(data):
+    pprint.pprint(data, width=1)
 
 
 def set_default_logging():
