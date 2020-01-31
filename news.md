@@ -2,6 +2,10 @@
 
 ## Added
 
+### Console
+
+- Add a console to replace independent scripts to provide utility commands for developers.
+
 ### Arus core
 
 - Add dataset module for sample dataset loading and reproducing.
