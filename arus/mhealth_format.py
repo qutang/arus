@@ -28,6 +28,13 @@ def get_subjects_info(dataset_path):
     return subjects
 
 
+def get_class_category(dataset_path):
+    filepath = os.path.join(
+        dataset_path, 'MetaCrossParticipants', 'muss_class_labels.csv')
+    class_category = pd.read_csv(filepath, header=0)
+    return class_category
+
+
 def parse_placement_str(placement_str):
     result = ''
     placement_str = placement_str.lower()
@@ -128,8 +135,10 @@ def traverse_dataset(dataset_path):
     location_mappings = get_location_mappings(
         dataset_path)
     subjects = get_subjects_info(dataset_path)
+    class_category = get_class_category(dataset_path)
     dataset_dict['meta']['location_mapping'] = location_mappings
     dataset_dict['meta']['subjects'] = subjects
+    dataset_dict['meta']['class_category'] = class_category
     dataset_dict['meta']['root'] = dataset_path
     dataset_dict['meta']['name'] = os.path.basename(dataset_path)
 
