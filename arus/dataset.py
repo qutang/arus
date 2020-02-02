@@ -62,7 +62,7 @@ def process_raw_dataset(dataset_name, approach='muss'):
     dataset_path = get_dataset_path(dataset_name)
     dataset_dict = load_raw_dataset(dataset_name)
     processed_dataset = _process_mehealth_dataset(
-        dataset_path, dataset_dict, approach=approach)
+        dataset_dict, approach=approach)
     output_path = os.path.join(
         env.get_data_home(), dataset_name + '.' + approach + '.feature.csv')
     processed_dataset.to_csv(
@@ -99,7 +99,7 @@ def decompress_dataset(dataset_path):
     return output_path
 
 
-def _process_mehealth_dataset(dataset_path, dataset_dict, approach='muss', **kwargs):
+def _process_mehealth_dataset(dataset_dict, approach='muss', **kwargs):
     if 'window_size' in kwargs:
         window_size = kwargs['window_size'] or 12.8
     else:
@@ -110,16 +110,18 @@ def _process_mehealth_dataset(dataset_path, dataset_dict, approach='muss', **kwa
         sr = 80
 
     results = []
-    for pid in dataset_dict.keys():
+    dataset_path = dataset_dict['meta']['root']
+    subject_data_dict = dataset_dict['subjects']
+    for pid in subject_data_dict.keys():
         logging.info('Start processing {}'.format(pid))
         pid_processed = None
         start_time = mh.get_session_start_time(pid, dataset_path)
         pipeline_kwargs = {}
         streams = []
-        for p in dataset_dict[pid]['sensors'].keys():
+        for p in subject_data_dict[pid]['sensors'].keys():
             stream_name = p
             pid_sid_stream = SensorFileSlidingWindowStream(
-                dataset_dict[pid]['sensors'][p], window_size=window_size, sr=sr, name=stream_name)
+                subject_data_dict[pid]['sensors'][p], window_size=window_size, sr=sr, name=stream_name)
             streams.append(pid_sid_stream)
             pipeline_kwargs[stream_name] = {
                 'sr': sr

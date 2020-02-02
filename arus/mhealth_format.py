@@ -19,6 +19,13 @@ def get_location_mappings(dataset_path):
     return mappings
 
 
+def get_subjects_info(dataset_path):
+    filepath = os.path.join(
+        dataset_path, 'MetaCrossParticipants', 'subjects.csv')
+    subjects = pd.read_csv(filepath, header=0)
+    return subjects
+
+
 def parse_placement_str(placement_str):
     result = ''
     placement_str = placement_str.lower()
@@ -112,27 +119,42 @@ def traverse_dataset(dataset_path):
         return list(set([get_annotation_type(os.path.basename(filepath))
                          for filepath in annotation_files]))
 
-    dataset_dict = {}
+    dataset_dict = {'meta': {}, 'subjects': {}}
     ids = get_pids(dataset_path)
-    location_mappings = get_location_mappings(dataset_path)
+
+    # Get meta files
+    location_mappings = get_location_mappings(
+        dataset_path)
+    subjects = get_subjects_info(dataset_path)
+    dataset_dict['meta']['location_mapping'] = location_mappings
+    dataset_dict['meta']['subjects'] = subjects
+    dataset_dict['meta']['root'] = dataset_path
+
     for pid in ids:
-        dataset_dict[pid] = {'sensors': {}, 'annotations': {}}
+        dataset_dict['subjects'][pid] = {'sensors': {}, 'annotations': {}}
+
+        # Get sensor files
         sids = _get_sids_from_location_mappings(pid, location_mappings)
         placements = _get_placements_from_location_mappings(
             pid, location_mappings)
         placements = _parse_placements(placements)
+
         for sid, p in zip(sids, placements):
-            dataset_dict[pid]['sensors'][p] = get_sensor_files(
+            dataset_dict['subjects'][pid]['sensors'][p] = get_sensor_files(
                 pid, dataset_path, sid=sid)
+
+        # Get annotation files
         annotation_files = get_annotation_files(pid, dataset_path)
         annotation_types = _parse_annotation_types(annotation_files)
         for annotation_type in annotation_types:
-            dataset_dict[pid]['annotations'][annotation_type] = get_annotation_files(
+            dataset_dict['subjects'][pid]['annotations'][annotation_type] = get_annotation_files(
                 pid, dataset_path, annotation_type=annotation_type)
     return dataset_dict
 
 
 if __name__ == "__main__":
     from arus import developer
-    dataset_dict = traverse_dataset('D:/data/muss_data')
+    from arus import env
+    dataset_dict = traverse_dataset(
+        os.path.join(env.get_data_home(), 'spades_lab'))
     developer.print_dict(dataset_dict)
