@@ -1,7 +1,7 @@
 name: unittest and build test
 
 on:
-  push: 
+  push:
     branches:
       - "**"
   pull_request:
@@ -12,39 +12,39 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-    - name: Check out repository
-      uses: actions/checkout@master
-      # with:
-      #   submodules: true
+      - name: Check out repository
+        uses: actions/checkout@master
 
-    - name: Setup python version
-      uses: actions/setup-python@v1
-      with:
-        python-version: '3.7.x' # Version range or exact version of a Python version to use, using semvers version range syntax.
-        architecture: 'x64' # (x64 or x86)
+        # with:
+        #   submodules: true
+      - name: Setup python version
+        uses: actions/setup-python@v1
+        with:
+          python-version: "3.7.x" # Version range or exact version of a Python version to use, using semvers version range syntax.
+          architecture: "x64" # (x64 or x86)
 
-    - name: Setup system dependencies
-      run: | 
-        sudo apt update
-        sudo apt install bluez
-        sudo apt install libboost-all-dev
-        sudo apt install libbluetooth-dev
-        sudo apt install libasound2-dev
+      - name: Setup system dependencies
+        run: |
+          sudo apt update
+          sudo apt install bluez
+          sudo apt install libboost-all-dev
+          sudo apt install libbluetooth-dev
+          sudo apt install libasound2-dev
 
-    - name: Setup python dev environment
-      run: |
-        pip install --upgrade pip
-        pip install poetry
-        poetry install --extras "metawear demo"
+      - name: Setup python dev environment
+        run: |
+          pip install --upgrade pip
+          pip install poetry
+          poetry install --extras "metawear demo"
 
-    - name: Run tests
-      run: poetry run pytest --cov --cov-report=xml arus
+      - name: Run tests
+        run: poetry run pytest --cov --cov-report=xml arus
 
-    - name: Test building package
-      run: poetry build
+      - name: Test building package
+        run: poetry build
 
-    - name: Test building apps
-      run: poetry run python build_apps.py
+      - name: Test building apps
+        run: poetry run arus_dev app . arus_demo 1.0
 
-    - name: Test building website
-      run: poetry run python build_website.py
+      - name: Test building website
+        run: poetry run arus_dev website .
