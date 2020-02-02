@@ -178,8 +178,9 @@ def build_arus_app(root, app_name, version):
     shutil.rmtree('./apps/{}/build'.format(app_name), ignore_errors=True)
 
 
-def print_dict(data):
-    pprint.pprint(data, width=1)
+def logging_dict(data, level=logging.INFO):
+    info = pprint.pformat(data, width=1)
+    logging.log(level=level, msg=info)
 
 
 def set_default_logging():
