@@ -32,6 +32,7 @@ from ..core.libs.dsp import filtering as arus_filtering
 from ..core.libs import num as arus_num
 from ..core import pipeline as arus_pipeline
 from ..core.libs import mhealth_format as arus_mh
+from .. import mhealth_format as mh
 
 
 def muss_inference_processor(chunk_list, **kwargs):
@@ -132,6 +133,8 @@ def muss_mhealth_dataset_processor(chunk_list, **kwargs):
     feature_dfs = []
     for df, st, et, prev_st, prev_et, name in chunk_list:
         if df.empty:
+            continue
+        if name not in mh.SENSOR_PLACEMENTS:
             continue
         placement = name
         feature_df = muss.compute_features(

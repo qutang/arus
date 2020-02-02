@@ -15,6 +15,7 @@ from . import mhealth_format as mh
 import logging
 import subprocess
 from .core.stream import SensorFileSlidingWindowStream
+from .core.stream import AnnotationFileSlidingWindowStream
 from .models import muss as arus_muss
 import pandas as pd
 
@@ -59,10 +60,13 @@ def load_raw_dataset(dataset_name):
 
 
 def process_raw_dataset(dataset_name, approach='muss'):
-    dataset_path = get_dataset_path(dataset_name)
     dataset_dict = load_raw_dataset(dataset_name)
-    processed_dataset = _process_mehealth_dataset(
-        dataset_dict, approach=approach)
+    if dataset_name == 'spades_lab':
+        sr = 80
+        processed_dataset = process_mehealth_dataset(
+            dataset_dict, approach=approach, sr=sr)
+    else:
+        raise NotImplementedError('Only "spades_lab" dataset is supported.')
     output_path = os.path.join(
         env.get_data_home(), dataset_name + '.' + approach + '.feature.csv')
     processed_dataset.to_csv(
@@ -99,49 +103,98 @@ def decompress_dataset(dataset_path):
     return output_path
 
 
-def _process_mehealth_dataset(dataset_dict, approach='muss', **kwargs):
-    if 'window_size' in kwargs:
-        window_size = kwargs['window_size'] or 12.8
-    else:
+def process_mehealth_dataset(dataset_dict, approach='muss', **kwargs):
+    if approach == 'muss':
         window_size = 12.8
-    if 'sr' in kwargs:
-        sr = kwargs['sr'] or 80
     else:
-        sr = 80
+        if 'window_size' in kwargs:
+            window_size = kwargs['window_size']
+        else:
+            raise NotImplementedError('You must provide a valid window size')
+
+    if 'sr' in kwargs:
+        sr = kwargs['sr']
+    else:
+        raise NotImplementedError('You must provide a valid sampling rate')
+
+    developer.logging_dict(kwargs, level=logging.INFO)
+    logging.info('sr: {}'.format(sr))
+    logging.info('window size: {}'.format(window_size))
 
     results = []
     dataset_path = dataset_dict['meta']['root']
-    subject_data_dict = dataset_dict['subjects']
-    for pid in subject_data_dict.keys():
+
+    for pid in dataset_dict['subjects'].keys():
         logging.info('Start processing {}'.format(pid))
-        pid_processed = None
+
         start_time = mh.get_session_start_time(pid, dataset_path)
-        pipeline_kwargs = {}
-        streams = []
-        for p in subject_data_dict[pid]['sensors'].keys():
-            stream_name = p
-            pid_sid_stream = SensorFileSlidingWindowStream(
-                subject_data_dict[pid]['sensors'][p], window_size=window_size, sr=sr, name=stream_name)
-            streams.append(pid_sid_stream)
-            pipeline_kwargs[stream_name] = {
-                'sr': sr
-            }
-        pipeline = arus_muss.MUSSModel.get_mhealth_dataset_pipeline(
-            *streams, name='{}-pipeline'.format(pid), scheduler='processes', max_processes=os.cpu_count() - 4, **pipeline_kwargs)
+
+        streams, streams_kwargs = _prepare_mhealth_streams(
+            dataset_dict, pid, window_size, sr)
+
+        if approach == 'muss':
+            pipeline = arus_muss.MUSSModel.get_mhealth_dataset_pipeline(
+                *streams, name='{}-pipeline'.format(pid), scheduler='processes', max_processes=os.cpu_count() - 4, **streams_kwargs)
+        else:
+            raise NotImplementedError('Only "muss" approach is implemented.')
+
         pipeline.start(start_time=start_time)
-        for df, st, et, prev_st, prev_et, name in pipeline.get_iterator():
-            if df.empty:
-                continue
-            if pid_processed is not None:
-                pid_processed = pd.concat(
-                    (pid_processed, df), sort=False, axis=0)
-            else:
-                pid_processed = df
-        logging.info('Pipeline {} has completed.'.format(pid))
-        pipeline.stop()
-        pid_processed['PID'] = pid
-        results.append(pid_processed)
+
+        processed = _prepare_mhealth_pipeline_output(pipeline, pid)
+        results.append(processed)
+
     processed_dataset = pd.concat(results, axis=0, sort=False)
     processed_dataset.sort_values(
         by=['PID', 'PLACEMENT', 'HEADER_TIME_STAMP', 'START_TIME'], inplace=True)
     return processed_dataset
+
+
+def parse_spades_lab_annotations(annot_df):
+    pass
+
+
+def _prepare_mhealth_streams(dataset_dict, pid, window_size, sr):
+    streams = []
+    subject_data_dict = dataset_dict['subjects']
+    streams_kwargs = {}
+    # sensor streams
+    for p in subject_data_dict[pid]['sensors'].keys():
+        stream_name = p
+        pid_sid_stream = SensorFileSlidingWindowStream(
+            subject_data_dict[pid]['sensors'][p],
+            window_size=window_size,
+            sr=sr,
+            name=stream_name
+        )
+        streams.append(pid_sid_stream)
+        streams_kwargs[stream_name] = {
+            'sr': sr
+        }
+
+    # annotation streams
+    for a in subject_data_dict[pid]['annotations'].keys():
+        stream_name = a
+        annotation_stream = AnnotationFileSlidingWindowStream(
+            subject_data_dict[pid]['annotations'][a],
+            window_size=window_size,
+            name=stream_name
+        )
+        streams.append(annotation_stream)
+
+    return streams, streams_kwargs
+
+
+def _prepare_mhealth_pipeline_output(pipeline, pid):
+    processed = None
+    for df, st, et, prev_st, prev_et, name in pipeline.get_iterator():
+        if df.empty:
+            continue
+        if processed is not None:
+            processed = pd.concat(
+                (processed, df), sort=False, axis=0)
+        else:
+            processed = df
+    logging.info('Pipeline {} has completed.'.format(pid))
+    pipeline.stop()
+    processed['PID'] = pid
+    return processed
