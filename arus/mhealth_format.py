@@ -11,6 +11,8 @@ import os
 import pandas as pd
 import datetime as dt
 
+SENSOR_PLACEMENTS = ['DW', 'NDW', 'DA', 'NDA', 'DT', 'NDT', 'DH', 'NDH']
+
 
 def get_location_mappings(dataset_path):
     filepath = os.path.join(
@@ -129,6 +131,7 @@ def traverse_dataset(dataset_path):
     dataset_dict['meta']['location_mapping'] = location_mappings
     dataset_dict['meta']['subjects'] = subjects
     dataset_dict['meta']['root'] = dataset_path
+    dataset_dict['meta']['name'] = os.path.basename(dataset_path)
 
     for pid in ids:
         dataset_dict['subjects'][pid] = {'sensors': {}, 'annotations': {}}
