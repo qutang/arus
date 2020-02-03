@@ -15,14 +15,6 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@master
 
-        # with:
-        #   submodules: true
-      - name: Setup python version
-        uses: actions/setup-python@v1
-        with:
-          python-version: "3.7.x" # Version range or exact version of a Python version to use, using semvers version range syntax.
-          architecture: "x64" # (x64 or x86)
-
       - name: Setup system dependencies
         run: |
           sudo apt update
@@ -30,6 +22,14 @@ jobs:
           sudo apt install libboost-all-dev
           sudo apt install libbluetooth-dev
           sudo apt install libasound2-dev
+          sudo apt install tk-dev
+        # with:
+        #   submodules: true
+      - name: Setup python version
+        uses: actions/setup-python@v1
+        with:
+          python-version: "3.7.x" # Version range or exact version of a Python version to use, using semvers version range syntax.
+          architecture: "x64" # (x64 or x86)
 
       - name: Setup python dev environment
         run: |
