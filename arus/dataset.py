@@ -20,6 +20,7 @@ from .core.libs import date as arus_date
 from .models import muss as arus_muss
 import pandas as pd
 import numpy as np
+import functools
 
 
 def get_dataset_names():
@@ -37,12 +38,14 @@ def cache_data(dataset_name, data_home=None):
     if dataset_name == 'spades_lab':
         url = "https://github.com/qutang/MUSS/releases/latest/download/muss_data.tar.gz"
         name = dataset_name + '.tar.gz'
+        original_name = 'muss_data'
     dataset_path = os.path.join(env.get_data_home(), dataset_name)
     if os.path.exists(dataset_path):
         return dataset_path
     else:
         compressed_dataset_path = download_dataset(url, name)
-        dataset_path = decompress_dataset(compressed_dataset_path)
+        dataset_path = decompress_dataset(
+            compressed_dataset_path, original_name)
         os.remove(compressed_dataset_path)
     return dataset_path
 
@@ -51,18 +54,14 @@ def get_dataset_path(dataset_name):
     return cache_data(dataset_name)
 
 
-def load_processed_dataset(dataset_name, cache=True):
-    pass
-
-
-def load_raw_dataset(dataset_name):
+def load_dataset(dataset_name):
     dataset_path = cache_data(dataset_name)
     if dataset_name == 'spades_lab':
         return mh.traverse_dataset(dataset_path)
 
 
-def process_raw_dataset(dataset_name, approach='muss'):
-    dataset_dict = load_raw_dataset(dataset_name)
+def process_dataset(dataset_name, approach='muss'):
+    dataset_dict = load_dataset(dataset_name)
     if dataset_name == 'spades_lab':
         sr = 80
         processed_dataset = process_mehealth_dataset(
@@ -70,7 +69,8 @@ def process_raw_dataset(dataset_name, approach='muss'):
     else:
         raise NotImplementedError('Only "spades_lab" dataset is supported.')
     output_path = os.path.join(
-        env.get_data_home(), dataset_name + '.' + approach + '.csv')
+        mh.get_processed_path(dataset_dict['meta']['root']), approach + '.csv')
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
     processed_dataset.to_csv(
         output_path, float_format='%.6f', header=True, index=False)
     logging.info('Processed {} dataset is saved to {}'.format(
@@ -87,7 +87,7 @@ def download_dataset(url, name):
     return result
 
 
-def decompress_dataset(dataset_path):
+def decompress_dataset(dataset_path, original_name):
     cwd = os.path.dirname(dataset_path)
     name = os.path.basename(dataset_path).split('.')[0]
     if developer.command_is_available('tar --version'):
@@ -100,19 +100,18 @@ def decompress_dataset(dataset_path):
         tar = tarfile.open(dataset_path)
         tar.extractall(path=cwd)
         tar.close()
-    os.rename(os.path.join(cwd, 'muss_data'), os.path.join(cwd, name))
+    os.rename(os.path.join(cwd, original_name), os.path.join(cwd, name))
     output_path = os.path.join(cwd, name)
     return output_path
 
 
 def process_mehealth_dataset(dataset_dict, approach='muss', **kwargs):
-    if approach == 'muss':
+    if approach == 'muss' and 'window_size' not in kwargs:
         window_size = 12.8
+    elif approach == 'muss' and 'window_size' in kwargs:
+        window_size = kwargs['window_size']
     else:
-        if 'window_size' in kwargs:
-            window_size = kwargs['window_size']
-        else:
-            raise NotImplementedError('You must provide a valid window size')
+        raise NotImplementedError('You must provide a valid window size')
 
     if 'sr' in kwargs:
         sr = kwargs['sr']
@@ -135,8 +134,10 @@ def process_mehealth_dataset(dataset_dict, approach='muss', **kwargs):
             dataset_dict, pid, window_size, sr)
 
         if approach == 'muss':
+            streams_kwargs['dataset_name'] = dataset_dict['meta']['name']
+            streams_kwargs['pid'] = pid
             pipeline = arus_muss.MUSSModel.get_mhealth_dataset_pipeline(
-                *streams, name='{}-pipeline'.format(pid), scheduler='processes', max_processes=os.cpu_count() - 4, **streams_kwargs)
+                *streams, name='{}-pipeline'.format(pid), scheduler='processes', max_processes=os.cpu_count() - 4, **streams_kwargs)  # os.cpu_count() - 4
         else:
             raise NotImplementedError('Only "muss" approach is implemented.')
 
@@ -144,7 +145,6 @@ def process_mehealth_dataset(dataset_dict, approach='muss', **kwargs):
 
         processed = _prepare_mhealth_pipeline_output(pipeline, pid)
         results.append(processed)
-
     processed_dataset = pd.concat(results, axis=0, sort=False)
     processed_dataset.sort_values(
         by=['PID', 'PLACEMENT', 'HEADER_TIME_STAMP', 'START_TIME'], inplace=True)
@@ -156,6 +156,48 @@ def parse_annotations(dataset_name, annot_df, pid, st, et):
         return _parse_spades_lab_annotations(annot_df, pid, st, et)
     else:
         raise NotImplementedError('Only support spades_lab dataset for now')
+
+
+def combine_multi_sensor_feature_sets(*dfs, placements, feature_names, fixed_cols=[]):
+    def _append_placement_suffix(df, placement_name):
+        new_cols = []
+        for col in df.columns:
+            if col in feature_names and placement_name != '':
+                col = col + '_' + placement_name
+            new_cols.append(col)
+        df.columns = new_cols
+        return df
+
+    def _combine(left, right):
+        left_df = _append_placement_suffix(left[0], left[1])
+        right_df = _append_placement_suffix(right[0], right[1])
+        merged = left_df.merge(
+            right_df, on=['HEADER_TIME_STAMP', 'START_TIME', 'STOP_TIME'] + fixed_cols, how='inner', sort=False)
+        return (merged, '')
+
+    sequence = zip(dfs, placements)
+    if len(placements) == 1:
+        combined_df = dfs[0]
+        combined_feature_names = feature_names
+    else:
+        tuple_results = functools.reduce(_combine, sequence)
+        combined_df = tuple_results[0]
+        combined_feature_names = list(filter(lambda name: name.split('_')
+                                             [-1] in placements, combined_df.columns))
+    return combined_df, combined_feature_names
+
+
+def select_feature_set_columns(df, selected_cols, fixed_cols=[]):
+    selected_cols = ['HEADER_TIME_STAMP', 'START_TIME',
+                     'STOP_TIME'] + selected_cols + fixed_cols
+    return df[selected_cols]
+
+
+def filter_out_column_values(df, selected_col, values_to_remove=['Unknown', 'Transition']):
+    # remove transition and unknown indices
+    is_valid_values = ~df[selected_col].isin(values_to_remove).values
+    filtered_df = df.loc[is_valid_values, :]
+    return filtered_df
 
 
 def _prepare_mhealth_streams(dataset_dict, pid, window_size, sr):
@@ -212,10 +254,15 @@ def _get_annotation_durations(annot_df):
 
 
 def _parse_spades_lab_annotations(annot_df, pid, st, et):
+    label_list = annot_df['LABEL_NAME'].str.lower()
+    annot_df['LABEL_NAME'] = label_list
+    annot_df = annot_df.loc[(label_list != 'wear on')
+                            & (label_list != 'wearon'), :]
+    if annot_df.shape[0] == 0:
+        return "Unknown"
     labels = annot_df.iloc[:, 3].unique()
     labels.sort()
-    label = ' '.join(labels).lower().replace(
-        'wear on', '').replace('wearon', '').strip()
+    label = ' '.join(labels).lower().strip()
 
     # filter if it does not cover the entire 12.8s
     durations = _get_annotation_durations(annot_df)
@@ -225,7 +272,7 @@ def _parse_spades_lab_annotations(annot_df, pid, st, et):
         return "Transition"
     # special cases
     if pid == 'SPADES_26':
-        if 'biking' in labels and st.hour == 11 and st.minute > 26:
+        if 'biking' in label and st.hour == 11 and st.minute > 26:
             return "Stationary cycle ergometry"
     elif pid == 'SPADES_19':
         if '3 mph' in label and 'arms on desk' in label and 'treadmill' in label:
