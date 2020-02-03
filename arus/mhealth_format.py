@@ -35,6 +35,25 @@ def get_class_category(dataset_path):
     return class_category
 
 
+def transform_class_category(class_category, input_category, input_label, output_category):
+    cond = class_category[input_category] == input_label
+    return class_category.loc[cond, output_category].values[0]
+
+
+def get_processed_path(dataset_path):
+    return os.path.join(
+        dataset_path, 'DerivedCrossParticipants')
+
+
+def get_processed_files(dataset_path):
+    processed_files = glob.glob(os.path.join(
+        get_processed_path(dataset_path), '*.csv'))
+    results = {}
+    for f in processed_files:
+        results[os.path.basename(f).split('.')[0]] = f
+    return results
+
+
 def parse_placement_str(placement_str):
     result = ''
     placement_str = placement_str.lower()
@@ -42,14 +61,13 @@ def parse_placement_str(placement_str):
         result = 'ND'
     elif 'dominant' in placement_str or placement_str.startswith('d'):
         result = 'D'
-
-    if 'ankle' in placement_str or placement_str.endswith('a'):
+    if 'ankle' in placement_str or placement_str.endswith('da'):
         result += 'A'
-    elif 'wrist' in placement_str or placement_str.endswith('w'):
+    elif 'wrist' in placement_str or placement_str.endswith('dw'):
         result += 'W'
-    elif 'waist' in placement_str or 'hip' in placement_str or placement_str.endswith('h'):
+    elif 'waist' in placement_str or 'hip' in placement_str or placement_str.endswith('dh'):
         result += 'H'
-    elif 'thigh' in placement_str or placement_str.endswith('t'):
+    elif 'thigh' in placement_str or placement_str.endswith('dt'):
         result += 'T'
     return result
 
@@ -112,6 +130,45 @@ def get_session_start_time(pid, dataset_path):
 
 
 def traverse_dataset(dataset_path):
+    """Traverse the given raw mhealth dataset to parse meta info, sensor and annotation files for each participant.
+
+    Args:
+        dataset_path (str): The filepath to the raw dataset.
+
+    Returns:
+        dict: python dict object storing the traversed paths and meta info for the given dataset.
+
+        {
+            "meta": {
+                "location_mapping": pandas.DataFrame, location_mappings,
+                "name": str, dataset name,
+                "root": str, dataset_path,
+                "subjects": pandas.DataFrame, subjects' geographic info
+            },
+            "processed": {
+                "muss": "muss.csv",
+                ...
+            },
+            "subjects": {
+                "pid_1": {
+                    "sensors": {
+                        "DW": [
+                            "/path/to/file1.sensor.csv",
+                            ...
+                        ],
+                        ...
+                    },
+                    "annotations": {
+                        "annotation_type": [
+                            "/path/to/file1.annotation.csv",
+                            ...
+                        ],
+                        ...
+                    }
+                }
+            }
+        }
+    """
 
     def _parse_placements(placements):
         return [parse_placement_str(p) for p in placements]
@@ -142,6 +199,9 @@ def traverse_dataset(dataset_path):
     dataset_dict['meta']['root'] = dataset_path
     dataset_dict['meta']['name'] = os.path.basename(dataset_path)
 
+    # Get processed files
+    dataset_dict['processed'] = get_processed_files(dataset_path)
+
     for pid in ids:
         dataset_dict['subjects'][pid] = {'sensors': {}, 'annotations': {}}
 
@@ -169,4 +229,4 @@ if __name__ == "__main__":
     from arus import env
     dataset_dict = traverse_dataset(
         os.path.join(env.get_data_home(), 'spades_lab'))
-    developer.print_dict(dataset_dict)
+    developer.logging_dict(dataset_dict)
