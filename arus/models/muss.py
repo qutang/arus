@@ -129,24 +129,32 @@ def muss_data_collection_processor(chunk_list, **kwargs):
 def muss_mhealth_dataset_processor(chunk_list, **kwargs):
     import pandas as pd
     from .muss import MUSSModel
+    from .. import dataset
     muss = MUSSModel()
     feature_dfs = []
     for df, st, et, prev_st, prev_et, name in chunk_list:
-        if df.empty:
-            continue
         if name not in mh.SENSOR_PLACEMENTS:
-            continue
-        placement = name
-        feature_df = muss.compute_features(
-            df, sr=kwargs[name]['sr'], st=st, et=et)
-        feature_df['PLACEMENT'] = placement
-        feature_dfs.append(feature_df)
+            if not df.empty:
+                class_label = dataset.parse_annotations(
+                    kwargs['dataset_name'], df, kwargs['pid'], st, et)
+            else:
+                class_label = "Unknown"
+        else:
+            if df.empty:
+                continue
+            else:
+                placement = name
+                feature_df = muss.compute_features(
+                    df, sr=kwargs[name]['sr'], st=st, et=et)
+                feature_df['PLACEMENT'] = placement
+                feature_dfs.append(feature_df)
     if len(feature_dfs) == 0:
         combined_df = pd.DataFrame()
     elif len(feature_dfs) == 1:
         combined_df = feature_dfs[0]
     else:
         combined_df = pd.concat(feature_dfs, axis=0, sort=False)
+    combined_df['CLASS_LABEL_' + name] = class_label
     return combined_df
 
 
@@ -376,7 +384,7 @@ class MUSSModel:
         input_labels = np.unique(input_class_vec)
         return input_feature_arr, input_class_vec, input_labels
 
-    def validate_classifier(self, input_feature, input_class, class_col, feature_names, placement_names, group_col, new_input_feature=None, new_input_class=None, strategy=Strategy.USE_ORIGIN_ONLY, **train_kwargs):
+    def validate_classifier(self, input_feature, input_class, class_col, feature_names, placement_names, group_col, new_input_feature=None, new_input_class=None, strategy=Strategy.USE_ORIGIN_ONLY, parallel=False, **train_kwargs):
         input_feature_arr = input_feature[feature_names].values
         input_class_vec = input_class[class_col].values
         class_labels = np.unique(input_class_vec)
