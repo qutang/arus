@@ -2,10 +2,8 @@
 """
 __pdoc__ = {}
 
-__pdoc__['tests'] = False
-
-from .data import *
+from .path import *
+from .meta import *
 from .io import *
-from .logging import *
-from .meta import * 
-from .path import * 
+from .data import *
+__pdoc__['tests'] = False
