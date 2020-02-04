@@ -44,6 +44,7 @@
 ### Arus core
 
 - Now pipeline stops correctly when all streams finishes serving data.
+- Generators now buffer data to make sure the output data size is the same as buffer size except for the last one.
 
 ### Arus models
 
