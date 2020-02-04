@@ -8,6 +8,7 @@ Date: 2020-02-03
 License: see LICENSE file
 """
 import functools
+import pandas as pd
 
 
 def merge_all(*dfs, suffix_names, suffix_cols, **kwargs):
@@ -43,3 +44,26 @@ def filter_column(df, col, values_to_filter_out=[]):
     is_valid_values = ~df[col].isin(values_to_filter_out).values
     filtered_df = df.loc[is_valid_values, :]
     return filtered_df
+
+
+def parallel_apply(df, func, **kwargs):
+    from pathos import pools
+    import os
+    import numpy as np
+    cores = os.cpu_count()
+    data_split = np.array_split(df, cores)
+    pool = pools.ProcessPool(cores - 4)
+    apply_func = functools.partial(func, **kwargs)
+    data = pd.concat(pool.map(apply_func, data_split))
+    pool.close()
+    pool.join()
+    return data
+
+
+def fast_series_map(s, func, **kwargs):
+    def _map(value):
+        result[result == value] = func(value, **kwargs)
+    result = s.copy()
+    values = s.unique().tolist()
+    [_map(value) for value in values]
+    return result
