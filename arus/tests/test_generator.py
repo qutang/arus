@@ -5,6 +5,56 @@ import pandas as pd
 import time
 
 
+def test_generate_from_mhealth_sensor_files(spades_lab):
+    sensor_files = spades_lab['subjects']['SPADES_1']['sensors']['DW']
+    sizes = []
+    generator = gr.generate_from_mhealth_sensor_files(
+        *sensor_files, buffer_size=1800)
+    for data in generator:
+        assert type(data) == pd.DataFrame
+        sizes.append(data.shape[0])
+    sizes = sizes[:-1]
+    assert np.all(np.array(sizes) == 1800)
+
+    sizes = []
+    generator = gr.generate_from_mhealth_sensor_files(
+        *sensor_files, buffer_size=1800)
+    while True:
+        try:
+            data = next(generator)
+            assert type(data) == pd.DataFrame
+            sizes.append(data.shape[0])
+        except StopIteration:
+            break
+    sizes = sizes[:-1]
+    assert np.all(np.array(sizes) == 1800)
+
+
+def test_generate_from_mhealth_annotation_files(spades_lab):
+    annotation_files = spades_lab['subjects']['SPADES_1']['annotations']['SPADESInLab']
+    sizes = []
+    generator = gr.generate_from_mhealth_annotation_files(
+        *annotation_files, buffer_size=5)
+    for data in generator:
+        assert type(data) == pd.DataFrame
+        sizes.append(data.shape[0])
+    sizes = sizes[:-1]
+    assert np.all(np.array(sizes) == 5)
+
+    sizes = []
+    generator = gr.generate_from_mhealth_annotation_files(
+        *annotation_files, buffer_size=5)
+    while True:
+        try:
+            data = next(generator)
+            assert type(data) == pd.DataFrame
+            sizes.append(data.shape[0])
+        except StopIteration:
+            break
+    sizes = sizes[:-1]
+    assert np.all(np.array(sizes) == 5)
+
+
 def test_generate_accel_from_normal_distribution():
     # default setting
     sr = 3600
