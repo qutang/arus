@@ -7,7 +7,7 @@ License: GNU v3
 """
 
 from .core.libs import mhealth_format as mh
-from .core.libs import date as arus_date
+from . import moment
 import datetime as dt
 import pandas as pd
 import numpy as np
@@ -15,11 +15,14 @@ import time
 
 
 def generate_from_mhealth_sensor_files(*filepaths, buffer_size=1800):
+    buffer = None
     for filepath in filepaths:
         reader = mh.io.read_data_csv(
             filepath, chunksize=buffer_size, iterator=True)
         for data in reader:
-            yield data
+            buffer, result = _buffering(buffer, data, buffer_size)
+            if result is not None:
+                yield result
 
 
 def generate_from_actigraph_csv_files(*filepaths, buffer_size=1800):
@@ -32,11 +35,14 @@ def generate_from_actigraph_csv_files(*filepaths, buffer_size=1800):
 
 
 def generate_from_mhealth_annotation_files(*filepaths, buffer_size=1800):
+    buffer = None
     for filepath in filepaths:
         reader = mh.io.read_data_csv(
             filepath, chunksize=buffer_size, iterator=True)
         for data in reader:
-            yield data
+            buffer, result = _buffering(buffer, data, buffer_size)
+            if result is not None:
+                yield result
 
 
 def generate_accel_from_normal_distribution(sr, buffer_size=1800, grange=8, start_time=None, sigma=1, max_samples=None):
@@ -49,7 +55,7 @@ def generate_accel_from_normal_distribution(sr, buffer_size=1800, grange=8, star
         data = np.random.standard_normal(size=(buffer_size, 3)) * sigma
         data[data > grange] = grange
         data[data < -grange] = -grange
-        ts = arus_date.get_timestamp_sequence(start_time, sr, buffer_size)
+        ts = moment.get_pandas_timestamp_sequence(start_time, sr, buffer_size)
         start_time = ts[-1]
         ts = ts[0:-1]
         result = mh.create_accel_dataframe(ts, data)
@@ -91,3 +97,17 @@ def generate_annotation_from_normal_distribution(duration_mu=5,
         if max_samples is None:
             max_count = counter + 1
         yield result
+
+
+def _buffering(buffer, data, buffer_size):
+    if buffer is None and data.shape[0] == buffer_size:
+        return buffer, data
+    elif buffer is None and data.shape[0] < buffer_size:
+        buffer = data
+        return buffer, None
+    elif buffer is not None:
+        n = buffer_size - buffer.shape[0]
+        result = pd.concat(
+            (buffer, data.iloc[:n, :]), axis=0, sort=False)
+        buffer = data.iloc[n:, :]
+        return buffer, result
