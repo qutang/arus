@@ -1,5 +1,5 @@
 import click
-from arus import developer
+from .. import developer
 
 
 @click.group()
