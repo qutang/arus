@@ -12,25 +12,40 @@ import pandas as pd
 import datetime as dt
 
 SENSOR_PLACEMENTS = ['DW', 'NDW', 'DA', 'NDA', 'DT', 'NDT', 'DH', 'NDH']
+FEATURE_SET_TIMESTAMP_COLS = ['HEADER_TIME_STAMP', 'START_TIME', 'STOP_TIME']
+FEATURE_SET_PID_COL = 'PID'
+FEATURE_SET_PLACEMENT_COL = 'PLACEMENT'
+ANNOTATION_LABEL_COL = 'LABEL_NAME'
+
+META_FOLDER = 'MetaCrossParticipants'
+PROCESSED_FOLDER = 'DerivedCrossParticipants'
+MASTER_FOLDER = "MasterSynced"
+
+META_LOCATION_MAPPING_FILENAME = 'location_mapping.csv'
+META_SUBJECTS_FILENAME = 'subjects.csv'
+META_CLASS_CATEGORY = 'class_category.csv'
+
+FILE_TIMESTAMP_FORMAT = '%Y-%m-%d-%H-%M-%S-%f'
+FILE_TIMESTAMP_FORMAT_WITH_TZ = '%Y-%m-%d-%H-%M-%S-%f-%z'
 
 
 def get_location_mappings(dataset_path):
     filepath = os.path.join(
-        dataset_path, 'MetaCrossParticipants', 'location_mapping.csv')
+        dataset_path, META_FOLDER, META_LOCATION_MAPPING_FILENAME)
     mappings = pd.read_csv(filepath, header=0)
     return mappings
 
 
 def get_subjects_info(dataset_path):
     filepath = os.path.join(
-        dataset_path, 'MetaCrossParticipants', 'subjects.csv')
+        dataset_path, META_FOLDER, META_SUBJECTS_FILENAME)
     subjects = pd.read_csv(filepath, header=0)
     return subjects
 
 
 def get_class_category(dataset_path):
     filepath = os.path.join(
-        dataset_path, 'MetaCrossParticipants', 'muss_class_labels.csv')
+        dataset_path, META_FOLDER, 'muss_class_labels.csv')
     class_category = pd.read_csv(filepath, header=0)
     return class_category
 
@@ -42,7 +57,7 @@ def transform_class_category(class_category, input_category, input_label, output
 
 def get_processed_path(dataset_path):
     return os.path.join(
-        dataset_path, 'DerivedCrossParticipants')
+        dataset_path, PROCESSED_FOLDER)
 
 
 def get_processed_files(dataset_path):
@@ -82,11 +97,11 @@ def parse_file_timestamp(filepath, ignore_tz=True):
     if ignore_tz:
         timestamp_str = timestamp_str[:-6]
         result = dt.datetime.strptime(
-            timestamp_str, '%Y-%m-%d-%H-%M-%S-%f')
+            timestamp_str, FILE_TIMESTAMP_FORMAT)
     else:
         timestamp_str = timestamp_str.replace('P', '+').replace('M', '-')
         result = dt.datetime.strptime(
-            timestamp_str, '%Y-%m-%d-%H-%M-%S-%f-%z')
+            timestamp_str, FILE_TIMESTAMP_FORMAT_WITH_TZ)
     return result
 
 
@@ -96,16 +111,16 @@ def get_annotation_type(filename):
 
 def get_pids(dataset_path):
     return list(filter(lambda name: name not in [
-        'DerivedCrossParticipants', 'MetaCrossParticipants'], os.listdir(dataset_path)))
+        PROCESSED_FOLDER, META_FOLDER], os.listdir(dataset_path)))
 
 
 def get_sensor_files(pid, dataset_path, sid=None):
     if sid is None:
         files = glob.glob(os.path.join(dataset_path, pid,
-                                       'MasterSynced', '**', '*.sensor.csv*'), recursive=True)
+                                       MASTER_FOLDER, '**', '*.sensor.csv*'), recursive=True)
     else:
         files = glob.glob(os.path.join(dataset_path, pid,
-                                       'MasterSynced', '**', '*{}*.sensor.csv*'.format(sid)), recursive=True)
+                                       MASTER_FOLDER, '**', '*{}*.sensor.csv*'.format(sid)), recursive=True)
     return sorted(files)
 
 
@@ -113,7 +128,7 @@ def get_annotation_files(pid, dataset_path, annotation_type=None, annotator=None
     annotation_type = annotation_type or ""
     annotator = annotator or ""
     files = glob.glob(os.path.join(dataset_path, pid,
-                                   'MasterSynced', '**', '*{}*{}*.annotation.csv*'.format(annotation_type, annotator)), recursive=True)
+                                   MASTER_FOLDER, '**', '*{}*{}*.annotation.csv*'.format(annotation_type, annotator)), recursive=True)
     return sorted(files)
 
 
@@ -174,11 +189,11 @@ def traverse_dataset(dataset_path):
         return [parse_placement_str(p) for p in placements]
 
     def _get_placements_from_location_mappings(pid, location_mappings):
-        filter_pid = location_mappings['PID'] == pid
+        filter_pid = location_mappings[FEATURE_SET_PID_COL] == pid
         return location_mappings.loc[filter_pid, 'SENSOR_PLACEMENT'].values.tolist()
 
     def _get_sids_from_location_mappings(pid, location_mappings):
-        filter_pid = location_mappings['PID'] == pid
+        filter_pid = location_mappings[FEATURE_SET_PID_COL] == pid
         return location_mappings.loc[filter_pid, 'SENSOR_ID'].values.tolist()
 
     def _parse_annotation_types(annotation_files):

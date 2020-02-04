@@ -147,7 +147,7 @@ def process_mehealth_dataset(dataset_dict, approach='muss', **kwargs):
         results.append(processed)
     processed_dataset = pd.concat(results, axis=0, sort=False)
     processed_dataset.sort_values(
-        by=['PID', 'PLACEMENT', 'HEADER_TIME_STAMP', 'START_TIME'], inplace=True)
+        by=[mh.FEATURE_SET_PID_COL, mh.FEATURE_SET_PLACEMENT_COL] + mh.FEATURE_SET_TIMESTAMP_COLS, inplace=True)
     return processed_dataset
 
 
@@ -156,48 +156,6 @@ def parse_annotations(dataset_name, annot_df, pid, st, et):
         return _parse_spades_lab_annotations(annot_df, pid, st, et)
     else:
         raise NotImplementedError('Only support spades_lab dataset for now')
-
-
-def combine_multi_sensor_feature_sets(*dfs, placements, feature_names, fixed_cols=[]):
-    def _append_placement_suffix(df, placement_name):
-        new_cols = []
-        for col in df.columns:
-            if col in feature_names and placement_name != '':
-                col = col + '_' + placement_name
-            new_cols.append(col)
-        df.columns = new_cols
-        return df
-
-    def _combine(left, right):
-        left_df = _append_placement_suffix(left[0], left[1])
-        right_df = _append_placement_suffix(right[0], right[1])
-        merged = left_df.merge(
-            right_df, on=['HEADER_TIME_STAMP', 'START_TIME', 'STOP_TIME'] + fixed_cols, how='inner', sort=False)
-        return (merged, '')
-
-    sequence = zip(dfs, placements)
-    if len(placements) == 1:
-        combined_df = dfs[0]
-        combined_feature_names = feature_names
-    else:
-        tuple_results = functools.reduce(_combine, sequence)
-        combined_df = tuple_results[0]
-        combined_feature_names = list(filter(lambda name: name.split('_')
-                                             [-1] in placements, combined_df.columns))
-    return combined_df, combined_feature_names
-
-
-def select_feature_set_columns(df, selected_cols, fixed_cols=[]):
-    selected_cols = ['HEADER_TIME_STAMP', 'START_TIME',
-                     'STOP_TIME'] + selected_cols + fixed_cols
-    return df[selected_cols]
-
-
-def filter_out_column_values(df, selected_col, values_to_remove=['Unknown', 'Transition']):
-    # remove transition and unknown indices
-    is_valid_values = ~df[selected_col].isin(values_to_remove).values
-    filtered_df = df.loc[is_valid_values, :]
-    return filtered_df
 
 
 def _prepare_mhealth_streams(dataset_dict, pid, window_size, sr):
@@ -243,7 +201,7 @@ def _prepare_mhealth_pipeline_output(pipeline, pid):
             processed = df
     logging.info('Pipeline {} has completed.'.format(pid))
     pipeline.stop()
-    processed['PID'] = pid
+    processed[mh.FEATURE_SET_PID_COL] = pid
     return processed
 
 
@@ -254,8 +212,8 @@ def _get_annotation_durations(annot_df):
 
 
 def _parse_spades_lab_annotations(annot_df, pid, st, et):
-    label_list = annot_df['LABEL_NAME'].str.lower()
-    annot_df['LABEL_NAME'] = label_list
+    label_list = annot_df[mh.ANNOTATION_LABEL_COL].str.lower()
+    annot_df[mh.ANNOTATION_LABEL_COL] = label_list
     annot_df = annot_df.loc[(label_list != 'wear on')
                             & (label_list != 'wearon'), :]
     if annot_df.shape[0] == 0:
