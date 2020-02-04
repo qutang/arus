@@ -50,7 +50,7 @@ def get_class_category(dataset_path):
     return class_category
 
 
-def transform_class_category(class_category, input_category, input_label, output_category):
+def transform_class_category(input_label, class_category, input_category,  output_category):
     cond = class_category[input_category] == input_label
     return class_category.loc[cond, output_category].values[0]
 
