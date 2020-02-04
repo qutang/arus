@@ -10,4 +10,5 @@ from . import developer as dev
 from . import env
 from . import generator
 from . import mhealth_format as mh
-from . import moment as moment
+from . import moment
+from . import extensions as ext
