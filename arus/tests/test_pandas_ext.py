@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-from .. import pandas as pd_ext
+from .. import pandas_ext as pd_ext
 
 
 def test_merge_all():
