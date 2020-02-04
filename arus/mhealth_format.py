@@ -237,11 +237,3 @@ def traverse_dataset(dataset_path):
             dataset_dict['subjects'][pid]['annotations'][annotation_type] = get_annotation_files(
                 pid, dataset_path, annotation_type=annotation_type)
     return dataset_dict
-
-
-if __name__ == "__main__":
-    from arus import developer
-    from arus import env
-    dataset_dict = traverse_dataset(
-        os.path.join(env.get_data_home(), 'spades_lab'))
-    developer.logging_dict(dataset_dict)
