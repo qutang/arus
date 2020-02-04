@@ -21,6 +21,8 @@ import shutil
 import importlib
 import pprint
 
+from . import mhealth_format as mh
+
 
 def compress_dataset(source_dir, out_dir, out_name):
     os.makedirs(out_dir, exist_ok=True)
@@ -181,6 +183,12 @@ def build_arus_app(root, app_name, version):
 def logging_dict(data, level=logging.INFO):
     info = pprint.pformat(data, width=1)
     logging.log(level=level, msg=info)
+
+
+def logging_st_and_et(st, et, level=logging.INFO):
+    st_str = st.strftime('%Y-%m-%d %H:%M:%S.%f')
+    et_str = et.strftime('%Y-%m-%d %H:%M:%S.%f')
+    logging.log(level=level, msg="{} - {}".format(st_str, et_str))
 
 
 def set_default_logging():
