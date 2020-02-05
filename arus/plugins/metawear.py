@@ -7,6 +7,7 @@ import time
 import pandas as pd
 
 from .. import generator
+import threading
 
 try:
     from mbientlab import metawear
@@ -107,7 +108,7 @@ class MetawearTimestampCorrector(object):
             data, self._current_withloss_ts, current_real_world_ts, self._last_real_world_ts)
         diff_rw = current_real_world_ts - self._last_real_world_ts
         self._last_real_world_ts = current_real_world_ts
-        return self._current_nofix_ts, self._current_noloss_ts, self._current_withloss_ts, diff_rw
+        return self._current_nofix_ts, self._current_noloss_ts, self._current_withloss_ts, self._get_current_nofix_ts_in_seconds(data), current_real_world_ts
 
 
 class MetaWearAccelDataGenerator(generator.Generator):
@@ -123,6 +124,7 @@ class MetaWearAccelDataGenerator(generator.Generator):
         self._input_count = 0
         self._buffer = queue.Queue()
         self._callback_started = False
+        self._start_condition = threading.Condition(threading.Lock())
 
     def generate(self):
         self._setup_metawear()
@@ -133,7 +135,15 @@ class MetaWearAccelDataGenerator(generator.Generator):
                 'Device fails to start correctly, please call generate to retry')
 
     def stop(self):
+        self._device.led.stop_and_clear()
+        time.sleep(0.5)
+        self._device.accelerometer.notifications(callback=None)
+        time.sleep(0.5)
+        self._device.disconnect()
+        logging.info('Disconnected.')
         self._callback_started = False
+        self._buffer.queue.clear()
+        super().stop()
 
     def get_device_name(self):
         model_code = metawear.libmetawear.mbl_mw_metawearboard_get_model(
@@ -158,12 +168,15 @@ class MetaWearAccelDataGenerator(generator.Generator):
         self._input_count = 0
 
         def _callback(data):
-            if self._input_count == 0:
-                logging.debug('Accelerometer callback starts running...')
-                self._callback_started = True
-            self._input_count = self._input_count + 1
             formatted = self._format_data_as_mhealth(data)
             self._buffer.put(formatted)
+            if self._input_count == 0:
+                logging.info('Accelerometer callback starts running...')
+                with self._start_condition:
+                    self._callback_started = True
+                    self._start_condition.notify_all()
+
+            self._input_count = self._input_count + 1
             if self._input_count == self._sr:
                 logging.debug('Received data for one second')
                 self._input_count = 1
@@ -172,15 +185,21 @@ class MetaWearAccelDataGenerator(generator.Generator):
             logging.info('starting accelerometer module...')
             self._device.accelerometer.notifications(
                 callback=_callback)
-            time.sleep(2)
-            if not self._callback_started:
-                return False
-            else:
+            with self._start_condition:
+                logging.info("Waiting for accelerometer callback to start...")
+                self._start_condition.wait(timeout=2)
+            if self._callback_started:
+                logging.info(
+                    'Accelerometer callback started successfully.')
                 pattern = self._device.led.load_preset_pattern(
                     'solid', repeat_count=0xff)
                 self._device.led.write_pattern(pattern, 'g')
                 self._device.led.play()
                 return True
+            else:
+                logging.warn(
+                    'Accelerometer callback did not start successfully.')
+                return False
         return _start()
 
     def _setup_metawear(self):
@@ -221,10 +240,12 @@ class MetaWearAccelDataGenerator(generator.Generator):
         ts_set = self._corrector.correct(data, real_world_ts)
         calibrated_values = self._calibrate_coord_system(data)
         formatted = {
-            'HEADER_TIME_STAMP': [pd.Timestamp.utcfromtimestamp(ts_set[2])],
+            'HEADER_TIME_STAMP': [pd.Timestamp.fromtimestamp(ts_set[2])],
             'X': [calibrated_values[0]],
             'Y': [calibrated_values[1]],
             'Z': [calibrated_values[2]],
+            'NO_FIX': [pd.Timestamp.fromtimestamp(ts_set[3])],
+            'CLOCK': [pd.Timestamp.fromtimestamp(ts_set[4])],
             'MAC_ADDRESS': [self._addr],
             'DEVICE_NAME': [self._device_name]
         }
