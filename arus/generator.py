@@ -51,100 +51,99 @@ class MhealthSensorFileGenerator(Generator):
                     yield result
 
 
-def generate_from_mhealth_sensor_files(*filepaths, buffer_size=1800):
-    buffer = None
-    for filepath in filepaths:
-        reader = mh.io.read_data_csv(
-            filepath, chunksize=buffer_size, iterator=True)
-        for data in reader:
-            buffer, result = _buffering(buffer, data, buffer_size)
-            if result is not None:
-                yield result
+class ActigraphSensorFileGenerator(Generator):
+    def __init__(self, *filepaths, **kwargs):
+        super().__init__(**kwargs)
+        self._filepaths = filepaths
+
+    def generate(self):
+        for filepath in self._filepaths:
+            reader, format_as_mhealth = mh.io.read_actigraph_csv(
+                filepath, chunksize=self._buffer_size, iterator=True)
+            for data in reader:
+                data = format_as_mhealth(data)
+                result = self._buffering(data)
+                if result is not None:
+                    yield result
 
 
-def generate_from_actigraph_csv_files(*filepaths, buffer_size=1800):
-    for filepath in filepaths:
-        reader, format_as_mhealth = mh.io.read_actigraph_csv(
-            filepath, chunksize=buffer_size, iterator=True)
-        for data in reader:
-            data = format_as_mhealth(data)
-            yield data
+class MhealthAnnotationFileGenerator(Generator):
+    def __init__(self, *filepaths, **kwargs):
+        super().__init__(**kwargs)
+        self._filepaths = filepaths
+
+    def generate(self):
+        for filepath in self._filepaths:
+            reader = mh.io.read_data_csv(
+                filepath, chunksize=self._buffer_size, iterator=True)
+            for data in reader:
+                result = self._buffering(data)
+                if result is not None:
+                    yield result
 
 
-def generate_from_mhealth_annotation_files(*filepaths, buffer_size=1800):
-    buffer = None
-    for filepath in filepaths:
-        reader = mh.io.read_data_csv(
-            filepath, chunksize=buffer_size, iterator=True)
-        for data in reader:
-            buffer, result = _buffering(buffer, data, buffer_size)
-            if result is not None:
-                yield result
+class RandomAccelDataGenerator(Generator):
+    def __init__(self, sr, grange=8, st=None, sigma=1, max_samples=None, **kwargs):
+        super().__init__(**kwargs)
+        self._sr = sr
+        self._grange = grange
+        self._st = st or dt.datetime.now()
+        self._sigma = sigma
+        self._max_samples = max_samples
+        self._max_count = max_samples or 1
+
+    def generate(self):
+        counter = 0
+        while counter <= self._max_count:
+            clock_start_time = time.time()
+            data = np.random.standard_normal(
+                size=(self._buffer_size, 3)) * self._sigma
+            data[data > self._grange] = self._grange
+            data[data < -self._grange] = -self._grange
+            ts = moment.get_pandas_timestamp_sequence(
+                self._st, self._sr, self._buffer_size)
+            self._st = ts[-1]
+            ts = ts[0:-1]
+            result = mh.create_accel_dataframe(ts, data)
+            delay = self._buffer_size / self._sr - \
+                (time.time() - clock_start_time)
+            time.sleep(delay)
+            counter += self._buffer_size
+            if self._max_samples is None:
+                self._max_count = counter + 1
+            yield result
 
 
-def generate_accel_from_normal_distribution(sr, buffer_size=1800, grange=8, start_time=None, sigma=1, max_samples=None):
-    buffer_size = int(buffer_size)
-    start_time = start_time or dt.datetime.now()
-    counter = 0
-    max_count = max_samples or 1
-    while counter <= max_count:
-        clock_start_time = time.time()
-        data = np.random.standard_normal(size=(buffer_size, 3)) * sigma
-        data[data > grange] = grange
-        data[data < -grange] = -grange
-        ts = moment.get_pandas_timestamp_sequence(start_time, sr, buffer_size)
-        start_time = ts[-1]
-        ts = ts[0:-1]
-        result = mh.create_accel_dataframe(ts, data)
-        delay = buffer_size / sr - (time.time() - clock_start_time)
-        time.sleep(delay)
-        counter += buffer_size
-        if max_samples is None:
-            max_count = counter + 1
-        yield result
+class RandomAnnotationDataGenerator(Generator):
+    def __init__(self, labels, duration_mu=5, duration_sigma=5, st=None, num_mu=2, num_sigma=1, max_samples=None, **kwargs):
+        super().__init__(**kwargs)
+        self._labels = labels
+        self._duration_mu = duration_mu
+        self._duration_sigma = duration_sigma
+        self._st = st or dt.datetime.now()
+        self._num_mu = num_mu
+        self._num_sigma = num_sigma
+        self._max_samples = max_samples
+        self._max_count = self._max_samples or 1
 
-
-def generate_annotation_from_normal_distribution(duration_mu=5,
-                                                 duration_sigma=5,
-                                                 start_time=None,
-                                                 num_mu=2,
-                                                 num_sigma=1,
-                                                 labels=['Sitting',
-                                                         'Standing', 'Lying'],
-                                                 max_samples=0):
-    start_time = start_time or dt.datetime.now()
-    counter = 0
-    max_count = max_samples or 1
-    while counter <= max_count:
-        N = np.random.poisson(lam=num_mu)
-        durations = np.random.standard_normal(
-            size=N) * duration_sigma + duration_mu
-        start_times = [start_time]
-        stop_times = []
-        for duration in durations:
-            new_start_time = start_time + pd.Timedelta(duration, 'S')
-            start_times.append(new_start_time)
-            start_time = new_start_time
-            stop_times.append(new_start_time)
-        start_times = start_times[:-1]
-        label_names = np.random.choice(labels, N)
-        result = mh.create_annotation_dataframe(
-            start_times, stop_times, label_names)
-        counter += N
-        if max_samples is None:
-            max_count = counter + 1
-        yield result
-
-
-def _buffering(buffer, data, buffer_size):
-    if buffer is None and data.shape[0] == buffer_size:
-        return buffer, data
-    elif buffer is None and data.shape[0] < buffer_size:
-        buffer = data
-        return buffer, None
-    elif buffer is not None:
-        n = buffer_size - buffer.shape[0]
-        result = pd.concat(
-            (buffer, data.iloc[:n, :]), axis=0, sort=False)
-        buffer = data.iloc[n:, :]
-        return buffer, result
+    def generate(self):
+        counter = 0
+        while counter <= self._max_count:
+            N = np.random.poisson(lam=self._num_mu)
+            durations = np.random.standard_normal(
+                size=N) * self._duration_sigma + self._duration_mu
+            start_times = [self._st]
+            stop_times = []
+            for duration in durations:
+                new_start_time = self._st + pd.Timedelta(duration, 'S')
+                start_times.append(new_start_time)
+                self._st = new_start_time
+                stop_times.append(new_start_time)
+            start_times = start_times[:-1]
+            label_names = np.random.choice(self._labels, N)
+            result = mh.create_annotation_dataframe(
+                start_times, stop_times, label_names)
+            counter += N
+            if self._max_samples is None:
+                self._max_count = counter + 1
+            yield result

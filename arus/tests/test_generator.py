@@ -1,27 +1,29 @@
 
-from .. import generator as gr
+from .. import generator
 import numpy as np
 import pandas as pd
 import time
 
 
-def test_generate_from_mhealth_sensor_files(spades_lab):
+def test_mHealthSensorFileGenerator(spades_lab):
     sensor_files = spades_lab['subjects']['SPADES_1']['sensors']['DW']
     sizes = []
-    generator = gr.generate_from_mhealth_sensor_files(
+    gen = generator.MhealthSensorFileGenerator(
         *sensor_files, buffer_size=1800)
-    for data in generator:
+    gen_data = gen.generate()
+    for data in gen_data:
         assert type(data) == pd.DataFrame
         sizes.append(data.shape[0])
     sizes = sizes[:-1]
     assert np.all(np.array(sizes) == 1800)
 
     sizes = []
-    generator = gr.generate_from_mhealth_sensor_files(
+    gen = generator.MhealthSensorFileGenerator(
         *sensor_files, buffer_size=1800)
+    gen_data = gen.generate()
     while True:
         try:
-            data = next(generator)
+            data = next(gen_data)
             assert type(data) == pd.DataFrame
             sizes.append(data.shape[0])
         except StopIteration:
@@ -30,23 +32,25 @@ def test_generate_from_mhealth_sensor_files(spades_lab):
     assert np.all(np.array(sizes) == 1800)
 
 
-def test_generate_from_mhealth_annotation_files(spades_lab):
+def test_mHealthAnnotationFileGenerator(spades_lab):
     annotation_files = spades_lab['subjects']['SPADES_1']['annotations']['SPADESInLab']
     sizes = []
-    generator = gr.generate_from_mhealth_annotation_files(
+    gen = generator.MhealthAnnotationFileGenerator(
         *annotation_files, buffer_size=5)
-    for data in generator:
+    gen_data = gen.generate()
+    for data in gen_data:
         assert type(data) == pd.DataFrame
         sizes.append(data.shape[0])
     sizes = sizes[:-1]
     assert np.all(np.array(sizes) == 5)
 
     sizes = []
-    generator = gr.generate_from_mhealth_annotation_files(
+    gen = generator.MhealthAnnotationFileGenerator(
         *annotation_files, buffer_size=5)
+    gen_data = gen.generate()
     while True:
         try:
-            data = next(generator)
+            data = next(gen_data)
             assert type(data) == pd.DataFrame
             sizes.append(data.shape[0])
         except StopIteration:
@@ -55,21 +59,23 @@ def test_generate_from_mhealth_annotation_files(spades_lab):
     assert np.all(np.array(sizes) == 5)
 
 
-def test_generate_accel_from_normal_distribution():
+def test_RandomAccelDataGenerator():
     # default setting
     sr = 3600
     grange = 4
     start_time = None
-    buffer_size = 3600 / 2
+    buffer_size = int(3600 / 2)
     sigma = 1
     max_samples = buffer_size * 2
-    for data in gr.generate_accel_from_normal_distribution(
-            sr=sr,
-            grange=grange,
-            start_time=start_time,
-            buffer_size=buffer_size,
-            sigma=sigma,
-            max_samples=max_samples):
+    gen = generator.RandomAccelDataGenerator(
+        sr=sr,
+        grange=grange,
+        st=start_time,
+        buffer_size=buffer_size,
+        sigma=sigma,
+        max_samples=max_samples)
+    gen_data = gen.generate()
+    for data in gen_data:
         mean_data = np.mean(data.values[:, 1:], axis=0)
         std_data = np.std(data.iloc[:, 1:].values, axis=0)
         duration = (data.iloc[-1, 0] - data.iloc[0, 0]) / \
@@ -81,7 +87,7 @@ def test_generate_accel_from_normal_distribution():
         np.testing.assert_almost_equal(duration, buffer_size / sr, decimal=1)
 
 
-def test_generate_annotation_from_normal_distribution():
+def test_RandomAnnotationDataGenerator():
     # default setting
     duration_mu = 5
     duration_sigma = 1
@@ -92,7 +98,10 @@ def test_generate_annotation_from_normal_distribution():
 
     durations = []
     rows = []
-    for data in gr.generate_annotation_from_normal_distribution(duration_mu=duration_mu, duration_sigma=duration_sigma, start_time=start_time, num_mu=num_mu, labels=labels, max_samples=max_samples):
+    gen = generator.RandomAnnotationDataGenerator(labels=labels,
+                                                  duration_mu=duration_mu, duration_sigma=duration_sigma, st=start_time, num_mu=num_mu, max_samples=max_samples)
+    gen_data = gen.generate()
+    for data in gen_data:
         durations += ((data['STOP_TIME'] - data['START_TIME']
                        )/pd.Timedelta(1, 'S')).values.tolist()
         rows.append(data.shape[0])
