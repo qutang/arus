@@ -14,6 +14,43 @@ import numpy as np
 import time
 
 
+class Generator:
+    def __init__(self, buffer_size=1800):
+        self._buffer_size = buffer_size
+        self._buffer = None
+
+    def generate(self):
+        pass
+
+    def _buffering(self, data):
+        if self._buffer is None and data.shape[0] == self._buffer_size:
+            return data
+        elif self._buffer is None and data.shape[0] < self._buffer_size:
+            self._buffer = data
+            return None
+        elif self._buffer is not None:
+            n = self._buffer_size - self._buffer.shape[0]
+            result = pd.concat(
+                (self._buffer, data.iloc[:n, :]), axis=0, sort=False)
+            self._buffer = data.iloc[n:, :]
+            return result
+
+
+class MhealthSensorFileGenerator(Generator):
+    def __init__(self, *filepaths, **kwargs):
+        super().__init__(**kwargs)
+        self._filepaths = filepaths
+
+    def generate(self):
+        for filepath in self._filepaths:
+            reader = mh.io.read_data_csv(
+                filepath, chunksize=self._buffer_size, iterator=True)
+            for data in reader:
+                result = self._buffering(data)
+                if result is not None:
+                    yield result
+
+
 def generate_from_mhealth_sensor_files(*filepaths, buffer_size=1800):
     buffer = None
     for filepath in filepaths:
