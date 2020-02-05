@@ -22,6 +22,9 @@ class Generator:
     def generate(self):
         pass
 
+    def stop(self):
+        pass
+
     def _buffering(self, data):
         if self._buffer is None and data.shape[0] == self._buffer_size:
             return data
@@ -100,8 +103,8 @@ class RandomAccelDataGenerator(Generator):
                 size=(self._buffer_size, 3)) * self._sigma
             data[data > self._grange] = self._grange
             data[data < -self._grange] = -self._grange
-            ts = moment.get_pandas_timestamp_sequence(
-                self._st, self._sr, self._buffer_size)
+            ts = moment.Moment.get_sequence(
+                self._st, self._sr, self._buffer_size, format='pandas')
             self._st = ts[-1]
             ts = ts[0:-1]
             result = mh.create_accel_dataframe(ts, data)
