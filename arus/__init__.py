@@ -9,6 +9,8 @@ from . import dataset
 from . import developer as dev
 from . import env
 from . import generator
+from . import segmenter
 from . import mhealth_format as mh
 from . import moment
 from . import extensions as ext
+from .stream import Stream
