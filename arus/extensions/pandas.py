@@ -67,3 +67,26 @@ def fast_series_map(s, func, **kwargs):
     values = s.unique().tolist()
     [_map(value) for value in values]
     return result
+
+
+def segment_by_time(df, seg_st=None, seg_et=None, st_col=0, et_col=None):
+    et_col = et_col or st_col
+    seg_st = seg_st or df.iloc[0, st_col]
+    seg_et = seg_et or df.iloc[-1, et_col]
+    if st_col == et_col:
+        mask = (df.iloc[:, st_col] >= seg_st) & (
+            df.iloc[:, et_col] < seg_et)
+        return df.loc[mask, :].copy(deep=True)
+    else:
+        mask = (df.iloc[:, st_col] <= seg_et) & (
+            df.iloc[:, et_col] >= seg_st)
+        subset_df = df[mask].copy(deep=True)
+
+        st_col = df.columns[st_col]
+        et_col = df.columns[et_col]
+
+        subset_df.loc[subset_df.loc[:, st_col] <
+                      seg_st, st_col] = seg_st
+        subset_df.loc[subset_df.loc[:, et_col] >
+                      seg_et, et_col] = seg_et
+        return subset_df
