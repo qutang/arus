@@ -11,6 +11,7 @@ from . import env
 from . import generator
 from . import segmentor
 from . import mhealth_format as mh
-from . import moment
+from .moment import Moment
 from . import extensions as ext
 from .stream import Stream
+from . import plugins
