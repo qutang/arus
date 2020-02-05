@@ -1,5 +1,4 @@
 import queue
-from . import moment
 import threading
 import time
 
@@ -33,26 +32,10 @@ class Stream:
         self._segmentor = segmentor
 
     def get_iterator(self):
-        """Get a python iterator for the loaded data queue.
-
-        Returns:
-            data_queue (iterator): the iterator that can be looped to read loaded data.
-        """
-        stop_fun = self.stop
-        buffer = self._output_buffer
-
-        class _data_iter:
-            def __iter__(self):
-                return self
-
-            def __next__(self):
-                data = buffer.get()
-                if data is None:
-                    # end of the stream, stop
-                    raise StopIteration
-                return data
-
-        return _data_iter()
+        data = self._output_buffer.get()
+        if data is None:
+            raise StopIteration
+        yield data
 
     def next(self):
         """Manually get the next loaded data in data queue. Rarely used. Recommend to use the `Stream.get_iterator` method.
@@ -71,7 +54,6 @@ class Stream:
 
         start_time (str or datetime or datetime64 or pandas.Timestamp, optional): The start time of data source. This is used to sync between multiple streams. If it is `None`, the default value would be extracted from the first sample of the loaded data.
         """
-        self._start_time = moment.to_pandas_timestamp(start_time)
         self._started = True
         self._loading_thread = self._get_thread_for_loading()
         self._loading_thread.daemon = True
@@ -92,16 +74,16 @@ class Stream:
         """Method to stop the loading process
         """
         self._started = False
+        self._segmentor.reset()
+        self._generator.stop()
         time.sleep(0.1)
         self._segment_thread.join(timeout=1)
         time.sleep(0.1)
         self._loading_thread.join(timeout=1)
-        self._segmentor.reset()
         with self._output_buffer.mutex:
             self._output_buffer.queue.clear()
         with self._input_buffer.mutex:
             self._input_buffer.queue.clear()
-        self._start_time = None
 
     def _generate(self):
         for data in self._generator.generate():
