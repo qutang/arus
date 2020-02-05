@@ -24,6 +24,7 @@ import os
 from sklearn import metrics
 import numpy as np
 import arus
+import matplotlib.pyplot as plt
 
 # %%
 
@@ -45,7 +46,8 @@ spades_lab = arus.dataset.load_dataset(dataset_name)
 # %% [markdown]
 # ### Different window sizes
 
-# %% Process spades lab datasets with different window sizes
+# %%
+# Process spades lab datasets with different window sizes
 
 
 def prepare_dataset(window_sizes):
@@ -68,7 +70,8 @@ def prepare_dataset(window_sizes):
 
 dataset_paths = prepare_dataset(window_sizes)
 
-# %% Load and prepare for validation
+# %%
+# Load and prepare for validation
 
 
 def prepare_validation(window_sizes, dataset_paths, spades_lab):
@@ -125,7 +128,8 @@ def prepare_validation(window_sizes, dataset_paths, spades_lab):
 
 prepared_ds = prepare_validation(window_sizes, dataset_paths, spades_lab)
 
-# %% run validations for activities
+# %%
+# run validations for activities
 
 
 def run_validation(prepared_ds, class_category):
@@ -167,5 +171,44 @@ result_path = os.path.join(os.path.dirname(os.path.abspath(
     __file__)), 'rt_muss.csv')
 
 results = pd.read_csv(result_path)
-# %% plot
-results.plot(x='window_size', y='score', kind='line', ylim=[0, 1])
+sit_scores = []
+stand_scores = []
+amb_scores = []
+for col in results.columns:
+    col_lower = col.lower()
+    if 'sit' in col_lower:
+        sit_scores.append(results[col].values)
+    elif 'stand' in col_lower:
+        stand_scores.append(results[col].values)
+    elif 'walk' in col_lower:
+        amb_scores.append(results[col].values)
+    elif 'ly' in col_lower:
+        results['ACTIVITIES_Lying'] = results[col].values
+    elif 'run' in col_lower:
+        results['ACTIVITIES_Run'] = results[col].values
+    elif 'cycle' in col_lower:
+        results['ACTIVITIES_Bike'] = results[col].values
+
+results['ACTIVITIES_Sit'] = np.mean(np.array(sit_scores), axis=0)
+results['ACTIVITIES_Stand'] = np.mean(np.array(stand_scores), axis=0)
+results['ACTIVITIES_Amb'] = np.mean(np.array(amb_scores), axis=0)
+# %%
+# plot
+line_styles = ['-'] * 4 + ['--'] * 7
+ax = results.plot(x='window_size', y=['POSTURES', 'POSTURES_Lying',
+                                      'POSTURES_Upright', 'POSTURES_Sitting', 'ACTIVITIES', 'ACTIVITIES_Sit', 'ACTIVITIES_Stand', 'ACTIVITIES_Amb', 'ACTIVITIES_Lying', 'ACTIVITIES_Run', 'ACTIVITIES_Bike'], kind='line', figsize=(8, 10), style=line_styles, fontsize=16)
+ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.05),
+          shadow=True, ncol=2)
+fig_path = os.path.join(os.path.dirname(os.path.abspath(
+    __file__)), 'rt_muss_ws_details.png')
+plt.tight_layout()
+plt.savefig(fig_path, dpi=300)
+
+ax = results.plot(x='window_size', y=[
+                  'POSTURES', 'ACTIVITIES'], kind='line', figsize=(8, 8), style=line_styles, fontsize=16)
+fig_path = os.path.join(os.path.dirname(os.path.abspath(
+    __file__)), 'rt_muss_ws.png')
+plt.tight_layout()
+plt.savefig(fig_path, dpi=300)
+
+# %%
