@@ -9,7 +9,7 @@ from . import dataset
 from . import developer as dev
 from . import env
 from . import generator
-from . import segmenter
+from . import segmentor
 from . import mhealth_format as mh
 from . import moment
 from . import extensions as ext

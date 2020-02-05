@@ -36,7 +36,7 @@ sensor_files = spades_lab['subjects']['SPADES_22']['sensors']['DA']
 window_size = 12.8
 generator = arus.generator.MhealthSensorFileGenerator(
     *sensor_files, buffer_size=1800)
-segmentor = arus.segmenter.SlidingWindowSegmentor(window_size=window_size)
+segmentor = arus.segmentor.SlidingWindowSegmentor(window_size=window_size)
 
 stream = arus.Stream(generator, segmentor,
                      name='mhealth-stream', scheduler='thread')
