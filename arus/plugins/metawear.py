@@ -1,13 +1,25 @@
 
 
-from .. import generator
-from mbientlab import metawear
-from pymetawear import client as mw_client
-from pymetawear import discover as mw_discover
 import logging
-import time
-import pandas as pd
 import queue
+import time
+
+import pandas as pd
+
+from .. import generator
+
+try:
+    from mbientlab import metawear
+    from pymetawear import client as mw_client
+    from pymetawear import discover as mw_discover
+except ImportError as e:
+    msg = (
+        "Arus plugin metawear requirements are not installed.\n\n"
+        "Please install the metawear extra packages as follows:\n\n"
+        "  pip install arus[metawear]\n\n"
+        "  poetry add arus --extras metawear"
+    )
+    raise ImportError(str(e) + "\n\n" + msg)
 
 
 class StartFailure(Exception):
