@@ -16,6 +16,7 @@
 - Add env module for managing environment variables and paths related to the package.
 - Add mhealth_format module for manipulating mhealth dataset.
 - Add developer module to provide utilities for arus developers. 
+- Add moment module to provide consistent interface to work with time and date objects.
 
 ### Arus models
 
@@ -44,6 +45,7 @@
 ### Arus core
 
 - New Stream API using Generator classes and Segmentor classes to define a stream.
+- New Generator class for metawear.
 
 ## Fix
 
