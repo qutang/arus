@@ -39,6 +39,12 @@
 
 - Stability and better code structure.
 
+## Changed
+
+### Arus core
+
+- New Stream API using Generator classes and Segmentor classes to define a stream.
+
 ## Fix
 
 ### Arus core
