@@ -41,6 +41,7 @@ playsound = {version = "^1.2.2", optional = true}
 wget = "^3.2"
 dephell_versioning = "^0.1.1"
 click = "^7.0"
+tzlocal = "^2.0.0"
 
 [tool.poetry.extras]
 metawear = ["pymetawear"]
