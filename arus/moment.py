@@ -18,10 +18,12 @@ def to_pandas_timestamp(ts):
         result = pd.Timestamp(ts.astype('datetime64[ms]'))
     elif type(ts) == dt.datetime:
         result = pd.Timestamp(np.datetime64(ts, 'ms'))
+    elif type(ts) == pd.Timestamp:
+        result = ts
     elif type(ts) == str:
         result = pd.Timestamp(ts)
     elif type(ts) == int or type(ts) == float:
-        result = pd.Timestamp.fromtimestamp(ts)
+        result = pd.Timestamp.utcfromtimestamp(ts)
     elif ts is None:
         result = None
     else:
