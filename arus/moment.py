@@ -11,45 +11,117 @@ License: see LICENSE file
 import numpy as np
 import pandas as pd
 import datetime as dt
+import time
+import tzlocal
+import pytz
 
 
-def to_pandas_timestamp(ts):
-    if type(ts) == np.datetime64:
-        result = pd.Timestamp(ts.astype('datetime64[ms]'))
-    elif type(ts) == dt.datetime:
-        result = pd.Timestamp(np.datetime64(ts, 'ms'))
-    elif type(ts) == pd.Timestamp:
-        result = ts
-    elif type(ts) == str:
-        result = pd.Timestamp(ts)
-    elif type(ts) == int or type(ts) == float:
-        result = pd.Timestamp.utcfromtimestamp(ts)
-    elif ts is None:
-        result = None
-    else:
-        raise NotImplementedError(
-            "Unknown type of input argument: {}".format(type(ts)))
-    return result
+class Moment:
+    def __init__(self, obj):
+        """Date time object that unifies various date time types
 
+        Args:
+            obj (int, float, datetime, np.datetime64, pd.Timestamp): If the obj is a datetime, np.datetime64 or pd.Timestamp object and does not have time zone, it will be assumed to be local time.
 
-def datetime_to_unix(ts):
-    return (ts - dt.datetime(1970, 1, 1)) / dt.timedelta(seconds=1)
+        Raises:
+            NotImplementedError: When input argument type is not recognized.
+        """
+        if type(obj) == int or type(obj) == float:
+            self._posix = float(obj)
+        elif type(obj) == str:
+            ts = pd.Timestamp(obj)
+            self._posix = obj.to_pydatetime().timestamp()
+        elif type(obj) == dt.datetime:
+            # assume local time, always to posix time
+            self._posix = obj.timestamp()
+        elif type(obj) == np.datetime64:
+            # assume local time, so convert to utc first
+            local_ts = obj.astype(float) / 10 ** 6
+            self._posix = local_ts + Moment.get_local_to_utc_offset()
+        elif type(obj) == pd.Timestamp:
+            self._posix = obj.to_pydatetime().timestamp()
+        else:
+            raise NotImplementedError('Input type is not supported')
 
+    def to_unix_timestamp(self):
+        return self._posix
 
-def to_numeric_interval(st, et, unit='s'):
-    if unit == 's':
-        unit_len = dt.timedelta(seconds=1)
-    elif unit == 'ms':
-        unit_len = dt.timedelta(milliseconds=1)
-    elif unit == 'us':
-        unit_len = dt.timedelta(microseconds=1)
-    elif unit == 'm':
-        unit_len = dt.timedelta(minutes=1)
-    return (et - st) / unit_len
+    def to_pandas_timestamp(self, tz=None):
+        if tz is not None:
+            return pd.Timestamp(self._posix, unit='s', tz=tz)
+        else:
+            return pd.Timestamp.fromtimestamp(self._posix)
 
+    def to_datetime(self, tz=None):
+        if tz is not None:
+            return dt.datetime.fromtimestamp(self._posix, tz=tz)
+        else:
+            return dt.datetime.fromtimestamp(self._posix)
 
-def get_pandas_timestamp_sequence(st, sr, N):
-    N = N + 1
-    freq = str(int(1000000 / sr)) + 'us'
-    ts = pd.date_range(start=st, periods=N, freq=freq)
-    return ts
+    def to_datetime64(self):
+        return np.datetime64(self.to_datetime())
+
+    def to_string(self, fmt, tz=None):
+        obj = self.to_datetime(tz=tz)
+        return obj.strftime(fmt)
+
+    @staticmethod
+    def get_local_to_utc_offset():
+        ts = time.time()
+        return (dt.datetime.utcfromtimestamp(ts) - dt.datetime.fromtimestamp(ts)
+                ).total_seconds()
+
+    @staticmethod
+    def get_utc_to_local_offset():
+        return - Moment.get_local_to_utc_offset()
+
+    @staticmethod
+    def get_local_timezone():
+        return tzlocal.get_localzone()
+
+    @staticmethod
+    def get_utc_timezone():
+        return pytz.timezone('UTC')
+
+    @staticmethod
+    def get_timezone(obj):
+        return pytz.timezone(obj)
+
+    @staticmethod
+    def get_duration(st, et, unit='s'):
+        st = Moment(st).to_datetime()
+        et = Moment(et).to_datetime()
+        if unit == 's':
+            unit_len = dt.timedelta(seconds=1)
+        elif unit == 'ms':
+            unit_len = dt.timedelta(milliseconds=1)
+        elif unit == 'us':
+            unit_len = dt.timedelta(microseconds=1)
+        elif unit == 'm':
+            unit_len = dt.timedelta(minutes=1)
+        return (et - st) / unit_len
+
+    @staticmethod
+    def get_durations(st, et, unit='s'):
+        return [Moment.get_duration(s, e) for s, e in zip(st, et)]
+
+    @staticmethod
+    def transform(iterable):
+        return [Moment(item) for item in iterable]
+
+    @staticmethod
+    def get_sequence(st, sr, N, endpoint_as_extra=True, tz=None, format='pandas'):
+        if endpoint_as_extra:
+            N = N + 1
+        st = Moment(st).to_unix_timestamp()
+        interval = 1 / float(sr)
+        span = interval * (N - 1)
+        et = st + span
+        ts = np.linspace(start=st, stop=et, num=N, endpoint=True).tolist()
+        if format == 'pandas':
+            ts = [Moment(t).to_pandas_timestamp(tz=tz) for t in ts]
+        elif format == 'posix':
+            pass
+        elif format == 'datetime':
+            ts = [Moment(t).to_datetime(tz=tz) for t in ts]
+        return ts
