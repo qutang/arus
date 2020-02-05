@@ -13,3 +13,4 @@ docs/source/generated
 docs/source/examples
 .metawear
 releases/
+.ipynb_checkpoints
