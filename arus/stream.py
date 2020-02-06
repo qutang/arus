@@ -55,6 +55,7 @@ class Stream:
 
         start_time (str or datetime or datetime64 or pandas.Timestamp, optional): The start time of data source. This is used to sync between multiple streams. If it is `None`, the default value would be extracted from the first sample of the loaded data.
         """
+        self._segmentor.set_ref_time(start_time)
         self._started = True
         self._loading_thread = self._get_thread_for_loading()
         self._loading_thread.daemon = True

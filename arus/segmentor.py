@@ -18,6 +18,9 @@ class Segmentor:
         self.reset()
         pass
 
+    def set_ref_time(self, ts):
+        self._ref_st = ts
+
     def reset(self):
         self._current_segment = []
         self._current_seg_st = None
