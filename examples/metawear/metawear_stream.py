@@ -4,15 +4,16 @@ Demonstration of the usage of arus.plugins.metawear.stream.MetaWearSlidingWindow
 
 """
 
-from arus.plugins.metawear.stream import MetaWearSlidingWindowStream
+import arus
 import logging
 from datetime import datetime
 
 if __name__ == "__main__":
-    logging.basicConfig(
-        level=logging.DEBUG, format='[%(levelname)s]%(asctime)s <P%(process)d-%(threadName)s> %(message)s')
-    stream = MetaWearSlidingWindowStream("FF:EE:B8:99:0C:64", sr=50, grange=8,
-                                         window_size=4, max_retries=10, name='metawear-stream')
+    arus.developer.set_default_logging()
+    generator = arus.plugins.metawear.MetaWearAccelDataGenerator(
+        "FF:EE:B8:99:0C:64", sr=50, grange=8, max_retries=10, buffer_size=100)
+    segmentor = arus.segmentor.SlidingWindowSegmentor(window_size=4)
+    stream = arus.Stream(generator, segmentor, name='metawear-stream')
     stream.start()
     i = 0
     for data, _, _, _, _, _ in stream.get_iterator():

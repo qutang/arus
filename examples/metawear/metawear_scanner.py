@@ -2,7 +2,7 @@
 Demonstration of the usage of MetaWearScanner
 ====================================================
 """
-from arus.plugins.metawear.scanner import MetaWearScanner
+from arus.plugins.metawear import MetaWearScanner
 
 
 if __name__ == "__main__":

@@ -8,8 +8,7 @@ The pipeline uses multiple metawear streams.
 from arus.models.muss import MUSSModel
 from arus.testing import load_test_data
 import pandas as pd
-from arus.plugins.metawear.stream import MetaWearSlidingWindowStream
-from arus.core.accelerometer import generator
+import arus
 from datetime import datetime
 import logging
 
@@ -41,17 +40,19 @@ def train_test_classifier(muss):
 
 
 def prepare_streams():
-
-    stream1 = MetaWearSlidingWindowStream("D2:C6:AF:2B:DB:22", sr=50, grange=8,
-                                          window_size=12.8, name='DW')
-    stream2 = MetaWearSlidingWindowStream("FF:EE:B8:99:0C:64", sr=100, grange=8,
-                                          window_size=12.8, name='DA')
+    generator = arus.plugins.metawear.MetaWearAccelDataGenerator(
+        "D2:C6:AF:2B:DB:22", sr=50, grange=8, buffer_size=100)
+    segmentor = arus.segmentor.SlidingWindowSegmentor(window_size=12.8)
+    stream1 = arus.Stream(generator, segmentor, name='DW')
+    generator = arus.plugins.metawear.MetaWearAccelDataGenerator(
+        "FF:EE:B8:99:0C:64", sr=50, grange=8, buffer_size=100)
+    segmentor = arus.segmentor.SlidingWindowSegmentor(window_size=12.8)
+    stream2 = arus.Stream(generator, segmentor, name='DA')
     return stream1, stream2
 
 
 if __name__ == "__main__":
-    logging.basicConfig(
-        level=logging.INFO, format='[%(levelname)s]%(asctime)s <P%(process)d-%(threadName)s> %(message)s')
+    arus.developer.set_default_logging()
     muss = MUSSModel()
     model = train_test_classifier(muss)
     stream1, stream2 = prepare_streams()

@@ -7,7 +7,7 @@ Demonstration of the usage of pipeline
 from arus.models.muss import MUSSModel
 from arus.testing import load_test_data
 import pandas as pd
-from arus.plugins.metawear.stream import MetaWearSlidingWindowStream
+import arus
 from datetime import datetime
 import logging
 
@@ -35,14 +35,15 @@ def train_test_classifier(muss):
 
 
 def prepare_streams():
-    stream = MetaWearSlidingWindowStream("D2:C6:AF:2B:DB:22", sr=50, grange=8,
-                                         window_size=12.8, start_time=datetime.now(), name='DW')
+    generator = arus.plugins.metawear.MetaWearAccelDataGenerator(
+        "D2:C6:AF:2B:DB:22", sr=50, grange=8, buffer_size=100)
+    segmentor = arus.segmentor.SlidingWindowSegmentor(window_size=12.8)
+    stream = arus.Stream(generator, segmentor, name='DW')
     return stream
 
 
 if __name__ == "__main__":
-    logging.basicConfig(
-        level=logging.DEBUG, format='[%(levelname)s]%(asctime)s <P%(process)d-%(threadName)s> %(message)s')
+    arus.developer.set_default_logging()
     muss = MUSSModel()
     model = train_test_classifier(muss)
     stream = prepare_streams()
