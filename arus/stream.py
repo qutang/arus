@@ -1,6 +1,8 @@
 import queue
 import threading
 import time
+import enum
+import logging
 
 
 class Stream:
@@ -14,6 +16,12 @@ class Stream:
         stream (Stream): an instance object of type `Stream`.
     """
 
+    class Status(enum.Enum):
+        NOT_START = enum.auto()
+        START = enum.auto()
+        RUN = enum.auto()
+        STOP = enum.auto()
+
     def __init__(self, generator, segmentor, name='default-stream', scheduler='thread'):
         """
 
@@ -25,46 +33,62 @@ class Stream:
         """
         self._input_buffer = queue.Queue()
         self._output_buffer = queue.Queue()
-        self._started = False
+        self._status = Stream.Status.NOT_START
         self._name = name
         self._scheduler = scheduler
         self._generator = generator
         self._segmentor = segmentor
 
-    def get_iterator(self):
-        while self._started:
+    def generate(self):
+        while True:
             data = self._output_buffer.get()
             if data is None:
-                self._started = False
+                self._status = Stream.Status.STOP
                 break
             yield data
         raise StopIteration
-
-    def next(self):
-        """Manually get the next loaded data in data queue. Rarely used. Recommend to use the `Stream.get_iterator` method.
-
-        Returns:
-            data (object): the loaded data.
-        """
-        data = self._output_buffer.get()
-        if data is None:
-            # end of the stream, stop
-            self.stop()
-        return data
 
     def start(self, start_time=None):
         """Method to start loading data from the provided data source.
 
         start_time (str or datetime or datetime64 or pandas.Timestamp, optional): The start time of data source. This is used to sync between multiple streams. If it is `None`, the default value would be extracted from the first sample of the loaded data.
         """
+        self._status = Stream.Status.START
+        logging.info('Stream is starting.')
         self._segmentor.set_ref_time(start_time)
-        self._started = True
         self._loading_thread = self._get_thread_for_loading()
         self._loading_thread.daemon = True
         self._segment_thread = self._get_thread_for_chunking()
         self._segment_thread.daemon = True
         self._loading_thread.start()
         self._segment_thread.start()
+        while not self._loading_thread.isAlive() or not self._segment_thread.isAlive():
+            time.sleep(0.1)
+        logging.info('Stream started.')
+        self._status = Stream.Status.RUN
+
+    def stop(self):
+        """Method to stop the loading process
+        """
+        logging.info('Stream is stopping.')
+        self._status = Stream.Status.STOP
+        self._segmentor.reset()
+        self._generator.stop()
+        time.sleep(0.1)
+        self._segment_thread.join(timeout=1)
+        logging.info('Segmentor thread stopped.')
+        time.sleep(0.1)
+        self._loading_thread.join(timeout=1)
+        logging.info('Generator thread stopped.')
+        with self._output_buffer.mutex:
+            self._output_buffer.queue.clear()
+        with self._input_buffer.mutex:
+            self._input_buffer.queue.clear()
+        self._status = Stream.Status.NOT_START
+        logging.info('Stream stopped.')
+
+    def get_status(self):
+        return self._status
 
     def _get_thread_for_loading(self):
         return threading.Thread(
@@ -74,36 +98,30 @@ class Stream:
         return threading.Thread(
             target=self._segment, name=self._name + '-segmenting')
 
-    def stop(self):
-        """Method to stop the loading process
-        """
-        self._started = False
-        self._segmentor.reset()
-        self._generator.stop()
-        time.sleep(0.1)
-        self._segment_thread.join(timeout=1)
-        time.sleep(0.1)
-        self._loading_thread.join(timeout=1)
-        with self._output_buffer.mutex:
-            self._output_buffer.queue.clear()
-        with self._input_buffer.mutex:
-            self._input_buffer.queue.clear()
-
     def _generate(self):
+        logging.info('Generator thread started.')
         for data in self._generator.generate():
+            if self._status == Stream.Status.STOP:
+                break
             self._input_buffer.put(data)
         self._input_buffer.put(None)
+        logging.info('Generator thread is stopping.')
 
     def _segment(self):
-        while self._started:
+        logging.info('Segmentor thread started.')
+        while True:
             try:
                 data = self._input_buffer.get(timeout=0.1)
                 if data is None:
                     break
                 for segment in self._segmentor.segment(data):
-                    if not self._started:
+                    if self._status == Stream.Status.STOP:
                         break
                     self._output_buffer.put(segment + (self._name, ))
             except queue.Empty:
-                continue
+                pass
+            finally:
+                if self._status == Stream.Status.STOP:
+                    break
         self._output_buffer.put(None)
+        logging.info('Segmentor thread is stopping.')
