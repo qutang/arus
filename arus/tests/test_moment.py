@@ -38,8 +38,6 @@ class TestMoment:
         assert test.to_string(fmt='%Y%z') == '2020'
         assert test.to_string(
             fmt='%Y%z', tz=moment.Moment.get_utc_timezone()) == '2020+0000'
-        assert test.to_string(
-            fmt='%Y%z', tz=moment.Moment.get_local_timezone()) == '2020-0500'
 
     def test_time_zones(self):
         assert moment.Moment.get_timezone('UTC') == pytz.utc
