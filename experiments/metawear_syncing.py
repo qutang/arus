@@ -42,7 +42,7 @@ for stream in streams:
 done = [False] * len(streams)
 while True:
     for stream in streams:
-        for data, st, et, _, _, name in stream.get_iterator():
+        for data, st, et, _, _, name in stream.generate():
             data['ST'] = st
             data['ET'] = et
             i = streams.index(stream)

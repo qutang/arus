@@ -16,7 +16,7 @@ if __name__ == "__main__":
     stream = arus.Stream(generator, segmentor, name='metawear-stream')
     stream.start()
     i = 0
-    for data, _, _, _, _, _ in stream.get_iterator():
+    for data, _, _, _, _, _ in stream.generate():
         if data.empty:
             print(data)
             continue

@@ -46,7 +46,7 @@ stream = arus.Stream(generator, segmentor,
 # ---------------------------------
 stream.start()
 chunk_sizes = []
-for data, st, et, _, _, name in stream.get_iterator():
+for data, st, et, _, _, name in stream.generate():
     print("{},{},{}".format(
         st, et, data.shape[0]))
     if not data.empty:
