@@ -176,8 +176,9 @@ def _prepare_mhealth_streams(dataset_dict, pid, window_size, sr):
     for a in subject_data_dict[pid]['annotations'].keys():
         stream_name = a
         gr = generator.MhealthAnnotationFileGenerator(
-            *subject_data_dict[pid]['annotations'][a], buffer_size=10)
-        seg = segmentor.SlidingWindowSegmentor(window_size=window_size)
+            *subject_data_dict[pid]['annotations'][a])
+        seg = segmentor.SlidingWindowSegmentor(
+            window_size=window_size, st_col=1, et_col=2)
         annotation_stream = stream.Stream(gr, seg, name=stream_name)
         streams.append(annotation_stream)
 
