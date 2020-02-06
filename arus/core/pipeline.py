@@ -189,7 +189,7 @@ class Pipeline:
         Returns:
             arus.core.Stream: The instance of the stream if it is found, otherwise return `None`.
         """
-        found = list(filter(lambda s: s.name == stream_name, self._streams))
+        found = list(filter(lambda s: s._name == stream_name, self._streams))
         return None if len(found) == 0 else found[0]
 
     def add_stream(self, stream):
@@ -202,7 +202,7 @@ class Pipeline:
         """
         if self._is_running():
             return
-        if self.get_stream(stream.name) is None:
+        if self.get_stream(stream._name) is None:
             self._streams.append(stream)
 
     def set_processor(self, processor, **kwargs):
@@ -264,7 +264,7 @@ class Pipeline:
         while self._connected:
             if self._started:
                 for stream in self._streams:
-                    if stream.started:
+                    if stream._started:
                         for data, st, et, prev_st, prev_et, name in stream.get_iterator():
                             if self._is_data_after_start_time(st):
                                 logging.debug(
@@ -274,16 +274,14 @@ class Pipeline:
                                 self._chunks[st.timestamp()].append(
                                     (data, st, et, prev_st, prev_et, name))
                                 self._stream_pointer[name] = st.timestamp()
-                                break
-                            else:
-                                pass
+                            break
                         if self._is_data_after_start_time(st):
                             self._process_synced_chunks(
                                 st, et, prev_st, prev_et, self.name)
                         else:
                             logging.debug('Discard one stream window' + str(
                                 st) + 'coming before process start time: ' + str(self._process_start_time))
-                if np.all([not stream.started for stream in self._streams]):
+                if np.all([not stream._started for stream in self._streams]):
                     self._streams_running = False
                     break
             else:
