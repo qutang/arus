@@ -26,12 +26,15 @@ class Generator:
         pass
 
     def _buffering(self, data):
-        if self._buffer is None and data.shape[0] == self._buffer_size:
+        if self._buffer_size is None:
             return data
-        elif self._buffer is None and data.shape[0] < self._buffer_size:
-            self._buffer = data
-            return None
-        elif self._buffer is not None:
+        if self._buffer is None:
+            if data.shape[0] == self._buffer_size:
+                return data
+            elif data.shape[0] < self._buffer_size:
+                self._buffer = data
+                return None
+        else:
             n = self._buffer_size - self._buffer.shape[0]
             result = pd.concat(
                 (self._buffer, data.iloc[:n, :]), axis=0, sort=False)
@@ -49,22 +52,6 @@ class MhealthSensorFileGenerator(Generator):
             reader = mh.io.read_data_csv(
                 filepath, chunksize=self._buffer_size, iterator=True)
             for data in reader:
-                result = self._buffering(data)
-                if result is not None:
-                    yield result
-
-
-class ActigraphSensorFileGenerator(Generator):
-    def __init__(self, *filepaths, **kwargs):
-        super().__init__(**kwargs)
-        self._filepaths = filepaths
-
-    def generate(self):
-        for filepath in self._filepaths:
-            reader, format_as_mhealth = mh.io.read_actigraph_csv(
-                filepath, chunksize=self._buffer_size, iterator=True)
-            for data in reader:
-                data = format_as_mhealth(data)
                 result = self._buffering(data)
                 if result is not None:
                     yield result
