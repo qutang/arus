@@ -27,7 +27,7 @@ sensor_file, sr = load_test_data(file_type='actigraph',
 # Setup stream
 # --------------
 window_size = 12.8
-gr = arus.generator.ActigraphSensorFileGenerator(sensor_file)
+gr = arus.plugins.actigraph.ActigraphSensorFileGenerator(sensor_file)
 seg = arus.segmentor.SlidingWindowSegmentor(window_size)
 stream = arus.Stream(gr, seg, name='spades-2')
 
