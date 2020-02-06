@@ -264,8 +264,8 @@ class Pipeline:
         while self._connected:
             if self._started:
                 for stream in self._streams:
-                    if stream._started:
-                        for data, st, et, prev_st, prev_et, name in stream.get_iterator():
+                    if stream.get_status() == stream.Status.RUN:
+                        for data, st, et, prev_st, prev_et, name in stream.generate():
                             if self._is_data_after_start_time(st):
                                 logging.debug(
                                     'recieved data window from ' + name)
@@ -281,7 +281,7 @@ class Pipeline:
                         else:
                             logging.debug('Discard one stream window' + str(
                                 st) + 'coming before process start time: ' + str(self._process_start_time))
-                if np.all([not stream._started for stream in self._streams]):
+                if np.all([stream.get_status() != stream.Status.RUN for stream in self._streams]):
                     self._streams_running = False
                     break
             else:
