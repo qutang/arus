@@ -108,9 +108,7 @@ class RandomAccelDataGenerator(Generator):
             self._st = ts[-1]
             ts = ts[0:-1]
             result = mh.create_accel_dataframe(ts, data)
-            delay = self._buffer_size / self._sr - \
-                (time.time() - clock_start_time)
-            time.sleep(delay)
+            time.sleep(0.2)
             counter += self._buffer_size
             if self._max_samples is None:
                 self._max_count = counter + 1
@@ -146,6 +144,7 @@ class RandomAnnotationDataGenerator(Generator):
             label_names = np.random.choice(self._labels, N)
             result = mh.create_annotation_dataframe(
                 start_times, stop_times, label_names)
+            time.sleep(0.2)
             counter += N
             if self._max_samples is None:
                 self._max_count = counter + 1
