@@ -15,3 +15,4 @@ from .moment import Moment
 from . import extensions as ext
 from .stream import Stream
 from . import plugins
+from . import testing
