@@ -32,10 +32,11 @@ class Stream:
         self._segmentor = segmentor
 
     def get_iterator(self):
-        data = self._output_buffer.get()
-        if data is None:
-            raise StopIteration
-        yield data
+        while self._started:
+            data = self._output_buffer.get()
+            if data is None:
+                raise StopIteration
+            yield data
 
     def next(self):
         """Manually get the next loaded data in data queue. Rarely used. Recommend to use the `Stream.get_iterator` method.
