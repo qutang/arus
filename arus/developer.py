@@ -150,7 +150,7 @@ def make_sphinx_website(repo_root, docs_folder):
     logging.info('Clean up old documentation website')
     shutil.rmtree(os.path.join(repo_root, docs_folder,
                                'build'), ignore_errors=True)
-    shutil.rmtree(os.path.join(repo_root, docs_folder,
+    shutil.rmtree(os.path.join(repo_root, docs_folder, 'source',
                                'generated'), ignore_errors=True)
     shutil.rmtree(os.path.join(repo_root, docs_folder,
                                'source', 'examples'), ignore_errors=True)
