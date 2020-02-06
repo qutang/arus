@@ -53,6 +53,7 @@ sphinx_gallery_conf = {
                                        '../../examples/pipelines',
                                        '../../examples/models',
                                        '../../examples/broadcasters',
+                                       '../../examples/dataset',
                                        '../../examples/metawear'])
 }
 

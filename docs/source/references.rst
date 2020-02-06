@@ -7,8 +7,10 @@ Core modules
 .. autosummary::
    :toctree: generated
 
+   arus.Stream
    arus.core.pipeline
-   arus.core.stream
+   arus.generator
+   arus.segmentor
 
 Acclerometer
 ------------
@@ -18,7 +20,6 @@ Acclerometer
 
    arus.core.accelerometer.features
    arus.core.accelerometer.transformation
-   arus.core.accelerometer.generator
 
 Activity recognition models
 ---------------------------
@@ -42,8 +43,9 @@ Utilities
 .. autosummary::
    :toctree: generated
 
+   arus.mhealth_format
+   arus.Moment
+   arus.extensions
    arus.core.libs.mhealth_format
    arus.core.libs.dsp
-   arus.core.libs.date
-   arus.core.libs.num
    arus.testing
