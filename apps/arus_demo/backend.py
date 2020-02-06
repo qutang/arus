@@ -2,8 +2,8 @@ from arus.testing import load_test_data
 import pandas as pd
 from arus.models.muss import MUSSModel, Strategy
 from pathos import pools
-from arus.plugins.metawear import MetaWearSlidingWindowStream, MetaWearScanner
 from arus.core.libs import mhealth_format as arus_mh
+import arus
 from playsound import playsound
 import datetime as dt
 import os
@@ -358,8 +358,10 @@ def connect_devices(devices, model, placement_names=['DW', 'DA'], mode=PROCESSOR
         placement_names = model[-2]
     kwargs = {}
     for addr, placement in zip(device_addrs, placement_names):
-        stream = MetaWearSlidingWindowStream(
-            addr, window_size=4, sr=50, grange=8, name=placement)
+        generator = arus.plugins.metawear.MetaWearAccelDataGenerator(
+            addr, sr=50, grange=8, buffer_size=100)
+        segmentor = arus.segmentor.SlidingWindowSegmentor(window_size=2)
+        stream = arus.Stream(generator, segmentor, name=placement)
         streams.append(stream)
         kwargs[placement] = {'sr': 50}
     if mode == PROCESSOR_MODE.TEST_ONLY:
@@ -424,6 +426,6 @@ def play_sound(text, pool=None):
 def get_nearby_devices(pool=None):
     pool = pool or pools.ThreadPool(nodes=1)
     pool.restart(force=True)
-    scanner = MetaWearScanner()
+    scanner = arus.plugins.metawear.MetaWearScanner()
     task = pool.apipe(scanner.get_nearby_devices, max_devices=3)
     return task

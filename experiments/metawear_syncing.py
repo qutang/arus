@@ -24,7 +24,7 @@ for addr in addrs:
     generator = arus.plugins.metawear.MetaWearAccelDataGenerator(
         addr, sr=50, grange=8, buffer_size=100)
     segmentor = arus.segmentor.SlidingWindowSegmentor(
-        window_size=2, ref_st=ref_st)
+        window_size=2)
     stream = arus.Stream(generator, segmentor,
                          name='metawear-stream-{}'.format(addr))
     streams.append(stream)
@@ -34,7 +34,7 @@ for addr in addrs:
 # start stream
 results = {}
 for stream in streams:
-    stream.start()
+    stream.start(start_time=ref_st)
     results[stream._name] = []
 
 
@@ -98,3 +98,6 @@ count_segment = count_segment.pivot(
 count_segment.columns = sorted(addrs)
 count_segment.reset_index(drop=False, inplace=True)
 count_segment.plot(x='ST', kind='line', ylim=(0, 210))
+
+
+# %%
