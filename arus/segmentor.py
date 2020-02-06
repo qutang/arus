@@ -8,6 +8,8 @@ License: GNU v3
 import queue
 import pandas as pd
 from . import extensions
+from . import moment
+import logging
 
 
 class Segmentor:
@@ -16,10 +18,26 @@ class Segmentor:
         self._et_col = et_col or self._st_col
         self._ref_st = ref_st
         self.reset()
-        pass
 
     def set_ref_time(self, ts):
         self._ref_st = ts
+
+    def reset(self):
+        pass
+
+    def segment(self, data):
+        if data is None:
+            raise StopIteration
+        for index, row in data.iterrows():
+            yield row
+
+
+class SlidingWindowSegmentor(Segmentor):
+    def __init__(self, window_size, **kwargs):
+        super().__init__(**kwargs)
+        if window_size == 0:
+            raise ValueError('Window size should be greater than zero.')
+        self._ws = window_size
 
     def reset(self):
         self._current_segment = []
@@ -28,16 +46,12 @@ class Segmentor:
         self._previous_seg_st = None
         self._previous_seg_et = None
 
-    def segement(self):
-        raise NotImplementedError('Subclass implements this.')
-
-
-class SlidingWindowSegmentor(Segmentor):
-    def __init__(self, window_size, **kwargs):
-        super().__init__(**kwargs)
-        self._ws = window_size
-
     def segment(self, data):
+        et = data.iloc[-1, self._et_col]
+        if self._ref_st is not None and moment.Moment(self._ref_st).to_unix_timestamp() > moment.Moment(et).to_unix_timestamp():
+            logging.warn(
+                'Referenced start time is after the end time of the input data, this generates no segments from the data.')
+            raise StopIteration
         if data is None:
             raise StopIteration
         else:
