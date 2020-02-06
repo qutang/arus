@@ -6,9 +6,8 @@ This example shows how to pass previous output and input to processor for a pipe
 """
 
 from arus.core.pipeline import Pipeline
-from arus.core.stream import GeneratorSlidingWindowStream
-from arus.core.accelerometer import generator
-from datetime import datetime
+import arus
+import datetime as dt
 import pandas as pd
 
 
@@ -31,21 +30,11 @@ def _pipeline_test_processor(chunk_list, prev_input=None, prev_output=None, **kw
 
 
 if __name__ == "__main__":
-    # test on a single stream
-    stream1_config = {
-        "generator": generator.normal_dist,
-        'kwargs': {
-            "grange": 8,
-            "buffer_size": 100,
-            "sleep_interval": 0,
-            "sigma": 1,
-            "sr": 80
-        }
-    }
-
     window_size = 12.8
-    stream1 = GeneratorSlidingWindowStream(
-        stream1_config, window_size=window_size, start_time_col=0, stop_time_col=0, name='stream-1')
+    gr1 = arus.generator.RandomAccelDataGenerator(
+        sr=80, grange=8, sigma=1, buffer_size=100)
+    seg1 = arus.segmentor.SlidingWindowSegmentor(window_size)
+    stream1 = arus.Stream(gr1, seg1, name='stream-1')
 
     pipeline = Pipeline(
         max_processes=2, scheduler='processes', preserve_status=True)

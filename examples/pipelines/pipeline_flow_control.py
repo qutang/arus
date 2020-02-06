@@ -6,9 +6,8 @@ This example shows how to start, stop, pause a pipeline.
 """
 
 from arus.core.pipeline import Pipeline
-from arus.core.stream.generator_stream import GeneratorSlidingWindowStream
-from arus.core.accelerometer import generator
-from datetime import datetime
+import arus
+import datetime as dt
 import pandas as pd
 import time
 import logging
@@ -27,25 +26,16 @@ def _pipeline_test_processor(chunk_list, **kwargs):
 
 
 if __name__ == "__main__":
-    # test on a single stream
-    stream1_config = {
-        "generator": generator.normal_dist,
-        'kwargs': {
-            "grange": 8,
-            "buffer_size": 100,
-            "sleep_interval": 0,
-            "sigma": 1,
-            "sr": 80
-        }
-    }
-
     window_size = 2
-    start_time = datetime.now()
-    stream1 = GeneratorSlidingWindowStream(
-        stream1_config, window_size=window_size, simulate_reality=True, start_time_col=0, stop_time_col=0, name='stream-1')
+    start_time = dt.datetime.now()
+
+    gr = arus.generator.RandomAccelDataGenerator(
+        sr=80, grange=8, sigma=1, buffer_size=100)
+    seg = arus.segmentor.SlidingWindowSegmentor(window_size)
+    stream = arus.Stream(gr, seg, name='stream-1')
 
     pipeline = Pipeline(max_processes=2, scheduler='processes')
-    pipeline.add_stream(stream1)
+    pipeline.add_stream(stream)
     pipeline.set_processor(_pipeline_test_processor)
 
     # connect, there will be no incoming data, get_iteratnor will be blocking
@@ -105,7 +95,7 @@ if __name__ == "__main__":
                 break
         if time.time() - stt >= 2 and not restarted:
             restarted = True
-            ts = datetime.now()
+            ts = dt.datetime.now()
             process_time = pd.Timestamp(ts)
             pipeline.process(start_time=process_time)
             print('Start again at:' + str(ts))

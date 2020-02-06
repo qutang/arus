@@ -8,9 +8,8 @@ The pipeline uses a single sensor generator stream.
 from arus.models.muss import MUSSModel
 from arus.testing import load_test_data
 import pandas as pd
-from arus.core.stream.generator_stream import GeneratorSlidingWindowStream
-from arus.core.accelerometer import generator
-from datetime import datetime
+import arus
+import datetime as dt
 
 
 def train_test_classifier(muss):
@@ -36,32 +35,23 @@ def train_test_classifier(muss):
 
 
 def prepare_streams():
-    stream1_config = {
-        "generator": generator.normal_dist,
-        'kwargs': {
-            "grange": 8,
-            "start_time": None,
-            "buffer_size": 100,
-            "sleep_interval": 0,
-            "sigma": 1,
-            "sr": 50
-        }
-    }
-
     window_size = 12.8
-    start_time = datetime.now()
-    stream = GeneratorSlidingWindowStream(
-        stream1_config, window_size=window_size, start_time=start_time, start_time_col=0, stop_time_col=0, name='DW')
+    gr = arus.generator.RandomAccelDataGenerator(
+        sr=50, grange=8, sigma=1, buffer_size=100)
+    seg = arus.segmentor.SlidingWindowSegmentor(window_size)
+    stream = arus.Stream(gr, seg, name='DW')
     return stream
 
 
 if __name__ == "__main__":
+    arus.dev.set_default_logging()
+    start_time = dt.datetime.now()
     muss = MUSSModel()
     model = train_test_classifier(muss)
     stream = prepare_streams()
     muss_pipeline = muss.get_inference_pipeline(
         stream, model=model, scheduler='processes', max_processes=2, DW={'sr': 50})
-    muss_pipeline.start()
+    muss_pipeline.start(start_time=start_time)
     i = 0
     for data, _, _, _, _, name in muss_pipeline.get_iterator():
         i = i + 1

@@ -13,34 +13,30 @@ from glob import glob
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-
-from arus.core.stream import SensorFileSlidingWindowStream
+import arus
 from arus.testing import load_test_data
 
 # %%
 # Load test Actigraph sensor files
 # ---------------------------------
-files, sr = load_test_data(file_type='actigraph',
-                           file_num='single',
-                           exception_type='consistent_sr')
+sensor_file, sr = load_test_data(file_type='actigraph',
+                                 file_num='single',
+                                 exception_type='consistent_sr')
 
 # %%
 # Setup stream
 # --------------
 window_size = 12.8
-stream = SensorFileSlidingWindowStream(data_source=files,
-                                       window_size=window_size,
-                                       sr=sr,
-                                       buffer_size=1800,
-                                       storage_format='actigraph',
-                                       name='spades_2')
+gr = arus.generator.ActigraphSensorFileGenerator(sensor_file)
+seg = arus.segmentor.SlidingWindowSegmentor(window_size)
+stream = arus.Stream(gr, seg, name='spades-2')
 
 # %%
 # Start stream and read in data
 # ------------------------------
 stream.start()
 chunk_sizes = []
-for data, _, _, _, _, name in stream.get_iterator():
+for data, _, _, _, _, name in stream.generate():
     print("{},{},{},{}".format(name,
                                data.iloc[0, 0], data.iloc[-1, 0], data.shape[0]))
     chunk_sizes.append(data.shape[0])

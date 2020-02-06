@@ -6,10 +6,8 @@ The pipeline uses one annotation stream and one sensor stream as input.
 """
 
 from arus.core.pipeline import Pipeline
-from arus.core.stream.generator_stream import GeneratorSlidingWindowStream
-from arus.core.accelerometer import generator as accel_generator
-from arus.core.annotation import generator as annot_generator
-from datetime import datetime
+import arus
+import datetime as dt
 import pandas as pd
 import numpy as np
 
@@ -53,38 +51,24 @@ def _feature_pipeline_processor(chunk_list, **kwargs):
 
 if __name__ == "__main__":
     # test on one annotation stream and one sensor stream + feature pipeline
-    stream1_config = {
-        "generator": accel_generator.normal_dist,
-        'kwargs': {
-            "grange": 8,
-            "buffer_size": 100,
-            "sleep_interval": 0,
-            "sigma": 1,
-            "sr": 80
-        }
-    }
-
-    stream2_config = {
-        "generator": annot_generator.normal_dist,
-        'kwargs': {
-            "duration_mu": 8,
-            "duration_sigma": 2,
-            "sleep_interval": 1,
-            "num_mu": 3,
-            "labels": ["Sitting", 'Standing', 'Lying', 'Walking', 'Running']
-        }
-    }
 
     window_size = 12.8
     sr = 80
-    start_time = datetime.now()
-    stream1 = GeneratorSlidingWindowStream(
-        stream1_config, window_size=window_size, start_time_col=0, stop_time_col=0, name='sensor-stream')
-    stream2 = GeneratorSlidingWindowStream(
-        stream2_config, window_size=window_size, start_time_col=1, stop_time_col=2, name='annotation-stream')
+    start_time = dt.datetime.now()
+    gr1 = arus.generator.RandomAccelDataGenerator(
+        sr=sr, grange=8, sigma=1, buffer_size=100)
+    seg1 = arus.segmentor.SlidingWindowSegmentor(window_size)
+    stream1 = arus.Stream(gr1, seg1, name='sensor-stream')
+
+    gr2 = arus.generator.RandomAnnotationDataGenerator(
+        labels=["Sitting", 'Standing', 'Lying', 'Walking', 'Running'], duration_mu=8, duration_sigma=2, num_mu=3, buffer_size=100)
+    seg2 = arus.segmentor.SlidingWindowSegmentor(
+        window_size, st_col=1, et_col=2)
+    stream2 = arus.Stream(gr2, seg2, name='annotation-stream')
 
     feat_pipeline = Pipeline(
         max_processes=2, scheduler='processes', name='feature-pipeline')
+
     feat_pipeline.add_stream(stream1)
     feat_pipeline.set_processor(_feature_pipeline_processor)
     master_pipeline = Pipeline(

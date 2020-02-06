@@ -6,9 +6,8 @@ The pipeline uses multiple sensor streams.
 """
 
 from arus.core.pipeline import Pipeline
-from arus.core.stream.generator_stream import GeneratorSlidingWindowStream
-from arus.core.accelerometer import generator
-from datetime import datetime
+import arus
+import datetime as dt
 import pandas as pd
 import logging
 
@@ -26,37 +25,20 @@ def _pipeline_test_processor(chunk_list, **kwargs):
 
 
 if __name__ == "__main__":
-    logging.basicConfig(
-        level=logging.DEBUG, format='[%(levelname)s]%(asctime)s <P%(process)d-%(threadName)s> %(message)s')
-    # test on multiple streams
-    stream1_config = {
-        "generator": generator.normal_dist,
-        'kwargs': {
-            "grange": 8,
-            "buffer_size": 100,
-            "sleep_interval": 0,
-            "sigma": 1,
-            "sr": 80
-        }
-    }
-
-    stream2_config = {
-        "generator": generator.normal_dist,
-        'kwargs': {
-            "grange": 4,
-            "buffer_size": 400,
-            "sleep_interval": 1,
-            "sigma": 2,
-            "sr": 50
-        }
-    }
+    arus.dev.set_default_logging()
 
     window_size = 12.8
-    start_time = datetime.now()
-    stream1 = GeneratorSlidingWindowStream(
-        stream1_config, window_size=window_size, start_time_col=0, stop_time_col=0, name='stream-1')
-    stream2 = GeneratorSlidingWindowStream(
-        stream2_config, window_size=window_size, start_time_col=0, stop_time_col=0, name='stream-2')
+    start_time = dt.datetime.now()
+
+    gr1 = arus.generator.RandomAccelDataGenerator(
+        sr=80, grange=8, sigma=1, buffer_size=100)
+    seg1 = arus.segmentor.SlidingWindowSegmentor(window_size)
+    stream1 = arus.Stream(gr1, seg1, name='stream-1')
+
+    gr2 = arus.generator.RandomAccelDataGenerator(
+        sr=50, grange=4, sigma=2, buffer_size=100)
+    seg2 = arus.segmentor.SlidingWindowSegmentor(window_size)
+    stream2 = arus.Stream(gr2, seg2, name='stream-2')
 
     pipeline = Pipeline(max_processes=2, scheduler='threads')
     pipeline.add_stream(stream1)

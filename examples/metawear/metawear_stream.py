@@ -1,5 +1,5 @@
 """
-Demonstration of the usage of arus.plugins.metawear.stream.MetaWearSlidingWindowStream
+Stream from metawear device
 ================================================================================
 
 """

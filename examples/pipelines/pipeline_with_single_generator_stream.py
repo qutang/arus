@@ -9,20 +9,21 @@ This example demonstrates using pipeline with a single sensor generator stream.
 # Imports
 # ----------
 import logging
-from datetime import datetime
 
 import pandas as pd
 import multiprocessing
 
-from arus.core.accelerometer import generator
 from arus.core.pipeline import Pipeline
-from arus.core.stream import GeneratorSlidingWindowStream
+import arus
+import datetime as dt
 
 multiprocessing.freeze_support()
 
 # %%
 # pipeline processor test function
 # ---------------------------------
+
+
 def _pipeline_test_processor(chunk_list, **kwargs):
     import pandas as pd
     result = {'NAME': [],
@@ -38,32 +39,16 @@ def _pipeline_test_processor(chunk_list, **kwargs):
 # %%
 # Turn on logging info
 # ----------------------
-logging.basicConfig(
-    level=logging.DEBUG, format='[%(levelname)s]%(asctime)s <P%(process)d-%(threadName)s> %(message)s')
-
-# %%
-# Setup sensor generator
-# -----------------------
-stream1_config = {
-    "generator": generator.normal_dist,
-    'kwargs': {
-        "grange": 8,
-        "buffer_size": 100,
-        "sleep_interval": 0,
-        "sigma": 1,
-        "sr": 80
-    }
-}
+arus.dev.set_default_logging()
 
 # %%
 # Setup stream
 # --------------
 window_size = 12.8
-stream1 = GeneratorSlidingWindowStream(stream1_config,
-                                       window_size=window_size,
-                                       start_time_col=0,
-                                       stop_time_col=0,
-                                       name='stream-1')
+gr1 = arus.generator.RandomAccelDataGenerator(
+    sr=80, grange=8, sigma=1, buffer_size=100)
+seg1 = arus.segmentor.SlidingWindowSegmentor(window_size)
+stream1 = arus.Stream(gr1, seg1, name='sensor-stream')
 
 # %%
 # Setup pipeline

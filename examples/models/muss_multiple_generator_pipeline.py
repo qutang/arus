@@ -8,9 +8,8 @@ The pipeline uses multiple sensor generator streams.
 from arus.models.muss import MUSSModel
 from arus.testing import load_test_data
 import pandas as pd
-from arus.core.stream.generator_stream import GeneratorSlidingWindowStream
-from arus.core.accelerometer import generator
-from datetime import datetime
+import arus
+import datetime as dt
 import logging
 
 
@@ -41,41 +40,21 @@ def train_test_classifier(muss):
 
 
 def prepare_streams():
-    stream1_config = {
-        "generator": generator.normal_dist,
-        'kwargs': {
-            "grange": 8,
-            "buffer_size": 100,
-            "sleep_interval": 0,
-            "sigma": 1,
-            "sr": 50
-        }
-    }
-
-    stream2_config = {
-        "generator": generator.normal_dist,
-        'kwargs': {
-            "grange": 4,
-            "buffer_size": 100,
-            "sleep_interval": 0,
-            "sigma": 2,
-            "sr": 50
-        }
-    }
-
     window_size = 12.8
-
-    stream1 = GeneratorSlidingWindowStream(
-        stream1_config, window_size=window_size, start_time_col=0, stop_time_col=0, name='DW')
-    stream2 = GeneratorSlidingWindowStream(
-        stream2_config, window_size=window_size, start_time_col=0, stop_time_col=0, name='DA')
+    gr1 = arus.generator.RandomAccelDataGenerator(
+        sr=50, grange=8, sigma=1, buffer_size=100)
+    seg1 = arus.segmentor.SlidingWindowSegmentor(window_size)
+    stream1 = arus.Stream(gr1, seg1, name='DW')
+    gr2 = arus.generator.RandomAccelDataGenerator(
+        sr=50, grange=4, sigma=2, buffer_size=100)
+    seg2 = arus.segmentor.SlidingWindowSegmentor(window_size)
+    stream2 = arus.Stream(gr2, seg2, name='DA')
     return stream1, stream2
 
 
 if __name__ == "__main__":
-    start_time = datetime.now()
-    logging.basicConfig(
-        level=logging.INFO, format='[%(levelname)s]%(asctime)s <P%(process)d-%(threadName)s> %(message)s')
+    arus.dev.set_default_logging()
+    start_time = dt.datetime.now()
     muss = MUSSModel()
     model = train_test_classifier(muss)
     stream1, stream2 = prepare_streams()
