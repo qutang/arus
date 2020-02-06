@@ -51,6 +51,7 @@ while True:
             results[name].append(data)
             if len(results[name]) == 20:
                 done[i] = True
+            break
     if np.all(done):
         break
 
