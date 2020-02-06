@@ -35,8 +35,10 @@ class Stream:
         while self._started:
             data = self._output_buffer.get()
             if data is None:
-                raise StopIteration
+                self._started = False
+                break
             yield data
+        raise StopIteration
 
     def next(self):
         """Manually get the next loaded data in data queue. Rarely used. Recommend to use the `Stream.get_iterator` method.
