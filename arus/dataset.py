@@ -6,21 +6,19 @@ Date: 01/28/2020
 License: GNU v3
 """
 
-import os
-from . import env
-import wget
-import tarfile
-from . import developer
-from . import mhealth_format as mh
-import logging
-import subprocess
-from .core.stream import SensorFileSlidingWindowStream
-from .core.stream import AnnotationFileSlidingWindowStream
-from .core.libs import date as arus_date
-from .models import muss as arus_muss
-import pandas as pd
-import numpy as np
 import functools
+import logging
+import os
+import subprocess
+import tarfile
+
+import numpy as np
+import pandas as pd
+import wget
+
+from . import developer, env, generator, moment, segmentor, stream
+from . import mhealth_format as mh
+from .models import muss as arus_muss
 
 
 def get_dataset_names():
@@ -165,12 +163,10 @@ def _prepare_mhealth_streams(dataset_dict, pid, window_size, sr):
     # sensor streams
     for p in subject_data_dict[pid]['sensors'].keys():
         stream_name = p
-        pid_sid_stream = SensorFileSlidingWindowStream(
-            subject_data_dict[pid]['sensors'][p],
-            window_size=window_size,
-            sr=sr,
-            name=stream_name
-        )
+        gr = generator.MhealthSensorFileGenerator(
+            *subject_data_dict[pid]['sensors'][p])
+        seg = segmentor.SlidingWindowSegmentor(window_size=window_size)
+        pid_sid_stream = stream.Stream(gr, seg, name=stream_name)
         streams.append(pid_sid_stream)
         streams_kwargs[stream_name] = {
             'sr': sr
@@ -179,11 +175,10 @@ def _prepare_mhealth_streams(dataset_dict, pid, window_size, sr):
     # annotation streams
     for a in subject_data_dict[pid]['annotations'].keys():
         stream_name = a
-        annotation_stream = AnnotationFileSlidingWindowStream(
-            subject_data_dict[pid]['annotations'][a],
-            window_size=window_size,
-            name=stream_name
-        )
+        gr = generator.MhealthAnnotationFileGenerator(
+            *subject_data_dict[pid]['annotations'][a], buffer_size=10)
+        seg = segmentor.SlidingWindowSegmentor(window_size=window_size)
+        annotation_stream = stream.Stream(gr, seg, name=stream_name)
         streams.append(annotation_stream)
 
     return streams, streams_kwargs
@@ -224,7 +219,7 @@ def _parse_spades_lab_annotations(annot_df, pid, st, et):
 
     # filter if it does not cover the entire 12.8s
     durations = _get_annotation_durations(annot_df)
-    interval = int(arus_date.compute_interval(st, et, unit='ms'))
+    interval = int(moment.Moment.get_duration(st, et, unit='ms'))
 
     if not np.all(durations.values >= np.timedelta64(interval, 'ms')):
         return "Transition"
