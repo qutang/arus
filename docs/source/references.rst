@@ -44,6 +44,6 @@ Utilities
 
    arus.mhealth_format
    arus.Moment
-   arus.extensions
-   arus.core.libs.mhealth_format
+   arus.extensions.numpy
+   arus.extensions.pandas
    arus.testing
