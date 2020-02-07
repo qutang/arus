@@ -41,6 +41,13 @@ def get_class_category(dataset_path):
     return class_category
 
 
+def get_offset_mappings(dataset_path):
+    filepath = os.path.join(
+        dataset_path, constants.META_FOLDER, 'offset_mappings.csv')
+    offset_mappings = pd.read_csv(filepath, header=0)
+    return offset_mappings
+
+
 def get_pids(dataset_path):
     return list(filter(lambda name: name not in [
         constants.PROCESSED_FOLDER, constants.META_FOLDER], os.listdir(dataset_path)))
@@ -140,9 +147,11 @@ def traverse_dataset(dataset_path):
         dataset_path)
     subjects = get_subjects_info(dataset_path)
     class_category = get_class_category(dataset_path)
+    offset_mappings = get_offset_mappings(dataset_path)
     dataset_dict['meta']['location_mapping'] = location_mappings
     dataset_dict['meta']['subjects'] = subjects
     dataset_dict['meta']['class_category'] = class_category
+    dataset_dict['meta']['offset_mapping'] = offset_mappings
     dataset_dict['meta']['root'] = dataset_path
     dataset_dict['meta']['name'] = os.path.basename(dataset_path)
 
