@@ -92,7 +92,7 @@ class MhealthFileWriter:
         return groups
 
     def _init_executor(self, n_chunks):
-        n = min(n_chunks, os.cpu_count() - 8)
+        n = max(min(n_chunks, os.cpu_count() - 8), 1)
         self._executor = futures.ThreadPoolExecutor(
             n, thread_name_prefix='mhealth-file-writer')
 
