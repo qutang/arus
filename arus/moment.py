@@ -29,7 +29,8 @@ class Moment:
         if type(obj) == int or type(obj) == float:
             self._posix = float(obj)
         elif type(obj) == str:
-            ts = pd.Timestamp(obj)
+            # if it is string, always ignore time zone
+            ts = pd.Timestamp(obj).tz_localize(None)
             self._posix = obj.to_pydatetime().timestamp()
         elif type(obj) == dt.datetime:
             # assume local time, always to posix time

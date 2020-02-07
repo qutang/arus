@@ -222,6 +222,7 @@ def test_get_file_timestamp():
 
     for test_case in sensor_test_cases:
         ts = path.extract_file_timestamp(test_case, ignore_tz=True)
+        print(ts)
         ts_unix = moment.Moment(ts).to_unix_timestamp()
         assert ts_unix == 1447966800.0
 
