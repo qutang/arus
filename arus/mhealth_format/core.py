@@ -23,6 +23,8 @@ def get_processed_files(dataset_path):
 def get_location_mappings(dataset_path):
     filepath = os.path.join(
         dataset_path, constants.META_FOLDER, constants.META_LOCATION_MAPPING_FILENAME)
+    if not os.path.exists(filepath):
+        return None
     mappings = pd.read_csv(filepath, header=0)
     return mappings
 
@@ -30,6 +32,8 @@ def get_location_mappings(dataset_path):
 def get_subjects_info(dataset_path):
     filepath = os.path.join(
         dataset_path, constants.META_FOLDER, constants.META_SUBJECTS_FILENAME)
+    if not os.path.exists(filepath):
+        return None
     subjects = pd.read_csv(filepath, header=0)
     return subjects
 
@@ -37,6 +41,8 @@ def get_subjects_info(dataset_path):
 def get_class_category(dataset_path):
     filepath = os.path.join(
         dataset_path, constants.META_FOLDER, 'muss_class_labels.csv')
+    if not os.path.exists(filepath):
+        return None
     class_category = pd.read_csv(filepath, header=0)
     return class_category
 
@@ -44,8 +50,19 @@ def get_class_category(dataset_path):
 def get_offset_mappings(dataset_path):
     filepath = os.path.join(
         dataset_path, constants.META_FOLDER, 'offset_mappings.csv')
+    if not os.path.exists(filepath):
+        return None
     offset_mappings = pd.read_csv(filepath, header=0)
     return offset_mappings
+
+
+def get_orientation_corrections(dataset_path):
+    filepath = os.path.join(
+        dataset_path, constants.META_FOLDER, 'orientation_corrections.csv')
+    if not os.path.exists(filepath):
+        return None
+    orientation_corrections = pd.read_csv(filepath, header=0)
+    return orientation_corrections
 
 
 def get_pids(dataset_path):
@@ -148,10 +165,12 @@ def traverse_dataset(dataset_path):
     subjects = get_subjects_info(dataset_path)
     class_category = get_class_category(dataset_path)
     offset_mappings = get_offset_mappings(dataset_path)
+    orientation_corrections = get_orientation_corrections(dataset_path)
     dataset_dict['meta']['location_mapping'] = location_mappings
     dataset_dict['meta']['subjects'] = subjects
     dataset_dict['meta']['class_category'] = class_category
     dataset_dict['meta']['offset_mapping'] = offset_mappings
+    dataset_dict['meta']['orientation_corrections'] = orientation_corrections
     dataset_dict['meta']['root'] = dataset_path
     dataset_dict['meta']['name'] = os.path.basename(dataset_path)
 
