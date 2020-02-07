@@ -1,4 +1,5 @@
 from .. import mhealth_format as mh
+from .. import moment
 import pytest
 import pandas as pd
 from concurrent import futures
@@ -23,7 +24,219 @@ def test_file(request, spades_lab):
         return spades_lab['subjects']['SPADES_2']['annotations']['SPADESInLab'][0]
 
 
+@pytest.fixture(scope='module')
+def filepath_test_cases():
+    valid_filepaths = [
+        'D:\\data\\spades_lab\\SPADES_7\\MasterSynced\\2015\\11\\19\\16',
+        'D:\\data\\spades_lab\\SPADES_7\\MasterSynced\\2015\\11\\19\\16\\',
+        'D:/data/spades_lab/SPADES_7/MasterSynced/2015/11/19/16/',
+        'D:/data/spades_lab/SPADES_7/Derived/2015/11/19/16/',
+        'D:/data/spades_lab/SPADES_7/Derived/AllSensors/2015/11/19/16/',
+        'D:/data/spades_lab/SPADES_7/MasterSynced/2015/11/19/16',
+        '''D:/data/spades_lab/SPADES_7/MasterSynced/2015/11/19/16/
+            ActigraphGT9X-AccelerationCalibrated-NA.TAS1E23150152-AccelerationCalibrated.
+            2015-11-19-16-00-00-000-M0500.sensor.csv''',
+        '''D:/data/spades_lab/SPADES_7/MasterSynced/2015/11/19/16/
+            ActigraphGT9X-AccelerationCalibrated-NA.TAS1E23150152-AccelerationCalibrated.
+            2015-11-19-16-00-00-000-M0500.sensor.csv.gz'''
+    ]
+
+    invalid_filepaths = [
+        'C:\\',
+        'C:/',
+        'D:/data/spades_lab/SPADES_7/MasterSynced/2015/16',
+        'D:/data/spades_lab/SPADES_7/MasterSynced/20/16',
+        'D:/data/spades_lab/SPADES_7/Mastenced/2015/16/17/21/'
+    ]
+
+    valid_flat_filepaths = [
+        'D:\\data\\spades_lab\\SPADES_7\\MasterSynced\\asdf.csv',
+        'D:\\data\\spades_lab\\SPADES_7\\MasterSynced\\adfa.csv',
+        'D:/data/spades_lab/SPADES_7/MasterSynced/sdf.csv',
+        'D:/data/spades_lab/SPADES_7/Derived/dfew.csv',
+        'D:/data/spades_lab/SPADES_7/Derived/AllSensors/dfsd.csv',
+        '''D:/data/spades_lab/SPADES_7/MasterSynced/ActigraphGT9X-AccelerationCalibrated-NA.TAS1E23150152-AccelerationCalibrated.2015-11-19-16-00-00-000-M0500.sensor.csv''',
+        '''D:/data/spades_lab/SPADES_7/MasterSynced/ActigraphGT9X-AccelerationCalibrated-NA.TAS1E23150152-AccelerationCalibrated.2015-11-19-16-00-00-000-M0500.sensor.csv.gz''',
+    ]
+
+    invalid_flat_filepaths = [
+        'C:\\',
+        'C:/',
+        'D:/data/spades_lab/SPADES_7/MasterSyn/',
+        'D:/data/spades_lab/SPADES_7/MasterSynced/20/16',
+        'D:/data/spades_lab/SPADES_7/Mastenced/2015/16/17/21/',
+        '''D:/data/spades_lab/SPADES_7/MasterSynced/2015/11/19/16/ActigraphGT9X-AccelerationCalibrated-NA.TAS1E23150152-AccelerationCalibrated.2015-11-19-16-00-00-000-M0500.sensor.csv'''
+    ]
+
+    valid_filenames = [
+        'ActigraphGT9X-AccelerationCalibrated-NA.TAS1E23150152-AccelerationCalibrated.2015-11-19-16-00-00-000-M0500.sensor.csv',
+        'SPADESInLab.diego-SPADESInLab.2015-11-19-16-00-00-000-M0500.annotation.csv',
+        'SPADESInLab.DIEGO-SPADESInLab.2015-11-19-16-00-00-000-M0500.annotation.csv',
+        'SPADESInLab.DIEGO-SPADESInLab.2015-11-19-16-00-00-000-M0500.annotation.csv.gz'
+    ]
+
+    invalid_filenames = [
+        'ActigraphGT9X-AccelerationCalibrated-NA.TAS1E23150152-AccelerationCalibrated.2015-11-19-16-00-00-000-M0500.annotation.csv',
+        'Actig?raphGT9X-AccelerationCalibrated-NA.TAS1E23150152-AccelerationCalibrated.2015-11-19-16-00-00-000-M0500.sensor.csv',
+        'ActigraphGT9X-NA.TAS1E23150152-AccelerationCalibrated.2015-11-19-16-00-00-000-M0500.sensor.csv',
+        'ActigraphGT9X-AccelerationCalibrated-0,1,2.TAS1E23150152-AccelerationCalibrated.2015-11-19-16-00-00-000-M0500.sensor.csv',
+        'ActigraphGT9X-AccelerationCalibrated-NA.tas1E23150152-AccelerationCalibrated.2015-11-19-16-00-00-000-M0500.sensor.csv',
+        'ActigraphGT9X-AccelerationCalibrated-NA.TAS1E23150152-AccelerationCalibrated.2015-0-000-M0500.sensor.csv',
+        'SPADESInLab-sdfsdf.diego-SPADESInLab.2015-11-19-16-00-00-000-M0500.annotation.csv'
+    ]
+
+    valid_sensor_type = [
+        'ActigraphGT9X-AccelerationCalibrated-NA.TAS1E23150152-AccelerationCalibrated.2015-11-19-16-00-00-000-M0500.sensor.csv',
+        'SPADESInLab.diego-SPADESInLab.2015-11-19-16-00-00-000-M0500.annotation.csv',
+        'SPADESInLab.DIEGO-SPADESInLab.2015-11-19-16-00-00-000-M0500.annotation.csv',
+        'SPADESInLab.DIEGO-SPADESInLab.2015-11-19-16-00-00-000-M0500.annotation.csv.gz',
+    ]
+
+    return valid_filepaths, invalid_filepaths, valid_flat_filepaths, invalid_flat_filepaths, valid_filenames, invalid_filenames, valid_sensor_type
+
+
+class TestCore:
+    def test_get_session_start_time(self, spades_lab):
+        start_time = mh.get_session_start_time(
+            'SPADES_12', spades_lab['meta']['root'])
+        assert start_time.strftime(
+            '%Y-%m-%d-%H-%M-%S') == '2015-12-14-11-00-00'
+
+
 class TestHelper:
+    def test_is_mhealth_filepath(self, filepath_test_cases):
+        for test_case in filepath_test_cases[0]:
+            assert mh.is_mhealth_filepath(test_case)
+
+        for test_case in filepath_test_cases[1]:
+            assert not mh.is_mhealth_filepath(test_case)
+
+    def test_is_mhealth_flat_filepath(self, filepath_test_cases):
+        for test_case in filepath_test_cases[2]:
+            assert mh.is_mhealth_flat_filepath(test_case)
+
+        for test_case in filepath_test_cases[3]:
+            assert not mh.is_mhealth_flat_filepath(test_case)
+
+    def test_is_mhealth_filename(self, filepath_test_cases):
+
+        for test_case in filepath_test_cases[4]:
+            assert mh.is_mhealth_filename(test_case)
+
+        for test_case in filepath_test_cases[5]:
+            assert not mh.is_mhealth_filename(test_case)
+
+    def test_parse_pid_from_filepath(self):
+        correct_test_cases = [
+            'D:\\data\\spades_lab\\SPADES_7\\MasterSynced\\2015\\11\\19\\16',
+            'D:\\data\\spades_lab\\SPADES_7\\MasterSynced\\2015\\11\\19\\16\\',
+            'D:/data/spades_lab/SPADES_7/MasterSynced/2015/11/19/16/',
+            'D:/data/spades_lab/SPADES_7/Derived/2015/11/19/16/',
+            'D:/data/spades_lab/SPADES_7/Derived/AllSensors/2015/11/19/16/',
+            'D:/data/spades_lab/SPADES_7/MasterSynced/2015/11/19/16',
+            '''D:/data/spades_lab/SPADES_7/MasterSynced/2015/11/19/16/
+            ActigraphGT9X-AccelerationCalibrated-NA.TAS1E23150152-AccelerationCalibrated.
+            2015-11-19-16-00-00-000-M0500.sensor.csv''',
+            'D:\\data\\spades_lab\\SPADES_7\\MasterSynced\\asdf.csv',
+            'D:\\data\\spades_lab\\SPADES_7\\MasterSynced\\adfa.csv',
+            'D:/data/spades_lab/SPADES_7/MasterSynced/sdf.csv',
+            'D:/data/spades_lab/SPADES_7/Derived/dfew.csv',
+            'D:/data/spades_lab/SPADES_7/Derived/AllSensors/dfsd.csv',
+            '''D:/data/spades_lab/SPADES_7/MasterSynced/ActigraphGT9X-AccelerationCalibrated-NA.TAS1E23150152-AccelerationCalibrated.2015-11-19-16-00-00-000-M0500.sensor.csv''',
+            '''D:/data/spades_lab/SPADES_7/MasterSynced/ActigraphGT9X-AccelerationCalibrated-NA.TAS1E23150152-AccelerationCalibrated.2015-11-19-16-00-00-000-M0500.sensor.csv.gz'''
+        ]
+
+        incorrect_test_cases = [
+            'C:\\',
+            'C:/',
+            'D:/data/spades_lab/SPADES_7/MasterSynced/2015/16',
+            'D:/data/spades_lab/SPADES_7/MasterSynced/20/16',
+            'D:/data/spades_lab/SPADES_7/Mastenced/2015/16/17/21/'
+        ]
+
+        for test_case in correct_test_cases:
+            print(test_case)
+            assert mh.parse_pid_from_filepath(test_case) == 'SPADES_7'
+
+        for test_case in incorrect_test_cases:
+            with pytest.raises(mh.ParseError):
+                mh.parse_pid_from_filepath(test_case)
+
+    def test_parse_sensor_type_from_filepath(self, filepath_test_cases):
+        for test_case in filepath_test_cases[6]:
+            print(test_case)
+            assert mh.parse_sensor_type_from_filepath(
+                test_case) == 'ActigraphGT9X' or mh.parse_sensor_type_from_filepath(test_case) == 'SPADESInLab'
+
+    def test_parse_data_type_from_filepath(self):
+        sensor_test_cases = [
+            'ActigraphGT9X-AccelerationCalibrated-NA.TAS1E23150152-AccelerationCalibrated.2015-11-19-16-00-00-000-M0500.sensor.csv',
+            'ActigraphGT9X-AccelerationCalibrated-NA.TAS1E23150152-AccelerationCalibrated.2015-11-19-16-00-00-000-M0500.sensor.csv.gz',
+        ]
+
+        for test_case in sensor_test_cases:
+            assert mh.parse_data_type_from_filepath(
+                test_case) == 'AccelerationCalibrated'
+
+    def test_parse_version_code_from_filepath(self):
+        sensor_test_cases = [
+            'ActigraphGT9X-AccelerationCalibrated-NA.TAS1E23150152-AccelerationCalibrated.2015-11-19-16-00-00-000-M0500.sensor.csv',
+            'ActigraphGT9X-AccelerationCalibrated-NA.TAS1E23150152-AccelerationCalibrated.2015-11-19-16-00-00-000-M0500.sensor.csv.gz',
+        ]
+
+        for test_case in sensor_test_cases:
+            assert mh.parse_version_code_from_filepath(test_case) == 'NA'
+
+    def test_parse_sensor_id_from_filepath(self):
+        sensor_test_cases = [
+            'ActigraphGT9X-AccelerationCalibrated-NA.TAS1E23150152-AccelerationCalibrated.2015-11-19-16-00-00-000-M0500.sensor.csv',
+            'ActigraphGT9X-AccelerationCalibrated-NA.TAS1E23150152-AccelerationCalibrated.2015-11-19-16-00-00-000-M0500.sensor.csv.gz',
+        ]
+
+        for test_case in sensor_test_cases:
+            assert mh.parse_sensor_id_from_filepath(
+                test_case) == 'TAS1E23150152'
+
+    def test_parse_file_type_from_filepath(self):
+        sensor_test_cases = [
+            'ActigraphGT9X-AccelerationCalibrated-NA.TAS1E23150152-AccelerationCalibrated.2015-11-19-16-00-00-000-M0500.sensor.csv',
+            'ActigraphGT9X-AccelerationCalibrated-NA.TAS1E23150152-AccelerationCalibrated.2015-11-19-16-00-00-000-M0500.sensor.csv.gz',
+        ]
+
+        annotation_test_cases = [
+            'SPADESInLab.diego-SPADESInLab.2015-11-19-16-00-00-000-M0500.annotation.csv',
+            'SPADESInLab.DIEGO-SPADESInLab.2015-11-19-16-00-00-000-M0500.annotation.csv',
+            'SPADESInLab.DIEGO-SPADESInLab.2015-11-19-16-00-00-000-M0500.annotation.csv.gz',
+        ]
+
+        for test_case in sensor_test_cases:
+            assert mh.parse_filetype_from_filepath(test_case) == 'sensor'
+
+        for test_case in annotation_test_cases:
+            assert mh.parse_filetype_from_filepath(test_case) == 'annotation'
+
+    def test_parse_timestamp_from_filepath(self):
+        sensor_test_cases = [
+            'ActigraphGT9X-AccelerationCalibrated-NA.TAS1E23150152-AccelerationCalibrated.2015-11-19-16-00-00-000-M0500.sensor.csv',
+            'ActigraphGT9X-AccelerationCalibrated-NA.TAS1E23150152-AccelerationCalibrated.2015-11-19-16-00-00-000-M0500.sensor.csv.gz',
+        ]
+
+        annotation_test_cases = [
+            'SPADESInLab.diego-SPADESInLab.2015-11-19-16-00-00-000-M0500.annotation.csv',
+            'SPADESInLab.DIEGO-SPADESInLab.2015-11-19-16-00-00-000-M0500.annotation.csv',
+            'SPADESInLab.DIEGO-SPADESInLab.2015-11-19-16-00-00-000-M0500.annotation.csv.gz',
+        ]
+
+        for test_case in sensor_test_cases:
+            ts = mh.parse_timestamp_from_filepath(test_case, ignore_tz=True)
+            ts_unix = moment.Moment(ts).to_unix_timestamp()
+            assert ts_unix == 1447966800.0
+
+        for test_case in annotation_test_cases:
+            ts = mh.parse_timestamp_from_filepath(test_case, ignore_tz=True)
+            ts_unix = moment.Moment(ts).to_unix_timestamp()
+            assert ts_unix == 1447966800.0
+
     def test_transform_class_category(self, spades_lab):
         class_category = spades_lab['meta']['class_category']
         input_category = 'FINEST_ACTIVITIES'

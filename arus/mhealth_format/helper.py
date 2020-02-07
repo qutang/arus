@@ -1,7 +1,12 @@
 from . import constants
 import datetime as dt
 import os
+import re
 from .. import moment
+
+
+class ParseError(Exception):
+    pass
 
 
 def parse_placement_from_str(placement_str):
@@ -44,8 +49,36 @@ def parse_annotation_type_from_filepath(filepath):
     return os.path.basename(filepath).split('.')[0]
 
 
+def parse_sensor_type_from_filepath(filepath):
+    result = os.path.basename(filepath).split('.')[0].split('-')[0]
+    return result
+
+
+def parse_data_type_from_filepath(filepath):
+    return os.path.basename(filepath).split('.')[0].split('-')[1]
+
+
+def parse_version_code_from_filepath(filepath):
+    return os.path.basename(filepath).split('.')[0].split('-')[2]
+
+
+def parse_sensor_id_from_filepath(filepath):
+    return os.path.basename(filepath).split('.')[1].split('-')[0]
+
+
 def parse_pid_from_filepath(filepath):
-    return os.path.basename(os.path.dirname(filepath.split(constants.MASTER_FOLDER)))
+    try:
+        assert is_mhealth_filepath(
+            filepath) or is_mhealth_flat_filepath(filepath)
+        pid = os.path.basename(
+            os.path.dirname(
+                filepath.split(constants.MASTER_FOLDER)[
+                    0].split(constants.DERIVED_FOLDER)[0]
+            )
+        )
+        return pid
+    except Exception:
+        raise ParseError('Fail to parse pid for the given filepath')
 
 
 def parse_filetype_from_filepath(filepath):
@@ -126,3 +159,60 @@ def compare_two_mhealth_filepaths(filepath1, filepath2):
 def transform_class_category(input_label, class_category, input_category,  output_category):
     cond = class_category[input_category] == input_label
     return class_category.loc[cond, output_category].values[0]
+
+
+def is_mhealth_filepath(filepath):
+    """Validate if input file path is in mhealth format
+
+    Args:
+        filepath (str): input file path
+
+    Returns:
+        is_mhealth (bool): `True` if the input is in mhealth format
+    """
+    filepath = os.path.abspath(filepath)
+    matched = re.search(
+        constants.MHEALTH_FILEPATH_PATTERN,
+        filepath)
+    return matched is not None
+
+
+def is_mhealth_flat_filepath(filepath):
+    """Validate if input file path is in mhealth format (flat structure)
+
+    The flat structure stores all files directly in the `MasterSynced` folder in the pid folder, ignoring all date and hour folders.
+
+    Args:
+        filepath (str): input file path
+
+    Returns:
+        is_mhealth (bool): `True` if the input is in mhealth flat format
+    """
+    matched = re.search(
+        constants.MHEALTH_FLAT_FILEPATH_PATTERN,
+        os.path.abspath(filepath)
+    )
+    return matched is not None
+
+
+def is_mhealth_filename(filepath):
+    filename = os.path.basename(filepath)
+
+    sensor_filename_pattern = "^{}\-{}\-{}\.{}\-{}\.{}\.sensor\.csv(\.gz)*$".format(
+        constants.CAMELCASE_PATTERN, constants.CAMELCASE_PATTERN,
+        constants.VERSIONCODE_PATTERN, constants.SID_PATTERN, constants.CAMELCASE_PATTERN, constants.FILE_TIMESTAMP_PATTERN
+    )
+
+    annotation_filename_pattern = "^{}\.{}\-{}\.{}\.annotation\.csv(\.gz)*$".format(
+        constants.CAMELCASE_PATTERN, constants.ANNOTATOR_PATTERN, constants.CAMELCASE_PATTERN, constants.FILE_TIMESTAMP_PATTERN)
+
+    sensor_matched = re.search(
+        sensor_filename_pattern,
+        filename
+    )
+
+    annotation_matched = re.search(
+        annotation_filename_pattern,
+        filename
+    )
+    return sensor_matched is not None or annotation_matched is not None
