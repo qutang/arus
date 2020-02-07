@@ -1,5 +1,5 @@
 from ...testing import load_test_data
-from ...core.libs.mhealth_format.io import read_data_csv
+from ... import mhealth_format as mh
 from ..muss import MUSSModel
 import numpy as np
 import pandas as pd
@@ -10,7 +10,7 @@ from sklearn.preprocessing import MinMaxScaler
 def test_muss_compute_features():
     filepath, sr = load_test_data(file_type='mhealth', sensor_type='sensor',
                                   file_num='single', exception_type='consistent_sr')
-    df = read_data_csv(filepath)
+    df = next(mh.MhealthFileReader(filepath).read_csv().get_data())
     st = df.iloc[0, 0]
     et = df.iloc[-1, 0]
     muss = MUSSModel()
@@ -24,7 +24,7 @@ def test_muss_compute_features():
 def test_muss_compute_features_grouped():
     filepath, sr = load_test_data(file_type='mhealth', sensor_type='sensor',
                                   file_num='single', exception_type='consistent_sr')
-    df = read_data_csv(filepath)
+    df = next(mh.MhealthFileReader(filepath).read_csv().get_data())
     muss = MUSSModel()
 
     def _compute_features(grouped_df, sr):
@@ -50,7 +50,7 @@ def test_muss_compute_features_grouped():
 def test_muss_combine_features():
     filepath, sr = load_test_data(file_type='mhealth', sensor_type='sensor',
                                   file_num='single', exception_type='consistent_sr')
-    df = read_data_csv(filepath)
+    df = next(mh.MhealthFileReader(filepath).read_csv().get_data())
     muss = MUSSModel()
 
     def _compute_features(grouped_df, sr):
@@ -129,6 +129,7 @@ def test_muss_validate_classifier():
         filtered_feature, filtered_class, class_col='MUSS_3_POSTURES', feature_names=muss.get_feature_names(), placement_names=['DW'], group_col='PID')
     np.testing.assert_array_equal(test_class.shape, pred_class.shape)
     assert acc > 0.7
+
 
 def test_muss_get_confusion_matrix():
     muss = MUSSModel()

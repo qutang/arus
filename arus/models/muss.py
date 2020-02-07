@@ -24,7 +24,6 @@ import seaborn as sns
 import enum
 
 from ..core import pipeline as arus_pipeline
-from ..core.libs import mhealth_format as arus_mh
 from .. import mhealth_format as mh
 from .. import extensions
 from .. import accelerometer as accel
@@ -79,9 +78,13 @@ def muss_data_collection_processor(chunk_list, **kwargs):
         print('Saving task started.')
         df = chunk_data[0]
         name = chunk_data[-1]
-        arus_mh.write_data_csv(df.iloc[:, 0:4], output_folder=output_folder, pid=pid, file_type='sensor', sensor_or_annotation_type='MetaWearR',
-                               data_type='AccelerationCalibrated', sensor_or_annotator_id=name, split_hours=False, flat=True, append=True)
-        print('Saved data to: ' + output_folder)
+        writer = mh.MhealthFileWriter(
+            output_folder, pid, hourly=False, date_folders=False)
+        writer.set_for_sensor(
+            'MetaWearR', 'AccelerationCalibrated', name, version_code='NA')
+        output_paths = writer.write_csv(
+            df.iloc[:, 0:4], append=True, block=True)
+        print('Saved data to: ' + str(output_paths))
 
     io_pool = ppools.ThreadPool(nodes=len(chunk_list))
     io_pool.restart(force=True)

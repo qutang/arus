@@ -4,6 +4,5 @@ __pdoc__ = {}
 
 from .path import *
 from .meta import *
-from .io import *
 from .data import *
 __pdoc__['tests'] = False

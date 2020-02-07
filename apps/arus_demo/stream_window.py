@@ -216,7 +216,7 @@ class StreamWindow(base.BaseWindow):
                 self._guide_task = None
 
         if self._save_task is not None:
-            if self._save_task.ready():
+            if self._save_task.done():
                 self._events.put(Event.ANNOTATION_SAVED)
                 self._save_task = None
 

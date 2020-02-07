@@ -6,7 +6,7 @@ Date: 01/28/2020
 License: GNU v3
 """
 
-from .core.libs import mhealth_format as mh
+from . import mhealth_format as mh
 from . import moment
 import datetime as dt
 import pandas as pd
@@ -49,9 +49,9 @@ class MhealthSensorFileGenerator(Generator):
 
     def generate(self):
         for filepath in self._filepaths:
-            reader = mh.io.read_data_csv(
-                filepath, chunksize=self._buffer_size, iterator=True)
-            for data in reader:
+            reader = mh.MhealthFileReader(filepath)
+            reader.read_csv(chunksize=self._buffer_size)
+            for data in reader.get_data():
                 result = self._buffering(data)
                 if result is not None:
                     yield result
@@ -64,9 +64,10 @@ class MhealthAnnotationFileGenerator(Generator):
 
     def generate(self):
         for filepath in self._filepaths:
-            reader = mh.io.read_data_csv(
-                filepath, chunksize=self._buffer_size, iterator=True)
-            for data in reader:
+            reader = mh.MhealthFileReader(filepath)
+            reader.read_csv(chunksize=self._buffer_size,
+                            datetime_cols=[0, 1, 2])
+            for data in reader.get_data():
                 result = self._buffering(data)
                 if result is not None:
                     yield result
@@ -85,7 +86,6 @@ class RandomAccelDataGenerator(Generator):
     def generate(self):
         counter = 0
         while counter <= self._max_count:
-            clock_start_time = time.time()
             data = np.random.standard_normal(
                 size=(self._buffer_size, 3)) * self._sigma
             data[data > self._grange] = self._grange
@@ -94,7 +94,8 @@ class RandomAccelDataGenerator(Generator):
                 self._st, self._sr, self._buffer_size, format='pandas')
             self._st = ts[-1]
             ts = ts[0:-1]
-            result = mh.create_accel_dataframe(ts, data)
+            result = pd.DataFrame(index=ts, data=data).reset_index(drop=False)
+            result.columns = [mh.TIMESTAMP_COL, 'X', 'Y', 'Z']
             time.sleep(0.2)
             counter += self._buffer_size
             if self._max_samples is None:
@@ -129,8 +130,12 @@ class RandomAnnotationDataGenerator(Generator):
                 stop_times.append(new_start_time)
             start_times = start_times[:-1]
             label_names = np.random.choice(self._labels, N)
-            result = mh.create_annotation_dataframe(
-                start_times, stop_times, label_names)
+            result = pd.DataFrame.from_dict({
+                mh.TIMESTAMP_COL: start_times,
+                mh.START_TIME_COL: start_times,
+                mh.STOP_TIME_COL: stop_times,
+                mh.ANNOTATION_LABEL_COL: label_names
+            })
             time.sleep(0.2)
             counter += N
             if self._max_samples is None:

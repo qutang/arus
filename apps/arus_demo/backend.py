@@ -2,7 +2,6 @@ from arus.testing import load_test_data
 import pandas as pd
 from arus.models.muss import MUSSModel, Strategy
 from pathos import pools
-from arus.core.libs import mhealth_format as arus_mh
 import arus
 from playsound import playsound
 import datetime as dt
@@ -398,22 +397,12 @@ def stop_test_model(pipeline, pool=None):
 
 
 def save_annotation(current_annotation, output_folder, pid, session_name, pool=None):
-    pool = pool or pools.ThreadPool(nodes=1)
-    pool.restart(force=True)
     output_folder = os.path.join(output_folder, 'data')
+    writer = arus.mh.MhealthFileWriter(
+        output_folder, pid, hourly=False, date_folders=False)
+    writer.set_for_annotation(session_name, 'ARUS')
     df = pd.DataFrame.from_dict(current_annotation)
-    task = pool.apipe(
-        arus_mh.write_data_csv,
-        df,
-        output_folder=output_folder,
-        pid=pid,
-        file_type='annotation',
-        sensor_or_annotation_type=session_name,
-        sensor_or_annotator_id='ARUS',
-        split_hours=False,
-        flat=True,
-        append=True
-    )
+    task = writer.write_csv(df, append=True, block=False)[0]
     return task
 
 
