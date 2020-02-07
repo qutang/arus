@@ -18,8 +18,7 @@ Acclerometer
 .. autosummary::
    :toctree: generated
 
-   arus.core.accelerometer.features
-   arus.core.accelerometer.transformation
+   arus.accelerometer
 
 Activity recognition models
 ---------------------------

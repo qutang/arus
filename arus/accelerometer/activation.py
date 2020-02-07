@@ -15,7 +15,7 @@ References:
 """
 
 import numpy as np
-from .... import extensions
+from .. import extensions
 
 
 def _active_samples(X, threshold=0.2):

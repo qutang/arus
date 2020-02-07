@@ -23,15 +23,11 @@ import matplotlib as mpl
 import seaborn as sns
 import enum
 
-from ..core.accelerometer.features import activation as accel_activation
-from ..core.accelerometer.features import orientation as accel_ori
-from ..core.accelerometer.features import spectrum as accel_spectrum
-from ..core.accelerometer.features import stats as accel_stats
-from ..core.accelerometer import transformation as accel_transform
 from ..core import pipeline as arus_pipeline
 from ..core.libs import mhealth_format as arus_mh
 from .. import mhealth_format as mh
 from .. import extensions
+from .. import accelerometer as accel
 
 
 def muss_inference_processor(chunk_list, **kwargs):
@@ -250,22 +246,22 @@ class MUSSModel:
                 result[name] = [np.nan]
         else:
             vm_feature_funcs = [
-                accel_stats.mean,
-                accel_stats.std,
-                accel_stats.max_value,
-                accel_stats.max_minus_min,
-                functools.partial(accel_spectrum.spectrum_features,
+                accel.mean,
+                accel.std,
+                accel.max_value,
+                accel.max_minus_min,
+                functools.partial(accel.spectrum_features,
                                   sr=sr, n=1, preset='muss'),
-                functools.partial(accel_activation.stats_active_samples,
+                functools.partial(accel.stats_active_samples,
                                   threshold=activation_threshold)
             ]
 
             axis_feature_funcs = [
-                functools.partial(accel_ori.gravity_angle_stats,
+                functools.partial(accel.gravity_angle_stats,
                                   subwin_samples=subwin_samples, unit=ori_unit)
             ]
 
-            X_vm = accel_transform.vector_magnitude(X)
+            X_vm = accel.vector_magnitude(X)
 
             X_vm_filtered = extensions.numpy.butterworth(
                 X_vm, sr=sr, cut_offs=20, order=4, filter_type='low')

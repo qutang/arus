@@ -34,16 +34,15 @@ def _master_pipeline_processor(chunk_list, **kwargs):
 def _feature_pipeline_processor(chunk_list, **kwargs):
     import pandas as pd
     import numpy as np
-    from arus.core.accelerometer.features import stats as accel_stats
-    from arus.core.accelerometer.transformation import vector_magnitude
+    import arus
     result = {'HEADER_TIME_STAMP': [],
               'START_TIME': [], 'STOP_TIME': [], 'VALUE': []}
     for data, st, et, prev_st, prev_et, name in chunk_list:
         result['HEADER_TIME_STAMP'].append(st)
         result['START_TIME'].append(st)
         result['STOP_TIME'].append(et)
-        vm_values = vector_magnitude(data.iloc[:, 1:].values)
-        values, name = accel_stats.mean(vm_values)
+        vm_values = arus.accel.vector_magnitude(data.iloc[:, 1:].values)
+        values, name = arus.accel.mean(vm_values)
         result['VALUE'].append(values[0, 0])
     result = pd.DataFrame.from_dict(result)
     return result

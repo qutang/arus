@@ -9,15 +9,15 @@ Date: Jul 10, 2018
 import logging
 import numpy as np
 
-from .... import extensions
-from . import stats as accel_stats
-from .. import transformation as accel_transform
+from .. import extensions
+from . import stats
+from . import transformation
 
 
 def _gravity_angles(X, unit='rad'):
     X = extensions.numpy.atleast_float_2d(X)
-    gravity = accel_stats.mean(X)[0]
-    gravity_vm = accel_transform.vector_magnitude(gravity)
+    gravity = stats.mean(X)[0]
+    gravity_vm = transformation.vector_magnitude(gravity)
     gravity_angles = np.arccos(
         gravity / gravity_vm) if gravity_vm != 0 else np.zeros_like(gravity)
     if unit == 'deg':

@@ -1,6 +1,6 @@
 import numpy as np
 import numpy.linalg as la
-from ... import extensions
+from .. import extensions
 
 
 def flip_and_swap(X, x_flip, y_flip, z_flip):

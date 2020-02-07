@@ -1,7 +1,5 @@
-__pdoc__ = {}
 
-__pdoc__['tests'] = False
-
+from .transformation import *
 from .activation import *
 from .counts import *
 from .orientation import *

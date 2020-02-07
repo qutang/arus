@@ -9,7 +9,7 @@ Date: Oct 16, 2019
 """
 import numpy as np
 from scipy import stats as sp_stats
-from .... import extensions
+from .. import extensions
 
 
 def mean(X):

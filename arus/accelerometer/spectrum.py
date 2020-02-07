@@ -7,9 +7,7 @@ Frequency features
 from scipy import signal
 import numpy as np
 import logging
-from .... import extensions
-
-logger = logging.getLogger()
+from .. import extensions
 
 
 def spectrum_features(X, sr, n=1, freq_range=None, prev_spectrum_features=None, preset='muss'):
@@ -94,8 +92,8 @@ def _sort_fft_peaks(freq, Sxx, i, j):
         sorted_i = sorted_i[::-1]
         sorted_freq_peaks = freq_peaks[sorted_i]
         sorted_Sxx_peaks = Sxx_peaks[sorted_i]
-    logger.debug('sxx:' + str(j) + ":" + str(sorted_Sxx_peaks.shape))
-    logger.debug('freq:' + str(j) + ":" + str(sorted_freq_peaks.shape))
+    logging.debug('sxx:' + str(j) + ":" + str(sorted_Sxx_peaks.shape))
+    logging.debug('freq:' + str(j) + ":" + str(sorted_freq_peaks.shape))
     return (sorted_freq_peaks, sorted_Sxx_peaks)
 
 

@@ -8,8 +8,8 @@ Date: Jul 10, 2018
 
 """
 import numpy as np
-from .. import transformation as accel_transform
-from .... import extensions
+from . import transformation
+from .. import extensions
 
 
 def enmo(X):
@@ -25,7 +25,7 @@ def enmo(X):
         [numpy.ndarray] -- 1 x 1
     """
     X = extensions.numpy.atleast_float_2d(X)
-    vm = accel_transform.vector_magnitude(X)
+    vm = transformation.vector_magnitude(X)
     result = np.nanmean(np.clip(vm - 1, a_min=0, a_max=None),
                         axis=0, keepdims=True)
     return result, 'ENMO'
