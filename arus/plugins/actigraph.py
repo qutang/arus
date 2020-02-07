@@ -50,7 +50,7 @@ class ActigraphReader:
 
     def read_csv(self, chunksize=None):
         reader = pd.read_csv(
-            self._filepath, skiprows=10, chunksize=chunksize)
+            self._filepath, skiprows=10, chunksize=chunksize, engine='c')
         if type(reader) == pd.DataFrame:
             self._data = reader
         else:
