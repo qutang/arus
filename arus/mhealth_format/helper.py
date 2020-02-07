@@ -1,6 +1,7 @@
 from . import constants
 import datetime as dt
 import os
+from .. import moment
 
 
 def parse_placement_from_str(placement_str):
@@ -43,6 +44,10 @@ def parse_annotation_type_from_filepath(filepath):
     return os.path.basename(filepath).split('.')[0]
 
 
+def parse_pid_from_filepath(filepath):
+    return os.path.basename(os.path.dirname(filepath.split(constants.MASTER_FOLDER)))
+
+
 def parse_filetype_from_filepath(filepath):
     filename = os.path.basename(filepath)
     if filename.endswith('gz'):
@@ -76,6 +81,46 @@ def format_columns(data, filetype):
         data.columns = constants.FEATURE_SET_TIMESTAMP_COLS + \
             [constants.ANNOTATION_LABEL_COL]
     return data
+
+
+def format_file_timestamp_from_data(data, filetype):
+    if filetype == constants.SENSOR_FILE_TYPE:
+        col = 0
+    else:
+        col = 1
+    st = moment.Moment(data.iloc[0, col]).to_datetime(
+        tz=moment.Moment.get_local_timezone())
+    timestamp_str = st.strftime(constants.FILE_TIMESTAMP_FORMAT_WITH_TZ)
+    return timestamp_str
+
+
+def format_date_folder_path_from_data(data, filetype):
+    if filetype == constants.SENSOR_FILE_TYPE:
+        col = 0
+    else:
+        col = 1
+    st = moment.Moment(data.iloc[0, col]).to_datetime(
+        tz=moment.Moment.get_local_timezone())
+    year = st.strftime('%Y')
+    month = st.strftime('%m')
+    day = st.strftime('%d')
+    hour = st.strftime('%H')
+    return year + os.sep + month + os.sep + day + os.sep + hour
+
+
+def compare_two_mhealth_filepaths(filepath1, filepath2):
+    sections1 = [os.path.dirname(filepath1)]
+    sections2 = [os.path.dirname(filepath2)]
+    name1 = os.path.basename(filepath1).strip('.gz')
+    name2 = os.path.basename(filepath2).strip('.gz')
+    sections1 += name1.split('.')
+    sections2 += name2.split('.')
+    if len(sections1) != len(sections2):
+        return False
+    for section1, section2 in zip(sections1, sections2):
+        if section1 != section2 and sections1.index(section1) != 3:
+            return False
+    return True
 
 
 def transform_class_category(input_label, class_category, input_category,  output_category):
