@@ -59,7 +59,8 @@ class TestMoment:
         result = moment.Moment.get_sequence(st, sr=100, N=2)
         assert moment.Moment.get_duration(result[0], result[1]) == 1 / 100.0
         result = moment.Moment.get_sequence(st, sr=1000, N=2)
-        assert moment.Moment.get_duration(result[0], result[1]) == 1 / 1000.0
+        np.testing.assert_almost_equal(moment.Moment.get_duration(
+            result[0], result[1]), 1 / 1000.0, decimal=2)
         result = moment.Moment.get_sequence(st, sr=1, N=2, format='posix')
         assert moment.Moment.get_duration(result[0], result[1]) == 1
         result = moment.Moment.get_sequence(st, sr=100, N=2, format='posix')
