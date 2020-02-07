@@ -197,7 +197,7 @@ class MetaWearAccelDataGenerator(generator.Generator):
                 self._device.led.play()
                 return True
             else:
-                logging.warn(
+                logging.warning(
                     'Accelerometer callback did not start successfully.')
                 return False
         return _start()
