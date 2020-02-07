@@ -75,7 +75,7 @@ class MhealthFileWriter:
                 raise IOError('Some chunks are not written to files correctly')
             else:
                 logging.info('All chunks have been written to files.')
-                return True
+                return [f.result() for f in done]
         else:
             return writing_tasks
 
@@ -156,3 +156,4 @@ class MhealthFileWriter:
             with open(output_filepath, 'ab') as f:
                 np.savetxt(f, text, delimiter=",",
                            fmt=fmt)
+        return output_filepath
