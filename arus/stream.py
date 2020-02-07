@@ -46,7 +46,6 @@ class Stream:
                 self._status = Stream.Status.STOP
                 break
             yield data
-        raise StopIteration
 
     def start(self, start_time=None):
         """Method to start loading data from the provided data source.

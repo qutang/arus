@@ -27,7 +27,7 @@ class Segmentor:
 
     def segment(self, data):
         if data is None:
-            raise StopIteration
+            return
         for index, row in data.iterrows():
             yield row
 
@@ -49,11 +49,11 @@ class SlidingWindowSegmentor(Segmentor):
     def segment(self, data):
         et = data.iloc[-1, self._et_col]
         if self._ref_st is not None and moment.Moment(self._ref_st).to_unix_timestamp() > moment.Moment(et).to_unix_timestamp():
-            logging.warn(
+            logging.warning(
                 'Referenced start time is after the end time of the input data, this generates no segments from the data.')
-            raise StopIteration
+            return
         if data is None:
-            raise StopIteration
+            return
         else:
             segments = self._extract_segments(data)
             for segment, seg_st, seg_et in segments:
