@@ -47,5 +47,4 @@ Utilities
    arus.Moment
    arus.extensions
    arus.core.libs.mhealth_format
-   arus.core.libs.dsp
    arus.testing
