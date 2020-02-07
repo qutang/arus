@@ -9,14 +9,13 @@ Date: Jul 10, 2018
 import logging
 import numpy as np
 
-from ...libs import dsp as arus_dsp
-from ...libs import num as arus_num
+from .... import extensions
 from . import stats as accel_stats
 from .. import transformation as accel_transform
 
 
 def _gravity_angles(X, unit='rad'):
-    X = arus_num.format_arr(X)
+    X = extensions.numpy.atleast_float_2d(X)
     gravity = accel_stats.mean(X)[0]
     gravity_vm = accel_transform.vector_magnitude(gravity)
     gravity_angles = np.arccos(
@@ -27,7 +26,7 @@ def _gravity_angles(X, unit='rad'):
 
 
 def gravity_angles(X, subwins=None, subwin_samples=None, unit='rad'):
-    result = arus_dsp.apply_over_subwins(
+    result = extensions.numpy.apply_over_subwins(
         X, _gravity_angles, subwins=subwins, subwin_samples=subwin_samples, unit=unit)
     final_result = np.atleast_2d(result.flatten())
     names = []
@@ -38,7 +37,7 @@ def gravity_angles(X, subwins=None, subwin_samples=None, unit='rad'):
 
 
 def gravity_angle_stats(X, subwins=None, subwin_samples=None, unit='rad'):
-    result = arus_dsp.apply_over_subwins(
+    result = extensions.numpy.apply_over_subwins(
         X, _gravity_angles, subwins=subwins, subwin_samples=subwin_samples, unit=unit)
     median_angles = np.nanmedian(result, axis=0, keepdims=True)
     range_angles = np.nanmax(

@@ -22,7 +22,7 @@ Date: 2019-11-15
 License: see LICENSE file
 """
 
-from .libs import date as arus_date
+from .. import moment
 import pathos.pools as ppools
 import pathos.helpers as phelpers
 import numpy as np
@@ -403,8 +403,9 @@ class Pipeline:
             start_time (str or datetime or np.datetime64 or pd.Timestamp, optional): The start time to start accepting the incoming stream windows. If it is `None`, the pipeline will always output any incoming data without checking `start_time`.
         """
         self._process_start_time = start_time
-        self._process_start_time = arus_date.parse_timestamp(
-            self._process_start_time)
+        if self._process_start_time is not None:
+            self._process_start_time = moment.Moment(
+                self._process_start_time).to_pandas_timestamp()
         with self._process_cond:
             self._started = True
             self._process_cond.notify_all()

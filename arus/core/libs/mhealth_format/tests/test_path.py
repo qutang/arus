@@ -1,5 +1,6 @@
 from .. import path
 from ... import date
+from ..... import moment
 
 
 def test_is_mhealth_filepath():
@@ -209,7 +210,6 @@ def test_get_file_type():
 
 
 def test_get_file_timestamp():
-    from datetime import datetime
     sensor_test_cases = [
         'ActigraphGT9X-AccelerationCalibrated-NA.TAS1E23150152-AccelerationCalibrated.2015-11-19-16-00-00-000-M0500.sensor.csv',
         'ActigraphGT9X-AccelerationCalibrated-NA.TAS1E23150152-AccelerationCalibrated.2015-11-19-16-00-00-000-M0500.sensor.csv.gz',
@@ -223,13 +223,13 @@ def test_get_file_timestamp():
 
     for test_case in sensor_test_cases:
         ts = path.extract_file_timestamp(test_case, ignore_tz=True)
-        ts_unix = date.datetime2unix(ts)
-        assert ts_unix == 1447948800.0
+        ts_unix = moment.Moment(ts).to_unix_timestamp()
+        assert ts_unix == 1447966800.0
 
     for test_case in annotation_test_cases:
         ts = path.extract_file_timestamp(test_case, ignore_tz=True)
-        ts_unix = date.datetime2unix(ts)
-        assert ts_unix == 1447948800.0
+        ts_unix = moment.Moment(ts).to_unix_timestamp()
+        assert ts_unix == 1447966800.0
 
 
 def test_get_timezone_name():

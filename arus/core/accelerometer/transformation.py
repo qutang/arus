@@ -1,10 +1,10 @@
 import numpy as np
 import numpy.linalg as la
-from ..libs import num as arus_num
+from ... import extensions
 
 
 def flip_and_swap(X, x_flip, y_flip, z_flip):
-    X = arus_num.format_arr(X)
+    X = extensions.numpy.atleast_float_2d(X)
     X_clone = np.copy(X)
     x = np.copy(X_clone[:, 0])
     y = np.copy(X_clone[:, 1])
@@ -55,6 +55,6 @@ def flip_and_swap(X, x_flip, y_flip, z_flip):
 
 
 def vector_magnitude(X):
-    X = arus_num.format_arr(X)
+    X = extensions.numpy.atleast_float_2d(X)
     result = la.norm(X, ord=2, axis=1, keepdims=True)
     return result

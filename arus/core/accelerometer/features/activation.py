@@ -15,7 +15,7 @@ References:
 """
 
 import numpy as np
-from ...libs import num as arus_num
+from .... import extensions
 
 
 def _active_samples(X, threshold=0.2):
@@ -55,7 +55,7 @@ def _stats_active_samples(active_samples):
 
 
 def stats_active_samples(X, threshold=0.2):
-    X = arus_num.format_arr(X)
+    X = extensions.numpy.atleast_float_2d(X)
     W = X.shape[0]
 
     active_samples = _active_samples(X, threshold=threshold)

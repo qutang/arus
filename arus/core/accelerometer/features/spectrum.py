@@ -6,17 +6,16 @@ Frequency features
 """
 from scipy import signal
 import numpy as np
-from ...libs import dsp as arus_dsp
 import logging
-from ...libs import num as arus_num
+from .... import extensions
 
 logger = logging.getLogger()
 
 
 def spectrum_features(X, sr, n=1, freq_range=None, prev_spectrum_features=None, preset='muss'):
-    X = arus_num.format_arr(X)
+    X = extensions.numpy.atleast_float_2d(X)
     # fill nan at first, nan will be filled by spline interpolation
-    X = arus_dsp.fill_nan(X)
+    X = extensions.numpy.mutate_nan(X)
     freq, Sxx = _fft(X, sr, freq_range=freq_range)
     freq_peaks, Sxx_peaks = _fft_peaks(freq, Sxx)
 
@@ -111,7 +110,7 @@ def _fft_peaks(freq, Sxx):
         mpd = int(np.ceil(1.0 / (freq[1] - freq[0]) * 0.1))
         # print(self._Sxx.shape)
         # mph should not be set, because signal can be weak but there may still be some dominant frequency, 06/03/2019
-        freq_peak_indices = list(map(lambda x: arus_dsp.detect_peaks(
+        freq_peak_indices = list(map(lambda x: extensions.numpy.detect_peaks(
             x, mph=None, mpd=mpd), list(Sxx.T)))
         # i = list(map(lambda x: detect_peaks(
         #     x, mph=1e-3, mpd=mpd), list(self._Sxx.T)))

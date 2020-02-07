@@ -28,11 +28,10 @@ from ..core.accelerometer.features import orientation as accel_ori
 from ..core.accelerometer.features import spectrum as accel_spectrum
 from ..core.accelerometer.features import stats as accel_stats
 from ..core.accelerometer import transformation as accel_transform
-from ..core.libs.dsp import filtering as arus_filtering
-from ..core.libs import num as arus_num
 from ..core import pipeline as arus_pipeline
 from ..core.libs import mhealth_format as arus_mh
 from .. import mhealth_format as mh
+from .. import extensions
 
 
 def muss_inference_processor(chunk_list, **kwargs):
@@ -244,7 +243,7 @@ class MUSSModel:
         }
 
         subwin_samples = subwin_secs * sr
-        X = arus_num.format_arr(input_data.values[:, 1:4])
+        X = extensions.numpy.atleast_float_2d(input_data.values[:, 1:4])
 
         if input_data.shape[0] < sr:
             for name in self._FEATURE_NAMES:
@@ -268,10 +267,10 @@ class MUSSModel:
 
             X_vm = accel_transform.vector_magnitude(X)
 
-            X_vm_filtered = arus_filtering.butterworth(
+            X_vm_filtered = extensions.numpy.butterworth(
                 X_vm, sr=sr, cut_offs=20, order=4, filter_type='low')
-            X_filtered = arus_filtering.butterworth(X, sr=sr, cut_offs=20,
-                                                    order=4, filter_type='low')
+            X_filtered = extensions.numpy.butterworth(X, sr=sr, cut_offs=20,
+                                                      order=4, filter_type='low')
 
             for func in vm_feature_funcs:
                 values, names = func(X_vm_filtered)
