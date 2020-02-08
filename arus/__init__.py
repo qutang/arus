@@ -10,6 +10,7 @@ from . import developer as dev
 from . import env
 from . import generator
 from . import segmentor
+from .scheduler import Scheduler
 from . import mhealth_format as mh
 from .moment import Moment
 from . import extensions as ext

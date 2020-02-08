@@ -42,6 +42,7 @@ wget = "^3.2"
 dephell_versioning = "^0.1.1"
 click = "^7.0"
 tzlocal = "^2.0.0"
+loky = "^2.6.0"
 
 [tool.poetry.extras]
 metawear = ["pymetawear"]
