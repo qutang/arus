@@ -56,6 +56,7 @@ class Scheduler:
         self._close = True
 
     def shutdown(self):
+        self.reset()
         self._executor.shutdown(wait=True)
 
     def submit(self, func, *args, **kwargs):
