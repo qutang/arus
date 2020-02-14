@@ -37,10 +37,11 @@ jobs:
 
     - name: Cache dependencies
       uses: actions/cache@v1
-      path: ./.venv
-      key: ubuntu-poetry-${{ hashFiles('**/poetry.lock') }}
-      restore-keys: |
-        ubuntu-pip-
+      with:
+        path: ./.venv
+        key: ubuntu-poetry-${{ hashFiles('**/poetry.lock') }}
+        restore-keys: |
+          ubuntu-pip-
 
     - name: Install dependencies
       run: |
