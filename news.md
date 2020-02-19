@@ -9,6 +9,7 @@
     - Bump package version
     - Build website and app
     - Compress dataset
+    - Run app
 
 ### Arus core
 
