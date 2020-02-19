@@ -14,7 +14,7 @@ import app_state as app
 import backend
 import base
 import components as comp
-import arus.core.libs.plotting as arus_plot
+import arus
 
 
 class Event(enum.Enum):
@@ -567,7 +567,7 @@ class StreamWindow(base.BaseWindow):
                 new_color = 'blue'
                 text_color = 'white'
             else:
-                new_color = arus_plot.adjust_lightness(
+                new_color = arus.extensions.plotting.adjust_lightness(
                     base_color, amount=num / 100.0, return_format='hex')
                 text_color = "white" if num > 20 else "gray"
             new_b_colors.append(new_color)

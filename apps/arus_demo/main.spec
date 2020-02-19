@@ -1,20 +1,23 @@
 # -*- mode: python ; coding: utf-8 -*-
 
-block_cipher = None
 import platform
+import sys
+
+sys.setrecursionlimit(5000)
+block_cipher = None
 
 if platform.system() == 'Windows':
-       binaries = [("../../.venv/Lib/site-packages/mbientlab/metawear/MetaWear.Win32.dll", "."),
-                       ("../..//.venv/Lib/site-packages/mbientlab/warble/warble.dll", ".")]
+    binaries = [("../../.venv/Lib/site-packages/mbientlab/metawear/MetaWear.Win32.dll", "."),
+                ("../..//.venv/Lib/site-packages/mbientlab/warble/warble.dll", ".")]
 elif platform.system() == 'Linux':
-       binaries = [("../../.venv/lib/python3.7/site-packages/mbientlab/metawear/libmetawear.so", "."),
-                       ("../..//.venv/lib/python3.7/site-packages/mbientlab/warble/libwarble.so", ".")]
+    binaries = [("../../.venv/lib/python3.7/site-packages/mbientlab/metawear/libmetawear.so", "."),
+                ("../..//.venv/lib/python3.7/site-packages/mbientlab/warble/libwarble.so", ".")]
 
 a = Analysis(['main.py'],
              pathex=['.', '../../.venv/Lib/site-packages/scipy/.libs'],
              binaries=binaries,
              datas=[("../../data/single/mhealth/feature/multi_placements/muss.feature.csv.gz", "./data/single/mhealth/feature/multi_placements/"),
-                    ("../../data/single/mhealth/class_labels/multi_tasks/muss.class.csv", "./data/single/mhealth/class_labels/multi_tasks/"), ("./assets/dom_wrist.png", "./assets/"), ("./assets/right_ankle.png", "./assets/"), ("./assets/switch_now.mp3", "./assets/"), ("./assets/keep_going.mp3", "./assets/")],
+                    ("../../data/single/mhealth/class_labels/multi_tasks/muss.class.csv", "./data/single/mhealth/class_labels/multi_tasks/"), ("./assets/dom_wrist.png", "./assets/"), ("./assets/right_ankle.png", "./assets/"), ("./assets/switch_now.mp3", "./assets/"), ("./assets/keep_going.mp3", "./assets/"), ("./README.md", ".")],
              hiddenimports=['scipy.special._ufuncs_cxx',
                             'scipy.linalg.cython_blas',
                             'scipy.linalg.cython_lapack',

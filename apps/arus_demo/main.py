@@ -21,6 +21,7 @@ import arus
 
 
 def start_app():
+    multiprocessing.freeze_support()
     arus.dev.set_default_logging()
     sg.theme('Reddit')
     os.chdir(os.path.dirname(os.path.realpath(__file__)))
@@ -28,5 +29,4 @@ def start_app():
 
 
 if __name__ == "__main__":
-    multiprocessing.freeze_support()
     start_app()
