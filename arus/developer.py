@@ -197,6 +197,7 @@ def set_default_logging(to_file=None):
     if to_file is not None:
         handlers.append(logging.FileHandler(to_file))
     handlers.append(logging.StreamHandler(sys.stdout))
+    logging.root.handlers = []
     logging.basicConfig(
         level=logging.INFO,
         format='[%(levelname)s]%(asctime)s <P%(process)d-%(threadName)s> %(message)s',
