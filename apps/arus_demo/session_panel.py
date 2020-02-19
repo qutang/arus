@@ -5,6 +5,7 @@ import backend
 import os
 import logging
 import traceback
+import arus
 
 
 def control_button(text, disabled, key=None):
@@ -63,6 +64,10 @@ class SessionSelectionPanel:
                 break
             if ready:
                 try:
+                    log_file = os.path.join(
+                        app.AppState._path, 'logs', app_state.pid + '.log')
+                    os.makedirs(os.path.dirname(log_file), exist_ok=True)
+                    arus.dev.set_default_logging(to_file=log_file)
                     demo = dashboard.Dashboard(
                         title='Arus Demo Session: ' + app_state.pid)
                     demo.start()
