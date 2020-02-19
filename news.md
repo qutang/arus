@@ -18,6 +18,7 @@
 - Add mhealth_format module for manipulating mhealth dataset.
 - Add developer module to provide utilities for arus developers. 
 - Add moment module to provide consistent interface to work with time and date objects.
+- Support logging to file.
 
 ### Arus models
 
@@ -34,6 +35,8 @@
 - Support thigh placement.
 - Support select placements for training, testing, validating and data collection.
 - Support select device addrs for different placements via a dropdown list.
+- Support logging to file.
+
 
 ## Improved
 
