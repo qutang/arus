@@ -256,8 +256,8 @@ def validate_model(origin_labels=None,
         )
         if feature_names is None:
             feature_names = new_feature_names
-        new_feature = new_feature.loc[:, ['HEADER_TIME_STAMP',
-                                          'START_TIME', 'STOP_TIME', 'PID'] + feature_names]
+        new_feature = new_feature[
+            ['HEADER_TIME_STAMP', 'START_TIME', 'STOP_TIME'] + feature_names]
 
     progress_queue.put('Validating SVM classifier...')
 
