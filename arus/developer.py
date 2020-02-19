@@ -13,6 +13,7 @@ License: GNU v3
 import tarfile
 import os
 import logging
+import sys
 
 import dephell_versioning as deph
 import subprocess
@@ -191,6 +192,12 @@ def logging_st_and_et(st, et, level=logging.INFO):
     logging.log(level=level, msg="{} - {}".format(st_str, et_str))
 
 
-def set_default_logging():
+def set_default_logging(to_file=None):
+    handlers = []
+    if to_file is not None:
+        handlers.append(logging.FileHandler(to_file))
+    handlers.append(logging.StreamHandler(sys.stdout))
     logging.basicConfig(
-        level=logging.INFO, format='[%(levelname)s]%(asctime)s <P%(process)d-%(threadName)s> %(message)s')
+        level=logging.INFO,
+        format='[%(levelname)s]%(asctime)s <P%(process)d-%(threadName)s> %(message)s',
+        handlers=handlers)
