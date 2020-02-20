@@ -32,7 +32,7 @@ class MetaWearScanner():
         metawears = set()
         retries = 0
         max_devices = 100 if max_devices is None else max_devices
-        while retries < 3 or len(metawears) < max_devices:
+        while retries < 5 and len(metawears) < max_devices:
             logging.info('Scanning metawear devices nearby...')
             try:
                 retries += 1
@@ -125,9 +125,9 @@ class MetaWearAccelDataGenerator(generator.Generator):
         self._buffer = queue.Queue()
         self._callback_started = False
         self._start_condition = threading.Condition(threading.Lock())
+        self._setup_metawear()
 
     def generate(self):
-        self._setup_metawear()
         if self._start_metawear():
             yield from self._generate()
         else:
