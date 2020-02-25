@@ -44,11 +44,12 @@ def _fill_nan_1d(y):
     return ynew
 
 
-def regularize_sr(t, X, sr):
+def regularize_sr(t, X, sr, st=None, et=None):
     X = atleast_float_2d(X)
-    t = t - t[0]
-    total_seconds = t[-1]
-    new_t = np.linspace(0, t[-1], num=int(np.floor(total_seconds * sr)))
+    st = st or t[0]
+    et = et or t[-1]
+    total_seconds = et - st
+    new_t = np.linspace(st, et, num=int(np.floor(total_seconds * sr)))
     new_X = np.apply_along_axis(
         _regularize_sr, axis=0, arr=X, t=t, new_t=new_t)
     return new_t, new_X
