@@ -74,3 +74,25 @@ class TestMoment:
             st, sr=1, N=2, endpoint_as_extra=False, format='posix')
         assert moment.Moment.get_duration(result[0], result[1]) == 1
         assert len(result) == 2
+
+    def test_seq_to_unix_timestamp(self):
+        st0 = time.time()
+        et = st0 + 1
+        ts0 = np.arange(st0, et, step=1.0/50)
+        result = moment.Moment.seq_to_unix_timestamp(ts0)
+        np.testing.assert_array_equal(result, ts0)
+
+        st = dt.datetime.fromtimestamp(st0)
+        ts = []
+        for n in range(0, 50):
+            ts.append(st + dt.timedelta(milliseconds=1000.0/50 * n))
+        result = moment.Moment.seq_to_unix_timestamp(ts)
+        np.testing.assert_array_almost_equal(result, ts0, decimal=3)
+
+        st = dt.datetime.fromtimestamp(st0)
+        ts = []
+        for n in range(0, 50):
+            ts.append(st + dt.timedelta(milliseconds=1000.0/50 * n))
+        ts = pd.to_datetime(ts).values
+        result = moment.Moment.seq_to_unix_timestamp(ts)
+        np.testing.assert_array_almost_equal(result, ts0, decimal=3)

@@ -126,3 +126,25 @@ class Moment:
         elif format == 'datetime':
             ts = [Moment(t).to_datetime(tz=tz) for t in ts]
         return ts
+
+    @staticmethod
+    def seq_to_unix_timestamp(seq, fmt=None):
+        if type(seq[0]) in [int, float, np.float64, np.int64]:
+            return seq
+        elif type(seq[0]) == str:
+            seq = pd.to_datetime(seq, format=fmt)
+        elif type(seq[0]) == dt.datetime:
+            local_ts = pd.to_datetime(seq).values.astype(float) / 10 ** 9
+            local_ts = local_ts + Moment.get_local_to_utc_offset()
+            return local_ts
+        elif type(seq[0]) == np.datetime64:
+            local_ts = np.array(seq).astype(
+                'datetime64[us]').astype(float) / 10 ** 6
+            local_ts = local_ts + Moment.get_local_to_utc_offset()
+            return local_ts
+        elif type(seq[0]) == pd.Timestamp:
+            local_ts = pd.to_datetime(seq).values.astype(float) / 10 ** 9
+            local_ts = local_ts + Moment.get_local_to_utc_offset()
+            return local_ts
+        else:
+            raise NotImplementedError('Input type is not supported')
