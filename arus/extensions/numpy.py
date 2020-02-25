@@ -44,6 +44,22 @@ def _fill_nan_1d(y):
     return ynew
 
 
+def regularize_sr(t, X, sr):
+    X = atleast_float_2d(X)
+    t = t - t[0]
+    total_seconds = t[-1]
+    new_t = np.linspace(0, t[-1], num=int(np.floor(total_seconds * sr)))
+    new_X = np.apply_along_axis(
+        _regularize_sr, axis=0, arr=X, t=t, new_t=new_t)
+    return new_t, new_X
+
+
+def _regularize_sr(y, t, new_t):
+    f = interpolate.interp1d(t, y, kind='cubic')
+    new_y = f(new_t)
+    return new_y
+
+
 def _remove_nan_1d(y):
     x = np.arange(len(y))
     selection = np.logical_not(np.isnan(y))
