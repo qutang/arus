@@ -58,7 +58,7 @@ def _process_muss(dataset_dict, pid, sr, window_size=12.8):
     return processed
 
 
-def _prepare_mhealth_streams(dataset_dict, pid, window_size, sr):
+def _prepare_mhealth_streams(dataset_dict, pid, window_size, sr, use_annotations=True):
     streams = []
     subject_data_dict = dataset_dict['subjects']
     streams_kwargs = {}
@@ -74,15 +74,16 @@ def _prepare_mhealth_streams(dataset_dict, pid, window_size, sr):
             'sr': sr
         }
 
-    # annotation streams
-    for a in subject_data_dict[pid]['annotations'].keys():
-        stream_name = a
-        gr = generator.MhealthAnnotationFileGenerator(
-            *subject_data_dict[pid]['annotations'][a])
-        seg = segmentor.SlidingWindowSegmentor(
-            window_size=window_size, st_col=1, et_col=2)
-        annotation_stream = stream.Stream(gr, seg, name=stream_name)
-        streams.append(annotation_stream)
+    if use_annotations:
+        # annotation streams
+        for a in subject_data_dict[pid]['annotations'].keys():
+            stream_name = a
+            gr = generator.MhealthAnnotationFileGenerator(
+                *subject_data_dict[pid]['annotations'][a])
+            seg = segmentor.SlidingWindowSegmentor(
+                window_size=window_size, st_col=1, et_col=2)
+            annotation_stream = stream.Stream(gr, seg, name=stream_name)
+            streams.append(annotation_stream)
 
     return streams, streams_kwargs
 
@@ -103,5 +104,16 @@ def _prepare_mhealth_pipeline_output(pipeline, pid):
     return processed
 
 
-def _process_nn(dataset_dict, pid):
-    dataset_dict['subjects'][pid]['sensors']
+def _process_nn(dataset_dict, pid, sr):
+    window_size = 3600
+    dataset_path = dataset_dict['meta']['root']
+    start_time = mh.get_session_start_time(pid, dataset_path)
+    streams, streams_kwargs = _prepare_mhealth_streams(
+        dataset_dict, pid, window_size, sr, use_annotations=False)
+    streams_kwargs['dataset_name'] = dataset_dict['meta']['name']
+    streams_kwargs['pid'] = pid
+    pipeline = arus_muss.MUSSModel.get_mhealth_dataset_pipeline(
+        *streams, name='{}-pipeline'.format(pid), scheduler='processes', max_processes=os.cpu_count() - 4, **streams_kwargs)  # os.cpu_count() - 4
+    pipeline.start(start_time=start_time)
+    processed = _prepare_mhealth_pipeline_output(pipeline, pid)
+    return processed
