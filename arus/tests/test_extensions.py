@@ -71,6 +71,16 @@ def resample_test_signals():
     return test_cases
 
 
+@pytest.fixture
+def regularize_test_signals():
+    results = []
+    for et, expected in zip([1, 1.1, 1.11, 1.01], [80, 88, 88, 80]):
+        t = np.linspace(0, et, num=85)
+        X = np.random.rand(len(t), 3)
+        results.append((t, X, 80, expected))
+    return results
+
+
 class TestPandas:
     def test_merge_all(self):
         df1 = pd.DataFrame({'key': ['foo', 'bar', 'baz', 'foo'],
@@ -257,3 +267,9 @@ class TestNumpy:
             X, func, subwin_samples=3, subwins=None, axis=0)
         assert np.array_equal(result, np.array(
             [[1, 1, 1], [2, 2, 2], [2, 2, 2]]))
+
+    def test_regularize_sr(self, regularize_test_signals):
+        for t, X, sr, expected in regularize_test_signals:
+            new_t, new_X = extensions.numpy.regularize_sr(t, X, sr)
+            assert len(new_t) == expected
+            np.testing.assert_array_equal(new_X.shape, [expected, 3])

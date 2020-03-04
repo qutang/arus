@@ -1,3 +1,3 @@
 `arus.dataset`
 
-::: arus.dataset
+::: arus.dataset.api
