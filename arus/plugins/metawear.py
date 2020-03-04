@@ -10,7 +10,7 @@ from .. import generator
 import threading
 
 try:
-    from mbientlab import metawear
+    from mbientlab import metawear as mw
     from pymetawear import client as mw_client
     from pymetawear import discover as mw_discover
 except ImportError as e:
@@ -146,9 +146,9 @@ class MetaWearAccelDataGenerator(generator.Generator):
         super().stop()
 
     def get_device_name(self):
-        model_code = metawear.libmetawear.mbl_mw_metawearboard_get_model(
+        model_code = mw.libmetawear.mbl_mw_metawearboard_get_model(
             self._device.mw.board)
-        metawear_models = metawear.cbindings.Model()
+        metawear_models = mw.cbindings.Model()
         model_names = list(
             filter(lambda attr: '__' not in attr, dir(metawear_models)))
         for name in model_names:
@@ -220,7 +220,7 @@ class MetaWearAccelDataGenerator(generator.Generator):
                 time.sleep(1)
         logging.info("New metawear connected: {0}".format(
             self._device))
-        metawear.libmetawear.mbl_mw_metawearboard_set_time_for_response(
+        mw.libmetawear.mbl_mw_metawearboard_set_time_for_response(
             self._device.mw.board, 4000)
         # high frequency throughput connection setup
         self._device.settings.set_connection_parameters(

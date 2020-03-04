@@ -2,7 +2,9 @@
 generator functions that takes external data source and generate values in buffer_size (number of samples) using Python generator syntax.
 
 Author: Qu Tang
+
 Date: 01/28/2020
+
 License: GNU v3
 """
 
@@ -15,11 +17,24 @@ import time
 
 
 class Generator:
-    def __init__(self, buffer_size=1800):
+    """Abstract class for instances that generate data streams.
+    """
+
+    def __init__(self, buffer_size: int = 1800):
+        """Create generator instance.
+
+        Arguments:
+            buffer_size: the sample size for each burst of the streaming data.
+        """
         self._buffer_size = buffer_size
         self._buffer = None
 
     def generate(self):
+        """Generate burst of streaming data.
+
+        Returns:
+            Burst of streaming data.
+        """
         pass
 
     def stop(self):
@@ -43,11 +58,20 @@ class Generator:
 
 
 class MhealthSensorFileGenerator(Generator):
-    def __init__(self, *filepaths, **kwargs):
+    """Generator class for sensor files stored in mhealth format.
+    """
+
+    def __init__(self, *filepaths: str, **kwargs: object):
+        """Create MhealthSensorFileGenerator instance.
+
+        Arguments:
+            filepaths: the sensor file paths.
+            kwargs: other keyword arguments passed to parent class.
+        """
         super().__init__(**kwargs)
         self._filepaths = filepaths
 
-    def generate(self):
+    def generate(self) -> "pandas.Dataframe":
         for filepath in self._filepaths:
             reader = mh.MhealthFileReader(filepath)
             reader.read_csv(chunksize=self._buffer_size)
@@ -58,11 +82,20 @@ class MhealthSensorFileGenerator(Generator):
 
 
 class MhealthAnnotationFileGenerator(Generator):
+    """Generator class for annotation files stored in mhealth format.
+    """
+
     def __init__(self, *filepaths, **kwargs):
+        """Create MhealthAnnotationFileGenerator instance.
+
+        Arguments:
+            filepaths: the sensor file paths.
+            kwargs: other keyword arguments passed to parent class.
+        """
         super().__init__(**kwargs)
         self._filepaths = filepaths
 
-    def generate(self):
+    def generate(self) -> "pandas.Dataframe":
         for filepath in self._filepaths:
             reader = mh.MhealthFileReader(filepath)
             reader.read_csv(chunksize=self._buffer_size,
@@ -74,7 +107,20 @@ class MhealthAnnotationFileGenerator(Generator):
 
 
 class RandomAccelDataGenerator(Generator):
-    def __init__(self, sr, grange=8, st=None, sigma=1, max_samples=None, **kwargs):
+    """Generate random raw accelerometer data stream.
+    """
+
+    def __init__(self, sr: int, grange: int = 8, st: "str, datetime, numpy.datetime64, pandas.Timestamp" = None, sigma: float = 1, max_samples: int = None, **kwargs: object):
+        """Create RandomAccelDataGenerator instance.
+
+        Arguments:
+            sr: sampling rate in Hz.
+            grange: dynamic range in g.
+            st: start time of timestamps.
+            sigma: the standard deviation of the normal distribution to draw samples.
+            max_samples: number of samples to be generated.
+            kwargs: other keyword arguments passed to parent class.
+        """
         super().__init__(**kwargs)
         self._sr = sr
         self._grange = grange
@@ -83,7 +129,7 @@ class RandomAccelDataGenerator(Generator):
         self._max_samples = max_samples
         self._max_count = max_samples or 1
 
-    def generate(self):
+    def generate(self) -> "pandas.Dataframe":
         counter = 0
         while counter <= self._max_count:
             data = np.random.standard_normal(
@@ -104,7 +150,22 @@ class RandomAccelDataGenerator(Generator):
 
 
 class RandomAnnotationDataGenerator(Generator):
-    def __init__(self, labels, duration_mu=5, duration_sigma=5, st=None, num_mu=2, num_sigma=1, max_samples=None, **kwargs):
+    """Generate random annotation data.
+    """
+
+    def __init__(self, labels: list, duration_mu: float = 5, duration_sigma: float = 5, st: "str, datetime, numpy.datetime64, pandas.Timestamp" = None, num_mu: float = 2, num_sigma: float = 1, max_samples: int = None, **kwargs: object):
+        """Create RandomAnnotationDataGenerator instance.
+
+        Arguments:
+            labels: annotation labels.
+            duration_mu: the expected annotation duration.
+            duration_sigma: the standard deviation of annotation duration.
+            st: start time of timestamps.
+            num_mu: the expected number of annotations.
+            num_sigma: the standard deviation of number of annotations.
+            max_samples: number of samples to be generated.
+            kwargs: other keyword arguments passed to parent class.
+        """
         super().__init__(**kwargs)
         self._labels = labels
         self._duration_mu = duration_mu
@@ -115,7 +176,7 @@ class RandomAnnotationDataGenerator(Generator):
         self._max_samples = max_samples
         self._max_count = self._max_samples or 1
 
-    def generate(self):
+    def generate(self) -> "pandas.Dataframe":
         counter = 0
         while counter <= self._max_count:
             N = np.random.poisson(lam=self._num_mu)

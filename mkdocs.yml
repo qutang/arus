@@ -1,0 +1,79 @@
+site_name: Arus
+site_url: https://qutang.github.io/arus/
+repo_name: "qutang/arus"
+repo_url: https://github.com/qutang/arus/
+site_description: Arus package provides a computational framework to manage and process ubiquitous sensory data for activity recognition.
+site_author: Qu Tang
+copyright: 2020 © Qu Tang
+nav:
+  - Home:
+      - "/"
+  - API reference:
+      - Data Flow:
+          - "references/stream.md"
+          - "references/generator.md"
+          - "references/segmentor.md"
+          - "references/scheduler.md"
+      - Data processing:
+          - "references/accelerometer.md"
+      - Plugins:
+          - "references/metawear.md"
+          - "references/actigraph.md"
+      - Extensions:
+          - "references/filesys.md"
+          - "references/numpy.md"
+          - "references/pandas.md"
+          - "references/plotting.md"
+      - "references/mhealth_format.md"
+      - "references/dataset.md"
+      - "references/developer.md"
+      - "references/moment.md"
+  - Examples:
+      - Streams:
+          - "examples/streams/run_actigraph_sensor_stream.md"
+          - "examples/streams/run_mhealth_annotation_stream.md"
+          - "examples/streams/run_mhealth_sensor_stream.md"
+      - Scheduler: "examples/scheduler/run_scheduler.md"
+      - Dataset:
+          - "examples/dataset/process_raw_dataset.md"
+  - Changelog:
+      - Changelogs: "news.md"
+theme:
+  name: material
+  palette:
+    primary: "blue grey"
+    accent: "blue"
+  logo:
+    icon: "directions_run"
+  feature:
+    tabs: true
+  hljs_style: github
+  nav_style: light
+  navigation_depth: 2
+  include_homepage_in_sidebar: false
+  prev_next_buttons_location: none
+use_directory_urls: true
+markdown_extensions:
+  - admonition
+  - codehilite:
+      guess_lang: false
+  - smarty
+  - toc:
+      permalink: "#"
+      baselevel: 2
+  - pymdownx.superfences
+extra:
+  social:
+    - type: "github"
+      link: "https://github.com/qutang"
+    - type: "linkedin"
+      link: "https://www.linkedin.com/in/qutang"
+plugins:
+  - nbconvert:
+      input_dir: examples
+      recursive: true
+      output_dir: examples
+  - search
+  - mkdocstrings:
+      watch:
+        - arus

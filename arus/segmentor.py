@@ -1,8 +1,10 @@
 """
-segmentor functions that takes a streams of dataframes and generate chunks in various ways.
+segmentor classes that takes a streams of dataframes and generate chunks in various ways.
 
 Author: Qu Tang
+
 Date: 02/04/2020
+
 License: GNU v3
 """
 import queue
@@ -13,19 +15,48 @@ import logging
 
 
 class Segmentor:
-    def __init__(self, ref_st=None, st_col=0, et_col=None):
+    """Base class for segmentors.
+
+    Segmentors are used to segment streaming data and generate chunks in different ways.
+    """
+
+    def __init__(self, ref_st: "str, datetime, numpy.datetime64, pandas.Timestamp" = None, st_col: int = 0, et_col: int = None):
+        """Create Segmentor instance.
+
+        Arguments:
+            ref_st: The reference start time for the first segmented window of data.
+            st_col: The column with start time timestamps in the streaming data.
+            et_col: The column with stop time timestamps in the streaming data. If it is `None`, `et_col = st_col`.
+        """
         self._st_col = st_col
         self._et_col = et_col or self._st_col
         self._ref_st = ref_st
         self.reset()
 
-    def set_ref_time(self, ts):
+    def set_ref_time(self, ts: "str, datetime, numpy.datetime64, pandas.Timestamp"):
+        """Set reference start time.
+
+        Arguments:
+            ts: The timestamp to be set.
+        """
         self._ref_st = ts
 
     def reset(self):
+        """Reset the segmentor.
+        """
         pass
 
-    def segment(self, data):
+    def segment(self, data: "pandas.Dataframe") -> "pandas.Dataframe":
+        """A python generator function to output segmented data.
+
+        The default behavior is to output each row of the burst of streaming data.
+
+        Arguments:
+            data: the input burst of streaming data.
+
+        Returns:
+            segmented data.
+        """
         if data is None:
             return
         for index, row in data.iterrows():
@@ -33,7 +64,18 @@ class Segmentor:
 
 
 class SlidingWindowSegmentor(Segmentor):
-    def __init__(self, window_size, **kwargs):
+    """Segment straming data with sliding window method.
+    """
+
+    def __init__(self, window_size: float, **kwargs):
+        """Create SlidingWindowSegmentor instance.
+
+        Arguments:
+            window_size: The window size in seconds.
+
+        Raises:
+            ValueError: Raise when window size is smaller than zero.
+        """
         super().__init__(**kwargs)
         if window_size == 0:
             raise ValueError('Window size should be greater than zero.')
@@ -46,7 +88,17 @@ class SlidingWindowSegmentor(Segmentor):
         self._previous_seg_st = None
         self._previous_seg_et = None
 
-    def segment(self, data):
+    def segment(self, data: 'pandas.Dataframe') -> "pandas.Dataframe":
+        """A python generator function to output segmented data.
+
+        It will segment the incoming streaming data with sliding window method and yield segmented data.
+
+        Arguments:
+            data: the input burst of streaming data.
+
+        Returns:
+            segmented data.
+        """
         et = data.iloc[-1, self._et_col]
         if self._ref_st is not None and moment.Moment(self._ref_st).to_unix_timestamp() > moment.Moment(et).to_unix_timestamp():
             logging.warning(

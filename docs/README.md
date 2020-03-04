@@ -1,8 +1,6 @@
-# `arus` package
+# Introduction
 
-
-test
-__arus__ python package provides a computation framework to manage and process ubiquitous sensory data for activity recognition.
+__Arus__ python package provides a computation framework to manage and process ubiquitous sensory data for activity recognition.
 
 [![PyPI version](https://badge.fury.io/py/arus.svg)](https://badge.fury.io/py/arus)
 [![Downloads](https://pepy.tech/badge/arus)](https://pepy.tech/project/arus)
@@ -38,31 +36,28 @@ bluez
 
 ## Installation
 
+### Stable version
+
 ```bash
 > pip install arus
-> pip install arus[metawear]
-> pip install arus[demo]
 ```
 
-or with `pipenv`
+### Development version
 
 ```bash
-> pipenv install arus
-> pipenv install arus[metawear]
-> pipenv install arus[demo]
-```
-
-or with `poetry`
-
-```bash
-> poetry add arus
-> poetry add arus --extras metawear
-> poetry add arus --extras demo
+> pip install git+https://github.com/qutang/arus.git
 ```
 
 ## Extras
 
-`arus[metawear]`: In addition to the core functionality, this extra provides support for metawear devices.
+* `arus[metawear]`: This extra provides support for metawear devices.
+    ```bash
+    > pip install arus[metawear]
+    ```
+* `arus[demo]`: This extra provides support for a demo GUI program.
+    ```bash
+    > pip install arus[demo]
+    ```
 
 ## For developer
 
@@ -79,4 +74,9 @@ poetry >= 0.12.17
 > git clone https://github.com/qutang/arus.git
 > cd arus
 > poetry install
+```
+
+### Run tests
+```bash
+> poetry run pytest
 ```

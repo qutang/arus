@@ -3,33 +3,31 @@ import threading
 import time
 import enum
 import logging
+import typing
 
 
 class Stream:
-    """The base class for data stream
+    """
+    The base class for data stream.
 
     Stream class is an abstraction of any data source that can be loaded into memory in arbitrary chunk size either asynchronously (currently only support threading) or synchronously.
-
-    Subclass may implement loading mechanisms for different data sources. Such as files, large file, socket device, bluetooth device, remote server, and database.
-
-    Returns:
-        stream (Stream): an instance object of type `Stream`.
     """
 
     class Status(enum.Enum):
+        """Stream Status codes."""
         NOT_START = enum.auto()
         START = enum.auto()
         RUN = enum.auto()
         STOP = enum.auto()
 
-    def __init__(self, generator, segmentor, name='default-stream', scheduler='thread'):
+    def __init__(self, generator: "arus.generator.Generator", segmentor: "arus.segmentor.Segmentor", name: typing.Optional[str] = 'default-stream', scheduler: typing.Optional[str] = 'thread'):
         """
 
-        Args:
-            data_source (object): An object that may be loaded into memory. The type of the object is decided by the implementation of subclass.
-            window_size (float): Number of seconds. Each data in the queue would be a short chunk of data lasting `window_size` seconds loaded from the `data_source`.
-            name (str, optional): The name of the data stream will also be used as the name of the sub-thread that is used to load data. Defaults to 'default-stream'.
-            scheduler (str, optional): The scheduler used to load the data source. It can be either 'thread' or 'sync'. Defaults to 'thread'.
+        Arguments:
+            generator: a Generator instance that can provide streaming data.
+            segmentor: a Segmentor instance that is responsible for segmenting the streaming data into chunks.
+            name: The name of the data stream will also be used as the name of the sub-thread that is used to load data. Defaults to 'default-stream'.
+            scheduler: The scheduler used to load the data source. It can be either 'thread' or 'sync'. Defaults to 'thread'.
         """
         self._input_buffer = queue.Queue()
         self._output_buffer = queue.Queue()
@@ -39,7 +37,12 @@ class Stream:
         self._generator = generator
         self._segmentor = segmentor
 
-    def generate(self):
+    def generate(self) -> "pandas.Dataframe":
+        """A python generator function to get the segmented streaming data.
+
+        Returns:
+            segmented streaming data.
+        """
         while True:
             data = self._output_buffer.get()
             if data is None:
@@ -47,10 +50,14 @@ class Stream:
                 break
             yield data
 
-    def start(self, start_time=None):
+    def start(self, start_time: "str, datetime, numpy.datetime64, pandas.Timestamp" = None):
         """Method to start loading data from the provided data source.
 
-        start_time (str or datetime or datetime64 or pandas.Timestamp, optional): The start time of data source. This is used to sync between multiple streams. If it is `None`, the default value would be extracted from the first sample of the loaded data.
+        Arguments:
+            start_time: The reference time for segmentation.
+
+        Note:
+            `start_time` is used to sync between multiple streams. If it is `None`, the default value would be extracted from the first sample of the loaded data.
         """
         self._status = Stream.Status.START
         logging.info('Stream is starting.')
@@ -67,14 +74,10 @@ class Stream:
         self._status = Stream.Status.RUN
 
     def stop(self):
-        """Method to stop the loading process
-        """
+        """Stop the loading process."""
         logging.info('Stream is stopping.')
         self._status = Stream.Status.STOP
         self._segmentor.reset()
-        self._generator.stop()
-        time.sleep(0.1)
-        self._segment_thread.join(timeout=1)
         logging.info('Segmentor thread stopped.')
         time.sleep(0.1)
         self._loading_thread.join(timeout=1)
@@ -86,7 +89,12 @@ class Stream:
         self._status = Stream.Status.NOT_START
         logging.info('Stream stopped.')
 
-    def get_status(self):
+    def get_status(self) -> "Stream.Status":
+        """Get the status code of the stream.
+
+        Returns:
+            The status code of the stream.
+        """
         return self._status
 
     def _get_thread_for_loading(self):

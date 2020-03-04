@@ -57,6 +57,5 @@ jobs:
 
       - name: Test building apps
         run: poetry run arus_dev app . arus_demo 1.0
-
       - name: Test building website
-        run: poetry run arus_dev website .
+        run: poetry run mkdocs build --clean

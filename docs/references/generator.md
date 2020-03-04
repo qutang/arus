@@ -1,0 +1,3 @@
+`arus.generator`
+
+::: arus.generator
