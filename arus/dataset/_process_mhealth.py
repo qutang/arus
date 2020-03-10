@@ -4,6 +4,8 @@ import logging
 import pandas as pd
 from .. import mhealth_format as mh
 from ..models import muss as arus_muss
+from ..models import nn
+from ..core import pipeline as arus_pipeline
 import os
 
 
@@ -18,12 +20,18 @@ def process_mehealth_dataset(dataset_dict, approach='muss', **kwargs):
             processed = _process_muss(
                 dataset_dict, pid, sr=kwargs['sr'], window_size=kwargs['window_size'])
             results.append(processed)
+        elif approach == 'nn':
+            processed = _process_nn(dataset_dict, pid, sr=kwargs['sr'])
+            if processed is not None:
+                processed.reset_index(drop=False, inplace=True)
+                results.append(processed)
         else:
             raise NotImplementedError('Only "muss" approach is implemented.')
 
     processed_dataset = pd.concat(results, axis=0, sort=False)
-    processed_dataset.sort_values(
-        by=[mh.FEATURE_SET_PID_COL, mh.FEATURE_SET_PLACEMENT_COL] + mh.FEATURE_SET_TIMESTAMP_COLS, inplace=True)
+    if approach == 'muss':
+        processed_dataset.sort_values(
+            by=[mh.FEATURE_SET_PID_COL, mh.FEATURE_SET_PLACEMENT_COL] + mh.FEATURE_SET_TIMESTAMP_COLS, inplace=True)
     return processed_dataset
 
 
@@ -32,6 +40,8 @@ def _parse_kwargs(approach, kwargs):
         kwargs['window_size'] = 12.8
     elif approach == 'muss' and 'window_size' in kwargs:
         pass
+    elif approach == 'nn':
+        kwargs['window_size'] = 3600
     else:
         raise NotImplementedError('You must provide a valid window size')
 
@@ -54,7 +64,7 @@ def _process_muss(dataset_dict, pid, sr, window_size=12.8):
     pipeline = arus_muss.MUSSModel.get_mhealth_dataset_pipeline(
         *streams, name='{}-pipeline'.format(pid), scheduler='processes', max_processes=os.cpu_count() - 4, **streams_kwargs)  # os.cpu_count() - 4
     pipeline.start(start_time=start_time)
-    processed = _prepare_mhealth_pipeline_output(pipeline, pid)
+    processed = _prepare_pipeline_output(pipeline, pid)
     return processed
 
 
@@ -88,7 +98,7 @@ def _prepare_mhealth_streams(dataset_dict, pid, window_size, sr, use_annotations
     return streams, streams_kwargs
 
 
-def _prepare_mhealth_pipeline_output(pipeline, pid):
+def _prepare_pipeline_output(pipeline, pid):
     processed = None
     for df, st, et, prev_st, prev_et, name in pipeline.get_iterator():
         if df.empty:
@@ -100,20 +110,26 @@ def _prepare_mhealth_pipeline_output(pipeline, pid):
             processed = df
     logging.info('Pipeline {} has completed.'.format(pid))
     pipeline.stop()
-    processed[mh.FEATURE_SET_PID_COL] = pid
+    if processed is not None:
+        processed[mh.FEATURE_SET_PID_COL] = pid
     return processed
 
 
 def _process_nn(dataset_dict, pid, sr):
     window_size = 3600
     dataset_path = dataset_dict['meta']['root']
-    start_time = mh.get_session_start_time(pid, dataset_path)
+    start_time = mh.get_session_start_time(
+        pid, dataset_path, round_to='minute')
     streams, streams_kwargs = _prepare_mhealth_streams(
         dataset_dict, pid, window_size, sr, use_annotations=False)
     streams_kwargs['dataset_name'] = dataset_dict['meta']['name']
     streams_kwargs['pid'] = pid
-    pipeline = arus_muss.MUSSModel.get_mhealth_dataset_pipeline(
-        *streams, name='{}-pipeline'.format(pid), scheduler='processes', max_processes=os.cpu_count() - 4, **streams_kwargs)  # os.cpu_count() - 4
+    pipeline = arus_pipeline.Pipeline(
+        max_processes=os.cpu_count() - 4, scheduler='processes', name='process-nn-pipeline')
+    for stream in streams:
+        pipeline.add_stream(stream)
+    pipeline.set_processor(nn.preprocess_processor, **streams_kwargs)
     pipeline.start(start_time=start_time)
-    processed = _prepare_mhealth_pipeline_output(pipeline, pid)
+    pid = pid.split('_')[1]
+    processed = _prepare_pipeline_output(pipeline, pid)
     return processed
