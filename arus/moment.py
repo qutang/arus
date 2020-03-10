@@ -38,7 +38,7 @@ class Moment:
         elif type(obj) == np.datetime64:
             # assume local time, so convert to utc first
             local_ts = obj.astype(float) / 10 ** 6
-            self._posix = local_ts + Moment.get_local_to_utc_offset()
+            self._posix = local_ts + Moment.get_local_to_utc_offset(local_ts)
         elif type(obj) == pd.Timestamp:
             self._posix = obj.to_pydatetime().timestamp()
         else:
@@ -67,14 +67,14 @@ class Moment:
         return obj.strftime(fmt)
 
     @staticmethod
-    def get_local_to_utc_offset():
-        ts = time.time()
+    def get_local_to_utc_offset(ts=None):
+        ts = ts or time.time()
         return (dt.datetime.utcfromtimestamp(ts) - dt.datetime.fromtimestamp(ts)
                 ).total_seconds()
 
     @staticmethod
-    def get_utc_to_local_offset():
-        return - Moment.get_local_to_utc_offset()
+    def get_utc_to_local_offset(ts=None):
+        return - Moment.get_local_to_utc_offset(ts=ts)
 
     @staticmethod
     def get_local_timezone():
@@ -135,16 +135,16 @@ class Moment:
             seq = pd.to_datetime(seq, format=fmt)
         elif type(seq[0]) == dt.datetime:
             local_ts = pd.to_datetime(seq).values.astype(float) / 10 ** 9
-            local_ts = local_ts + Moment.get_local_to_utc_offset()
+            local_ts = local_ts + Moment.get_local_to_utc_offset(local_ts[0])
             return local_ts
         elif type(seq[0]) == np.datetime64:
             local_ts = np.array(seq).astype(
                 'datetime64[us]').astype(float) / 10 ** 6
-            local_ts = local_ts + Moment.get_local_to_utc_offset()
+            local_ts = local_ts + Moment.get_local_to_utc_offset(local_ts[0])
             return local_ts
         elif type(seq[0]) == pd.Timestamp:
             local_ts = pd.to_datetime(seq).values.astype(float) / 10 ** 9
-            local_ts = local_ts + Moment.get_local_to_utc_offset()
+            local_ts = local_ts + Moment.get_local_to_utc_offset(local_ts[0])
             return local_ts
         else:
             raise NotImplementedError('Input type is not supported')
