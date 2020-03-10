@@ -88,7 +88,7 @@ def get_annotation_files(pid, dataset_path, annotation_type=None, annotator=None
     return sorted(files)
 
 
-def get_session_start_time(pid, dataset_path):
+def get_session_start_time(pid, dataset_path, round_to='hour'):
     smallest = dt.datetime.now()
     filepaths = get_sensor_files(
         pid, dataset_path) + get_annotation_files(pid, dataset_path)
@@ -96,7 +96,12 @@ def get_session_start_time(pid, dataset_path):
         timestamp = helper.parse_timestamp_from_filepath(path, ignore_tz=True)
         if timestamp < smallest:
             smallest = timestamp
-    smallest = smallest.replace(microsecond=0, second=0, minute=0)
+    if round_to == 'minute':
+        smallest = smallest.replace(microsecond=0, second=0)
+    elif round_to == 'second':
+        smallest = smallest.replace(microsecond=0)
+    else:
+        smallest = smallest.replace(microsecond=0, second=0, minute=0)
     return smallest
 
 
