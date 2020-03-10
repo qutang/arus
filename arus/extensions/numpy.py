@@ -49,14 +49,15 @@ def regularize_sr(t, X, sr, st=None, et=None):
     st = st or t[0]
     et = et or t[-1]
     total_seconds = et - st
-    new_t = np.linspace(st, et, num=int(np.floor(total_seconds * sr)))
+    new_t = np.linspace(st, et, num=int(
+        np.floor(total_seconds * sr)), endpoint=False)
     new_X = np.apply_along_axis(
         _regularize_sr, axis=0, arr=X, t=t, new_t=new_t)
     return new_t, new_X
 
 
 def _regularize_sr(y, t, new_t):
-    f = interpolate.interp1d(t, y, kind='cubic')
+    f = interpolate.InterpolatedUnivariateSpline(t, y, k=3)
     new_y = f(new_t)
     return new_y
 
