@@ -6,10 +6,12 @@ Date: 02/07/2020
 License: GNU v3
 """
 from . import moment
+from . import o
 
 
-class Synchronizer:
+class Synchronizer(o.BaseOperator):
     def __init__(self):
+        super().__init__()
         self._buffer = {}
         self._num = 0
         pass
@@ -27,35 +29,56 @@ class Synchronizer:
         self._num -= 1
         self._num = max(0, self._num)
 
+    def stop(self):
+        self.reset()
+
     def reset(self):
         self._buffer.clear()
 
-    def sync(self, data, st, et, source_id, **kwargs):
+    def generate(self, values, src=None, context={}):
+        """[summary]
+
+        Arguments:
+            values {[type]} -- [description]
+
+        Keyword Arguments:
+            src {[type]} -- [description] (default: {None})
+            context {dict} -- It has to provide `data_id` as an indicator of the incoming data source, `start_time` and `stop_time` as indicators of the start and stop boundary of the data. (default: {{}})
+
+        Yields:
+            [type] -- [description]
+        """
+        self._context = {**self._context, **context}
+        del self._context['data_id']
+        st = self._context['start_time']
+        et = self._context['stop_time']
+        data_id = context['data_id']
+        result = self.sync(values, st, et, data_id)
+        if result is not None:
+            yield result, self._context
+
+    def sync(self, data, st, et, data_id):
         st = moment.Moment(st)
         et = moment.Moment(et)
         if st.to_unix_timestamp() not in self._buffer:
             self._buffer[st.to_unix_timestamp()] = {}
         # If source id exists, new data will overwrite old data
-        self._buffer[st.to_unix_timestamp()][source_id] = (
-            data, st, et, kwargs)
+        self._buffer[st.to_unix_timestamp()][data_id] = data
         assembled = self._buffer[st.to_unix_timestamp()]
         if len(assembled.keys()) == self._num:
             # now the assemble is ready
             assembled = self._format_assembled(assembled)
             del self._buffer[st.to_unix_timestamp()]
             return assembled
+        return None
 
     def _format_assembled(self, assembled):
-        data = []
-        start_time = None
-        stop_time = None
-        source_ids = []
-        kwargs_list = []
-        for source_id, item in assembled.items():
-            source_ids.append(source_id)
-            data.append(item[0])
-            start_time = item[1]
-            stop_time = item[2]
-            kwargs_list.append(item[3])
-        result = (data, source_ids, kwargs_list, start_time, stop_time)
+        result = []
+        data_ids = []
+        for data_id, values in assembled.items():
+            data_ids.append(data_id)
+            result.append(values)
+        self._context = {
+            **self._context, "data_ids": data_ids
+        }
         return result

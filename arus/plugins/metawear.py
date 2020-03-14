@@ -122,12 +122,12 @@ class MetaWearAccelDataGenerator(generator.Generator):
         self._device = None
         self._corrector = MetawearTimestampCorrector(sr)
         self._input_count = 0
-        self._buffer = queue.Queue()
+        self._internal_buffer = queue.Queue()
         self._callback_started = False
         self._start_condition = threading.Condition(threading.Lock())
         self._setup_metawear()
 
-    def generate(self):
+    def generate(self, values=None, src=None, context={}):
         if self._start_metawear():
             yield from self._generate()
         else:
@@ -142,7 +142,7 @@ class MetaWearAccelDataGenerator(generator.Generator):
         self._device.disconnect()
         logging.info('Disconnected.')
         self._callback_started = False
-        self._buffer.queue.clear()
+        self._internal_buffer.queue.clear()
         super().stop()
 
     def get_device_name(self):
@@ -159,8 +159,10 @@ class MetaWearAccelDataGenerator(generator.Generator):
     def _generate(self):
         while self._callback_started:
             try:
-                data = self._buffer.get(timeout=0.1)
-                yield data
+                data = self._internal_buffer.get(timeout=0.1)
+                result = self._buffering(data)
+                if result is not None:
+                    yield result, self._context
             except queue.Empty:
                 continue
 
@@ -169,7 +171,7 @@ class MetaWearAccelDataGenerator(generator.Generator):
 
         def _callback(data):
             formatted = self._format_data_as_mhealth(data)
-            self._buffer.put(formatted)
+            self._internal_buffer.put(formatted)
             if self._input_count == 0:
                 logging.info('Accelerometer callback starts running...')
                 with self._start_condition:

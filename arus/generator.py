@@ -10,13 +10,14 @@ License: GNU v3
 
 from . import mhealth_format as mh
 from . import moment
+from . import o
 import datetime as dt
 import pandas as pd
 import numpy as np
 import time
 
 
-class Generator:
+class Generator(o.BaseOperator):
     """Abstract class for instances that generate data streams.
     """
 
@@ -26,10 +27,11 @@ class Generator:
         Arguments:
             buffer_size: the sample size for each burst of the streaming data.
         """
+        super().__init__()
         self._buffer_size = buffer_size
         self._buffer = None
 
-    def generate(self):
+    def generate(self, values=None, src=None, context={}):
         """Generate burst of streaming data.
 
         Returns:
@@ -51,10 +53,14 @@ class Generator:
                 return None
         else:
             n = self._buffer_size - self._buffer.shape[0]
-            result = pd.concat(
+            self._buffer = pd.concat(
                 (self._buffer, data.iloc[:n, :]), axis=0, sort=False)
-            self._buffer = data.iloc[n:, :]
-            return result
+            if self._buffer.shape[0] == self._buffer_size:
+                result = self._buffer.copy()
+                self._buffer = data.iloc[n:, :]
+                return result
+            else:
+                return None
 
 
 class MhealthSensorFileGenerator(Generator):
@@ -71,14 +77,14 @@ class MhealthSensorFileGenerator(Generator):
         super().__init__(**kwargs)
         self._filepaths = filepaths
 
-    def generate(self) -> "pandas.Dataframe":
+    def generate(self, values=None, src=None, context={}) -> "pandas.Dataframe":
         for filepath in self._filepaths:
             reader = mh.MhealthFileReader(filepath)
             reader.read_csv(chunksize=self._buffer_size)
             for data in reader.get_data():
                 result = self._buffering(data)
                 if result is not None:
-                    yield result
+                    yield result, self._context
 
 
 class MhealthAnnotationFileGenerator(Generator):
@@ -95,7 +101,7 @@ class MhealthAnnotationFileGenerator(Generator):
         super().__init__(**kwargs)
         self._filepaths = filepaths
 
-    def generate(self) -> "pandas.Dataframe":
+    def generate(self, values=None, src=None, context={}) -> "pandas.Dataframe":
         for filepath in self._filepaths:
             reader = mh.MhealthFileReader(filepath)
             reader.read_csv(chunksize=self._buffer_size,
@@ -103,7 +109,7 @@ class MhealthAnnotationFileGenerator(Generator):
             for data in reader.get_data():
                 result = self._buffering(data)
                 if result is not None:
-                    yield result
+                    yield result, self._context
 
 
 class RandomAccelDataGenerator(Generator):
@@ -129,7 +135,7 @@ class RandomAccelDataGenerator(Generator):
         self._max_samples = max_samples
         self._max_count = max_samples or 1
 
-    def generate(self) -> "pandas.Dataframe":
+    def generate(self, values=None, src=None, context={}) -> "pandas.Dataframe":
         counter = 0
         while counter <= self._max_count:
             data = np.random.standard_normal(
@@ -146,7 +152,7 @@ class RandomAccelDataGenerator(Generator):
             counter += self._buffer_size
             if self._max_samples is None:
                 self._max_count = counter + 1
-            yield result
+            yield result, self._context
 
 
 class RandomAnnotationDataGenerator(Generator):
@@ -176,7 +182,7 @@ class RandomAnnotationDataGenerator(Generator):
         self._max_samples = max_samples
         self._max_count = self._max_samples or 1
 
-    def generate(self) -> "pandas.Dataframe":
+    def generate(self, values=None, src=None, context={}) -> "pandas.Dataframe":
         counter = 0
         while counter <= self._max_count:
             N = np.random.poisson(lam=self._num_mu)
@@ -201,4 +207,4 @@ class RandomAnnotationDataGenerator(Generator):
             counter += N
             if self._max_samples is None:
                 self._max_count = counter + 1
-            yield result
+            yield result, self._context

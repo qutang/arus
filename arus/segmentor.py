@@ -12,9 +12,10 @@ import pandas as pd
 from . import extensions
 from . import moment
 import logging
+from . import o
 
 
-class Segmentor:
+class Segmentor(o.BaseOperator):
     """Base class for segmentors.
 
     Segmentors are used to segment streaming data and generate chunks in different ways.
@@ -28,6 +29,7 @@ class Segmentor:
             st_col: The column with start time timestamps in the streaming data.
             et_col: The column with stop time timestamps in the streaming data. If it is `None`, `et_col = st_col`.
         """
+        super().__init__()
         self._st_col = st_col
         self._et_col = et_col or self._st_col
         self._ref_st = ref_st
@@ -46,6 +48,10 @@ class Segmentor:
         """
         pass
 
+    def generate(self, values=None, src=None, context={}):
+        self._context = {**self._context, **context}
+        yield from self.segment(values)
+
     def segment(self, data: "pandas.Dataframe") -> "pandas.Dataframe":
         """A python generator function to output segmented data.
 
@@ -60,7 +66,7 @@ class Segmentor:
         if data is None:
             return
         for index, row in data.iterrows():
-            yield row
+            yield row, self._context
 
 
 class SlidingWindowSegmentor(Segmentor):
@@ -80,6 +86,9 @@ class SlidingWindowSegmentor(Segmentor):
         if window_size == 0:
             raise ValueError('Window size should be greater than zero.')
         self._ws = window_size
+
+    def stop(self):
+        self.reset()
 
     def reset(self):
         self._current_segment = []
@@ -116,19 +125,20 @@ class SlidingWindowSegmentor(Segmentor):
                 else:
                     self._current_segment = pd.concat(
                         self._current_segment, axis=0, sort=False)
-                    result = (
-                        self._current_segment,
-                        self._current_seg_st,
-                        self._current_seg_et,
-                        self._previous_seg_st,
-                        self._previous_seg_et
-                    )
+                    result = self._current_segment
+                    new_context = {
+                        "start_time": self._current_seg_st,
+                        "stop_time": self._current_seg_et,
+                        "prev_start_time": self._previous_seg_st,
+                        "prev_stop_time": self._previous_seg_et,
+                    }
+                    self._context = {**self._context, **new_context}
                     self._current_segment = [segment]
                     self._previous_seg_st = self._current_seg_st
                     self._previous_seg_et = self._current_seg_et
                     self._current_seg_st = seg_st
                     self._current_seg_et = seg_et
-                    yield result
+                    yield result, self._context
 
     def _extract_segments(self, data):
         if data.empty:
