@@ -1,4 +1,5 @@
 # %%
+
 import arus
 import logging
 arus.dev.set_default_logging()
@@ -81,7 +82,8 @@ spades_lab = arus.dataset.load_dataset('spades_lab')
 mhealth_filepath = spades_lab['subjects']['SPADES_2']['sensors']['DW'][0]
 generator = arus.generator.MhealthSensorFileGenerator(
     mhealth_filepath, buffer_size=1800)
-values, context = next(generator.generate())
+generator.run()
+values, context = next(generator.get_result())
 generator.stop()
 segmentor = arus.segmentor.SlidingWindowSegmentor(window_size=1)
 op = arus.O(segmentor, name='segmentor-1s')
@@ -113,19 +115,23 @@ dw_generator = arus.generator.MhealthSensorFileGenerator(
     dw_filepath, buffer_size=1800)
 da_generator = arus.generator.MhealthSensorFileGenerator(
     da_filepath, buffer_size=1800)
-dw_values, dw_context = next(dw_generator.generate())
-da_values, da_context = next(da_generator.generate())
+dw_generator.run()
+da_generator.run()
+dw_values, dw_context = next(dw_generator.get_result())
+da_values, da_context = next(da_generator.get_result())
 dw_context = {**dw_context, 'data_id': 'DW'}
 da_context = {**da_context, 'data_id': 'DA'}
 dw_generator.stop()
 da_generator.stop()
 
 segmentor = arus.segmentor.SlidingWindowSegmentor(window_size=1)
-seg_dw_values, dw_context = next(segmentor.generate(
-    dw_values, src=None, context=dw_context))
+segmentor.run(
+    dw_values, src=None, context=dw_context)
+seg_dw_values, dw_context = next(segmentor.get_result())
 segmentor = arus.segmentor.SlidingWindowSegmentor(window_size=1)
-seg_da_values, da_context = next(segmentor.generate(
-    da_values, src=None, context=da_context))
+segmentor.run(
+    da_values, src=None, context=da_context)
+seg_da_values, da_context = next(segmentor.get_result())
 
 synchronizer = arus.synchronizer.Synchronizer()
 synchronizer.add_sources(2)
@@ -135,6 +141,46 @@ op.consume(arus.O.Pack(values=seg_dw_values,
                        signal=arus.O.Signal.DATA, context=dw_context, src='dw'))
 op.consume(arus.O.Pack(values=seg_da_values,
                        signal=arus.O.Signal.DATA, context=da_context, src='da'))
+while True:
+    data = next(op.produce())
+    if data.signal == arus.O.Signal.WAIT:
+        continue
+    logging.info(data)
+    break
+op.stop()
+
+
+# %% [markdown]
+# ### scheduler/processor operator
+
+
+# %%
+spades_lab = arus.dataset.load_dataset('spades_lab')
+dw_filepath = spades_lab['subjects']['SPADES_2']['sensors']['DW'][0]
+da_filepath = spades_lab['subjects']['SPADES_2']['sensors']['DA'][0]
+dw_generator = arus.generator.MhealthSensorFileGenerator(
+    dw_filepath, buffer_size=1800)
+dw_generator.run()
+dw_values, dw_context = next(dw_generator.get_result())
+dw_context = {**dw_context, 'data_id': 'DW'}
+dw_generator.stop()
+
+
+def compute_mean(values, src=None, **context):
+    import numpy as np
+    data = values.values[:, 1:]
+    result = np.mean(data, axis=0)
+    return result, context
+
+
+processor = arus.processor.Processor(compute_mean,
+                                     mode=arus.Scheduler.Mode.THREAD,
+                                     scheme=arus.Scheduler.Scheme.SUBMIT_ORDER, max_workers=2)
+
+op = arus.O(processor, name='compute-mean')
+op.start()
+op.consume(arus.O.Pack(values=dw_values, signal=arus.O.Signal.DATA,
+                       context=dw_context, src='dw'))
 while True:
     data = next(op.produce())
     if data.signal == arus.O.Signal.WAIT:
