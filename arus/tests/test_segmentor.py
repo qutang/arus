@@ -17,7 +17,7 @@ class TestSegmentor:
         df = pd.DataFrame(data=sensor_data)
         seg = segmentor.Segmentor()
         i = 0
-        for sample in seg.segment(df):
+        for sample, context in seg.segment(df):
             assert len(sample.shape) == 1
             assert len(sample) == 4
             np.testing.assert_array_equal(
@@ -37,9 +37,9 @@ class TestSlidingWindowSegmentor:
             seg = segmentor.SlidingWindowSegmentor(
                 window_size=window_size, ref_st=ref_st, st_col=0, et_col=None)
             i = 0
-            for sample, st, et, prev_st, prev_et in seg.segment(sensor_data):
+            for sample, context in seg.segment(sensor_data):
                 assert moment.Moment.get_duration(
-                    st, et, unit='s') == window_size
+                    context['start_time'], context['stop_time'], unit='s') == window_size
                 assert sample.shape[0] <= window_size * 80
                 assert sample.shape[1] == 4
                 i += 1
