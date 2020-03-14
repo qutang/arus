@@ -20,3 +20,4 @@ from . import accelerometer as accel
 from . import testing
 from .o import O, BaseOperator
 from . import synchronizer
+from . import processor
