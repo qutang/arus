@@ -39,6 +39,7 @@ class O:
         self._output_buffer = queue.Queue()
         self._operator = op
         self._produce_thread = None
+        self._result_thread = None
         self._status = O.Status.ON
         self._type = t
 
@@ -58,10 +59,15 @@ class O:
         self._status = O.Status.START
         logging.info('Operator is starting.')
         self._produce_thread = threading.Thread(
-            target=self._produce, name=self._name)
+            target=self._produce, name=self._name + '-produce')
         self._produce_thread.daemon = True
         self._produce_thread.start()
-        while not self._produce_thread.isAlive():
+        self._result_thread = threading.Thread(
+            target=self._get_result, name=self._name + '-result'
+        )
+        self._result_thread.daemon = True
+        self._result_thread.start()
+        while not self._produce_thread.isAlive() or not self._result_thread.isAlive():
             time.sleep(0.1)
         logging.info('Operator started.')
 
@@ -69,7 +75,8 @@ class O:
         logging.info('Operator is stopping.')
         self._operator.stop()
         self._status = O.Status.STOP
-        self._produce_thread.join(timeout=1)
+        self._produce_thread.join()
+        self._result_thread.join()
         logging.info('Operator thread stopped.')
         with self._input_buffer.mutex:
             self._input_buffer.queue.clear()
@@ -108,17 +115,26 @@ class O:
         """
         return self._status
 
-    def _produce_from_input(self):
-        src = self._name
-        for values, context in self._operator.generate():
+    def _get_result(self):
+        while True:
+            for values, context in self._operator.get_result():
+                if self._status == O.Status.STOP:
+                    break
+                else:
+                    self._output_buffer.put(
+                        O.Pack(values=values, signal=O.Signal.DATA,
+                               context=context, src=self._name)
+                    )
             if self._status == O.Status.STOP:
                 break
-            self._output_buffer.put(
-                O.Pack(values=values, signal=O.Signal.DATA,
-                       context=context, src=src)
-            )
+            else:
+                self._output_buffer.put(
+                    O.Pack(values=None, signal=O.Signal.WAIT, context={}, src=self._name))
         self._output_buffer.put(
-            O.Pack(values=None, signal=O.Signal.STOP, context={}, src=src))
+            O.Pack(values=None, signal=O.Signal.STOP, context={}, src=self._name))
+
+    def _produce_from_input(self):
+        self._operator.run()
 
     def _produce_from_pipe(self):
         src = self._name
@@ -126,14 +142,10 @@ class O:
             try:
                 data = self._input_buffer.get(timeout=0.1)
                 if data.signal in [O.Signal.STOP, O.Signal.WAIT]:
-                    self._output_buffer.put(
-                        O.Pack(values=None, signal=O.Signal.WAIT, context={}, src=src))
+                    pass
                 else:
-                    for values, new_context in self._operator.generate(data.values, context=data.context, src=data.src):
-                        if self._status == O.Status.STOP:
-                            break
-                        self._output_buffer.put(
-                            O.Pack(values=values, signal=O.Signal.DATA, context=new_context, src=src))
+                    self._operator.run(
+                        data.values, context=data.context, src=data.src)
             except queue.Empty:
                 pass
             finally:
@@ -149,13 +161,15 @@ class O:
                 if data.signal == O.Signal.STOP:
                     pass
                 else:
-                    self._operator.generate(
+                    self._operator.run(
                         data.values, context=data.context, src=data.src)
             except queue.Empty:
                 pass
             finally:
                 if self._status == O.Status.STOP:
                     break
+            self._output_buffer.put(
+                O.Pack(values=None, signal=O.Signal.STOP, context={}, src=self._name))
 
     def _produce(self):
         logging.info('Operator thread started.')
@@ -174,9 +188,11 @@ class BaseOperator(abc.ABC):
 
     def __init__(self):
         self._context = {}
+        self._result = queue.Queue()
+        self._result_thread = None
 
     @abc.abstractmethod
-    def generate(self, *, values=None, src=None, context={}):
+    def run(self, *, values=None, src=None, context={}):
         pass
 
     def set_context(self, **context):
@@ -185,3 +201,10 @@ class BaseOperator(abc.ABC):
     @abc.abstractmethod
     def stop(self):
         pass
+
+    def get_result(self):
+        try:
+            result, new_context = self._result.get(timeout=0.1)
+            yield result, new_context
+        except queue.Empty:
+            pass
