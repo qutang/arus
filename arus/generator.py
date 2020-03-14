@@ -30,17 +30,15 @@ class Generator(o.BaseOperator):
         super().__init__()
         self._buffer_size = buffer_size
         self._buffer = None
+        self._stop = False
 
-    def generate(self, values=None, src=None, context={}):
+    def run(self, values=None, src=None, context={}):
         """Generate burst of streaming data.
-
-        Returns:
-            Burst of streaming data.
         """
         pass
 
     def stop(self):
-        pass
+        self._stop = True
 
     def _buffering(self, data):
         if self._buffer_size is None:
@@ -77,14 +75,18 @@ class MhealthSensorFileGenerator(Generator):
         super().__init__(**kwargs)
         self._filepaths = filepaths
 
-    def generate(self, values=None, src=None, context={}) -> "pandas.Dataframe":
+    def run(self, values=None, src=None, context={}):
         for filepath in self._filepaths:
             reader = mh.MhealthFileReader(filepath)
             reader.read_csv(chunksize=self._buffer_size)
             for data in reader.get_data():
+                if self._stop:
+                    break
                 result = self._buffering(data)
                 if result is not None:
-                    yield result, self._context
+                    self._result.put((result, self._context))
+            if self._stop:
+                break
 
 
 class MhealthAnnotationFileGenerator(Generator):
@@ -101,15 +103,19 @@ class MhealthAnnotationFileGenerator(Generator):
         super().__init__(**kwargs)
         self._filepaths = filepaths
 
-    def generate(self, values=None, src=None, context={}) -> "pandas.Dataframe":
+    def run(self, values=None, src=None, context={}):
         for filepath in self._filepaths:
             reader = mh.MhealthFileReader(filepath)
             reader.read_csv(chunksize=self._buffer_size,
                             datetime_cols=[0, 1, 2])
             for data in reader.get_data():
+                if self._stop:
+                    break
                 result = self._buffering(data)
                 if result is not None:
-                    yield result, self._context
+                    self._result.put((result, self._context))
+            if self._stop:
+                break
 
 
 class RandomAccelDataGenerator(Generator):
@@ -135,9 +141,11 @@ class RandomAccelDataGenerator(Generator):
         self._max_samples = max_samples
         self._max_count = max_samples or 1
 
-    def generate(self, values=None, src=None, context={}) -> "pandas.Dataframe":
+    def run(self, values=None, src=None, context={}):
         counter = 0
         while counter <= self._max_count:
+            if self._stop:
+                break
             data = np.random.standard_normal(
                 size=(self._buffer_size, 3)) * self._sigma
             data[data > self._grange] = self._grange
@@ -152,7 +160,7 @@ class RandomAccelDataGenerator(Generator):
             counter += self._buffer_size
             if self._max_samples is None:
                 self._max_count = counter + 1
-            yield result, self._context
+            self._result.put((result, self._context))
 
 
 class RandomAnnotationDataGenerator(Generator):
@@ -182,9 +190,11 @@ class RandomAnnotationDataGenerator(Generator):
         self._max_samples = max_samples
         self._max_count = self._max_samples or 1
 
-    def generate(self, values=None, src=None, context={}) -> "pandas.Dataframe":
+    def run(self, values=None, src=None, context={}):
         counter = 0
         while counter <= self._max_count:
+            if self._stop:
+                break
             N = np.random.poisson(lam=self._num_mu)
             durations = np.random.standard_normal(
                 size=N) * self._duration_sigma + self._duration_mu
@@ -207,4 +217,4 @@ class RandomAnnotationDataGenerator(Generator):
             counter += N
             if self._max_samples is None:
                 self._max_count = counter + 1
-            yield result, self._context
+            self._result.put((result, self._context))

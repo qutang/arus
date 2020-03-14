@@ -34,6 +34,7 @@ class Segmentor(o.BaseOperator):
         self._et_col = et_col or self._st_col
         self._ref_st = ref_st
         self.reset()
+        self._stop = False
 
     def set_ref_time(self, ts: "str, datetime, numpy.datetime64, pandas.Timestamp"):
         """Set reference start time.
@@ -48,20 +49,23 @@ class Segmentor(o.BaseOperator):
         """
         pass
 
-    def generate(self, values=None, src=None, context={}):
-        self._context = {**self._context, **context}
-        yield from self.segment(values)
+    def stop(self):
+        self._stop = True
 
-    def segment(self, data: "pandas.Dataframe") -> "pandas.Dataframe":
+    def run(self, values=None, src=None, context={}):
+        self._context = {**self._context, **context}
+        for result, new_context in self.segment(values):
+            if self._stop:
+                break
+            self._result.put((result, new_context))
+
+    def segment(self, data: "pandas.Dataframe"):
         """A python generator function to output segmented data.
 
         The default behavior is to output each row of the burst of streaming data.
 
         Arguments:
             data: the input burst of streaming data.
-
-        Returns:
-            segmented data.
         """
         if data is None:
             return
@@ -88,6 +92,7 @@ class SlidingWindowSegmentor(Segmentor):
         self._ws = window_size
 
     def stop(self):
+        super().stop()
         self.reset()
 
     def reset(self):
@@ -97,16 +102,13 @@ class SlidingWindowSegmentor(Segmentor):
         self._previous_seg_st = None
         self._previous_seg_et = None
 
-    def segment(self, data: 'pandas.Dataframe') -> "pandas.Dataframe":
+    def segment(self, data: 'pandas.Dataframe'):
         """A python generator function to output segmented data.
 
         It will segment the incoming streaming data with sliding window method and yield segmented data.
 
         Arguments:
             data: the input burst of streaming data.
-
-        Returns:
-            segmented data.
         """
         et = data.iloc[-1, self._et_col]
         if self._ref_st is not None and moment.Moment(self._ref_st).to_unix_timestamp() > moment.Moment(et).to_unix_timestamp():

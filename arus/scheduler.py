@@ -84,7 +84,7 @@ class Scheduler:
         """Submit a new task to the scheduler.
 
         Arguments:
-            func: the task function to be submitted to the scheduler. It should be picklable.
+            func: the task function to be submitted to the scheduler. It should be picklable. It should return a tuple including two items. The first item is the computed values and the second is the context as a dict to be passed with the computed values.
             args: the positional arguments passed to `func`.
             kwargs: the keyword arguments passed to `func`.
 
@@ -145,7 +145,7 @@ class Scheduler:
                 results.append(t[1].result())
         return results
 
-    def get_result(self, timeout: float = None) -> object:
+    def get_result(self, timeout: float = None) -> tuple:
         """Get the next result of the submitted tasks.
 
         Arguments:
@@ -155,7 +155,7 @@ class Scheduler:
             Scheduler.ResultNotAvailableError: Raise when result is not available yet.
 
         Returns:
-            The next result of the submitted tasks.
+            The next result of the submitted tasks. It should be a tuple with two items. The first is the computed values and the second is the context dict.
         """
         try:
             if self._scheme == Scheduler.Scheme.EXECUTION_ORDER:

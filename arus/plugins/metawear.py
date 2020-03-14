@@ -127,9 +127,9 @@ class MetaWearAccelDataGenerator(generator.Generator):
         self._start_condition = threading.Condition(threading.Lock())
         self._setup_metawear()
 
-    def generate(self, values=None, src=None, context={}):
+    def run(self, values=None, src=None, context={}):
         if self._start_metawear():
-            yield from self._generate()
+            self._generate()
         else:
             raise StartFailure(
                 'Device fails to start correctly, please call generate to retry')
@@ -138,7 +138,7 @@ class MetaWearAccelDataGenerator(generator.Generator):
         self._device.led.stop_and_clear()
         time.sleep(0.5)
         self._device.accelerometer.notifications(callback=None)
-        time.sleep(0.5)
+        time.sleep(1)
         self._device.disconnect()
         logging.info('Disconnected.')
         self._callback_started = False
@@ -162,7 +162,7 @@ class MetaWearAccelDataGenerator(generator.Generator):
                 data = self._internal_buffer.get(timeout=0.1)
                 result = self._buffering(data)
                 if result is not None:
-                    yield result, self._context
+                    self._result.put((result, self._context))
             except queue.Empty:
                 continue
 

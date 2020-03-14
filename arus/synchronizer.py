@@ -35,7 +35,7 @@ class Synchronizer(o.BaseOperator):
     def reset(self):
         self._buffer.clear()
 
-    def generate(self, values, src=None, context={}):
+    def run(self, values, src=None, context={}):
         """[summary]
 
         Arguments:
@@ -44,9 +44,6 @@ class Synchronizer(o.BaseOperator):
         Keyword Arguments:
             src {[type]} -- [description] (default: {None})
             context {dict} -- It has to provide `data_id` as an indicator of the incoming data source, `start_time` and `stop_time` as indicators of the start and stop boundary of the data. (default: {{}})
-
-        Yields:
-            [type] -- [description]
         """
         self._context = {**self._context, **context}
         del self._context['data_id']
@@ -55,7 +52,7 @@ class Synchronizer(o.BaseOperator):
         data_id = context['data_id']
         result = self.sync(values, st, et, data_id)
         if result is not None:
-            yield result, self._context
+            self._result.put((result, self._context))
 
     def sync(self, data, st, et, data_id):
         st = moment.Moment(st)
