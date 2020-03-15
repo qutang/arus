@@ -15,6 +15,7 @@ from . import mhealth_format as mh
 from .moment import Moment
 from . import extensions as ext
 from .stream import Stream
+from . import stream2
 from . import plugins
 from . import accelerometer as accel
 from . import testing
