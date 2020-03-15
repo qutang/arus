@@ -17,7 +17,8 @@ class Processor(o.BaseOperator):
 
     def get_result(self):
         try:
-            result, new_context = self._scheduler.get_result(timeout=0.1)
-            yield result, new_context
+            while True:
+                result, new_context = self._scheduler.get_result(timeout=0.1)
+                yield result, new_context
         except scheduler.Scheduler.ResultNotAvailableError:
             pass
