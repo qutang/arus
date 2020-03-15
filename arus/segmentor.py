@@ -110,14 +110,15 @@ class SlidingWindowSegmentor(Segmentor):
         Arguments:
             data: the input burst of streaming data.
         """
-        et = data.iloc[-1, self._et_col]
-        if self._ref_st is not None and moment.Moment(self._ref_st).to_unix_timestamp() > moment.Moment(et).to_unix_timestamp():
-            logging.warning(
-                'Referenced start time is after the end time of the input data, this generates no segments from the data.')
-            return
+
         if data is None:
-            return
+            yield data, self._context
         else:
+            et = data.iloc[-1, self._et_col]
+            if self._ref_st is not None and moment.Moment(self._ref_st).to_unix_timestamp() > moment.Moment(et).to_unix_timestamp():
+                logging.warning(
+                    'Referenced start time is after the end time of the input data, this generates no segments from the data.')
+                return
             segments = self._extract_segments(data)
             for segment, seg_st, seg_et in segments:
                 self._current_seg_st = self._current_seg_st or seg_st
@@ -126,7 +127,7 @@ class SlidingWindowSegmentor(Segmentor):
                     self._current_segment.append(segment)
                 else:
                     self._current_segment = pd.concat(
-                        self._current_segment, axis=0, sort=False)
+                        self._current_segment, axis=0, sort=False, ignore_index=True)
                     result = self._current_segment
                     new_context = {
                         "start_time": self._current_seg_st,
