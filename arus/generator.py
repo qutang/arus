@@ -49,6 +49,9 @@ class Generator(o.BaseOperator):
             elif data.shape[0] < self._buffer_size:
                 self._buffer = data
                 return None
+            else:
+                self._buffer = data.iloc[self._buffer_size:, :]
+                return data.iloc[:self._buffer_size, :]
         else:
             n = self._buffer_size - self._buffer.shape[0]
             self._buffer = pd.concat(
@@ -87,6 +90,7 @@ class MhealthSensorFileGenerator(Generator):
                     self._result.put((result, self._context))
             if self._stop:
                 break
+        self._result.put((None, self._context))
 
 
 class MhealthAnnotationFileGenerator(Generator):
@@ -116,6 +120,7 @@ class MhealthAnnotationFileGenerator(Generator):
                     self._result.put((result, self._context))
             if self._stop:
                 break
+        self._result.put((None, self._context))
 
 
 class RandomAccelDataGenerator(Generator):
@@ -154,13 +159,15 @@ class RandomAccelDataGenerator(Generator):
                 self._st, self._sr, self._buffer_size, format='pandas')
             self._st = ts[-1]
             ts = ts[0:-1]
-            result = pd.DataFrame(index=ts, data=data).reset_index(drop=False)
+            result = pd.DataFrame(
+                index=ts, data=data).reset_index(drop=False)
             result.columns = [mh.TIMESTAMP_COL, 'X', 'Y', 'Z']
             time.sleep(0.2)
             counter += self._buffer_size
             if self._max_samples is None:
                 self._max_count = counter + 1
             self._result.put((result, self._context))
+        self._result.put((None, self._context))
 
 
 class RandomAnnotationDataGenerator(Generator):
@@ -218,3 +225,4 @@ class RandomAnnotationDataGenerator(Generator):
             if self._max_samples is None:
                 self._max_count = counter + 1
             self._result.put((result, self._context))
+        self._result.put((None, self._context))
