@@ -52,6 +52,9 @@ class O:
     def toggle(self, status=Status.OFF):
         self._status = O.Status.ON
 
+    def get_op(self):
+        return self._operator
+
     def start(self):
         if self._status == O.Status.OFF:
             logging.warn('Please turn on the operator at first')
@@ -67,7 +70,7 @@ class O:
         )
         self._result_thread.daemon = True
         self._result_thread.start()
-        while not self._produce_thread.isAlive() or not self._result_thread.isAlive():
+        while not self._produce_thread.is_alive() or not self._result_thread.is_alive():
             time.sleep(0.1)
         logging.info('Operator started.')
 
@@ -87,7 +90,10 @@ class O:
 
     def consume(self, pack):
         if self._type != O.Type.INPUT:
-            self._input_buffer.put(pack)
+            if pack.signal in [O.Signal.WAIT, O.Signal.STOP]:
+                pass
+            else:
+                self._input_buffer.put(pack)
         else:
             logging.warn('INPUT operator does not support consume method')
 
@@ -97,15 +103,15 @@ class O:
         Returns:
             output of the operator.
         """
-        src = self._name
         try:
             data = self._output_buffer.get(timeout=0.1)
             yield data
         except queue.Empty:
-            yield O.Pack(values=None, signal=O.Signal.WAIT, context={}, src=src)
+            yield O.Pack(values=None, signal=O.Signal.WAIT, context={}, src=self._name)
         finally:
             if self._status == O.Status.STOP:
                 return
+            pass
 
     def get_status(self) -> "O.Status":
         """Get the status code of the operator.
@@ -128,8 +134,7 @@ class O:
             if self._status == O.Status.STOP:
                 break
             else:
-                self._output_buffer.put(
-                    O.Pack(values=None, signal=O.Signal.WAIT, context={}, src=self._name))
+                pass
         self._output_buffer.put(
             O.Pack(values=None, signal=O.Signal.STOP, context={}, src=self._name))
 
@@ -141,11 +146,8 @@ class O:
         while True:
             try:
                 data = self._input_buffer.get(timeout=0.1)
-                if data.signal in [O.Signal.STOP, O.Signal.WAIT]:
-                    pass
-                else:
-                    self._operator.run(
-                        data.values, context=data.context, src=data.src)
+                self._operator.run(
+                    data.values, context=data.context, src=data.src)
             except queue.Empty:
                 pass
             finally:
@@ -158,11 +160,8 @@ class O:
         while True:
             try:
                 data = self._input_buffer.get(timeout=0.1)
-                if data.signal == O.Signal.STOP:
-                    pass
-                else:
-                    self._operator.run(
-                        data.values, context=data.context, src=data.src)
+                self._operator.run(
+                    data.values, context=data.context, src=data.src)
             except queue.Empty:
                 pass
             finally:
@@ -189,7 +188,6 @@ class BaseOperator(abc.ABC):
     def __init__(self):
         self._context = {}
         self._result = queue.Queue()
-        self._result_thread = None
 
     @abc.abstractmethod
     def run(self, *, values=None, src=None, context={}):
@@ -204,7 +202,8 @@ class BaseOperator(abc.ABC):
 
     def get_result(self):
         try:
-            result, new_context = self._result.get(timeout=0.1)
-            yield result, new_context
+            while True:
+                result, new_context = self._result.get(timeout=0.1)
+                yield result, new_context
         except queue.Empty:
             pass
