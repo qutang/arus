@@ -6,6 +6,7 @@ from concurrent import futures
 import os
 import numpy as np
 import datetime as dt
+import sys
 
 
 @pytest.fixture(scope='module')
@@ -126,7 +127,8 @@ class TestHelper:
         for test_case in filepath_test_cases[5]:
             assert not mh.is_mhealth_filename(test_case)
 
-    def test_parse_pid_from_filepath(self):
+    @pytest.mark.skipif(sys.platform == 'linux', reason="does not run on linux")
+    def test_parse_pid_from_filepath_win(self):
         correct_test_cases = [
             'D:\\data\\spades_lab\\SPADES_7\\MasterSynced\\2015\\11\\19\\16',
             'D:\\data\\spades_lab\\SPADES_7\\MasterSynced\\2015\\11\\19\\16\\',
@@ -230,12 +232,12 @@ class TestHelper:
         for test_case in sensor_test_cases:
             ts = mh.parse_timestamp_from_filepath(test_case, ignore_tz=True)
             ts_unix = moment.Moment(ts).to_unix_timestamp()
-            assert ts_unix == 1447966800.0
+            assert dt.datetime.fromtimestamp(ts_unix) == ts
 
         for test_case in annotation_test_cases:
             ts = mh.parse_timestamp_from_filepath(test_case, ignore_tz=True)
             ts_unix = moment.Moment(ts).to_unix_timestamp()
-            assert ts_unix == 1447966800.0
+            assert dt.datetime.fromtimestamp(ts_unix) == ts
 
     def test_transform_class_category(self, spades_lab):
         class_category = spades_lab['meta']['class_category']

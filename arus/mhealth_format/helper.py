@@ -198,12 +198,12 @@ def is_mhealth_flat_filepath(filepath):
 def is_mhealth_filename(filepath):
     filename = os.path.basename(filepath)
 
-    sensor_filename_pattern = "^{}\-{}\-{}\.{}\-{}\.{}\.sensor\.csv(\.gz)*$".format(
+    sensor_filename_pattern = r"^{}\-{}\-{}\.{}\-{}\.{}\.sensor\.csv(\.gz)*$".format(
         constants.CAMELCASE_PATTERN, constants.CAMELCASE_PATTERN,
         constants.VERSIONCODE_PATTERN, constants.SID_PATTERN, constants.CAMELCASE_PATTERN, constants.FILE_TIMESTAMP_PATTERN
     )
 
-    annotation_filename_pattern = "^{}\.{}\-{}\.{}\.annotation\.csv(\.gz)*$".format(
+    annotation_filename_pattern = r"^{}\.{}\-{}\.{}\.annotation\.csv(\.gz)*$".format(
         constants.CAMELCASE_PATTERN, constants.ANNOTATOR_PATTERN, constants.CAMELCASE_PATTERN, constants.FILE_TIMESTAMP_PATTERN)
 
     sensor_matched = re.search(
