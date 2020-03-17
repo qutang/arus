@@ -13,11 +13,19 @@ from concurrent import futures
 import queue
 import threading
 import logging
+from dataclasses import dataclass, field
+from typing import Any
 
 
 class Scheduler:
     """Scheduler to support different scheduling schemes when running tasks on subprocess workers.
     """
+
+    @dataclass(order=True)
+    class PrioritizedItem:
+        priority: int
+        item: Any = field(compare=False)
+
     class ClosedError(Exception):
         pass
 
@@ -113,14 +121,19 @@ class Scheduler:
 
     def _add_to_results(self, task):
         if self._scheme == Scheduler.Scheme.EXECUTION_ORDER:
-            self._results.put((self._priority_number, task))
+            item = Scheduler.PrioritizedItem(
+                priority=self._priority_number, item=task)
+            self._results.put(item)
             self._priority_number += 1
         elif self._scheme == Scheduler.Scheme.SUBMIT_ORDER:
             i = self._tasks.queue.index(task)
-            self._results.put((i, task))
+            item = Scheduler.PrioritizedItem(priority=i, item=task)
+            self._results.put(item)
         elif self._scheme == Scheduler.Scheme.AFTER_PREVIOUS_DONE:
             task.result()
-            self._results.put((self._priority_number, task))
+            item = Scheduler.PrioritizedItem(
+                priority=self._priority_number, item=task)
+            self._results.put(item)
             self._priority_number += 1
 
     def get_all_remaining_results(self) -> list:
@@ -135,14 +148,14 @@ class Scheduler:
         if self._scheme == Scheduler.Scheme.AFTER_PREVIOUS_DONE:
             while not self._results.empty():
                 t = self._results.get()
-                results.append(t[1].result())
+                results.append(t.item.result())
             t = self._tasks.get()
             results.append(t.result())
         else:
             while not self._results.empty():
                 t = self._results.get()
                 self._tasks.get()
-                results.append(t[1].result())
+                results.append(t.item.result())
         return results
 
     def get_result(self, timeout: float = None) -> tuple:
@@ -161,23 +174,23 @@ class Scheduler:
             if self._scheme == Scheduler.Scheme.EXECUTION_ORDER:
                 task = self._results.get(timeout=timeout)
                 self._tasks.get()
-                return task[1].result()
+                return task.item.result()
             elif self._scheme == Scheduler.Scheme.SUBMIT_ORDER:
                 if not self._results.empty():
                     first_task = self._results.queue[0]
-                    if self._tasks.queue.index(first_task[1]) != 0:
+                    if self._tasks.queue.index(first_task.item) != 0:
                         raise queue.Empty
                     else:
                         first_task = self._results.get()
                         self._tasks.get()
-                        result = first_task[1].result()
+                        result = first_task.item.result()
                         return result
                 else:
                     raise queue.Empty
             elif self._scheme == Scheduler.Scheme.AFTER_PREVIOUS_DONE:
                 if not self._results.empty():
                     task = self._results.get()
-                    return task[1].result()
+                    return task.item.result()
                 elif not self._tasks.empty():
                     return self._tasks.get().result()
                 else:
