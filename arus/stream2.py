@@ -8,7 +8,7 @@ import typing
 from . import o
 
 
-class Stream:
+class Stream(o.BaseOperator):
     """
     The base class for data stream.
 
@@ -23,11 +23,20 @@ class Stream:
             segmentor: a Segmentor instance that is responsible for segmenting the streaming data into chunks.
             name: The name of the data stream will also be used as the name of the sub-thread that is used to load data. Defaults to 'default-stream'.
         """
+        super().__init__()
         self._name = name
         self._generator = o.O(op=generator, t=o.O.Type.INPUT,
                               name=self._name + '-generator')
         self._segmentor = o.O(op=segmentor, t=o.O.Type.PIPE,
                               name=self._name + '-segmentor')
+
+    def run(self, *, values=None, src=None, context={}):
+        logging.info('Stream is starting.')
+        self._segmentor.get_op().set_ref_time(self._context['ref_start_time'])
+        self._generator.get_op().set_context(data_id=self._context['data_id'])
+        self._segmentor.start()
+        self._generator.start()
+        logging.info('Stream started.')
 
     def start(self, start_time: "str, datetime, numpy.datetime64, pandas.Timestamp" = None):
         """Method to start loading data from the provided data source.
@@ -38,11 +47,8 @@ class Stream:
         Note:
             `start_time` is used to sync between multiple streams. If it is `None`, the default value would be extracted from the first sample of the loaded data.
         """
-        logging.info('Stream is starting.')
-        self._segmentor.get_op().set_ref_time(start_time)
-        self._segmentor.start()
-        self._generator.start()
-        logging.info('Stream started.')
+        self._context['ref_start_time'] = start_time
+        self.run()
 
     def stop(self):
         """Stop the loading process."""
@@ -52,11 +58,19 @@ class Stream:
         time.sleep(0.1)
         self._generator.stop()
         logging.info('Generator thread stopped.')
+        super().stop()
         logging.info('Stream stopped.')
 
     def get_result(self):
         while True:
+            if self._stop:
+                break
             data = next(self._generator.produce())
             self._segmentor.consume(data)
             data = next(self._segmentor.produce())
-            yield data
+            if data.signal == o.O.Signal.WAIT:
+                pass
+            elif data.signal == o.O.Signal.DATA:
+                yield data.values, data.context
+            else:
+                pass
