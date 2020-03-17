@@ -34,7 +34,6 @@ class Segmentor(o.BaseOperator):
         self._et_col = et_col or self._st_col
         self._ref_st = ref_st
         self.reset()
-        self._stop = False
 
     def set_ref_time(self, ts: "str, datetime, numpy.datetime64, pandas.Timestamp"):
         """Set reference start time.
@@ -48,9 +47,6 @@ class Segmentor(o.BaseOperator):
         """Reset the segmentor.
         """
         pass
-
-    def stop(self):
-        self._stop = True
 
     def run(self, values=None, src=None, context={}):
         self._context = {**self._context, **context}
@@ -70,6 +66,8 @@ class Segmentor(o.BaseOperator):
         if data is None:
             return
         for index, row in data.iterrows():
+            if self._stop:
+                break
             yield row, self._context
 
 
@@ -121,6 +119,8 @@ class SlidingWindowSegmentor(Segmentor):
                 return
             segments = self._extract_segments(data)
             for segment, seg_st, seg_et in segments:
+                if self._stop:
+                    break
                 self._current_seg_st = self._current_seg_st or seg_st
                 self._current_seg_et = self._current_seg_et or seg_et
                 if self._current_seg_st == seg_st and self._current_seg_et == seg_et:

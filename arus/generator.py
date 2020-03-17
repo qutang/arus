@@ -37,9 +37,6 @@ class Generator(o.BaseOperator):
         """
         pass
 
-    def stop(self):
-        self._stop = True
-
     def _buffering(self, data):
         if self._buffer_size is None:
             return data

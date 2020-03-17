@@ -158,6 +158,8 @@ class MetaWearAccelDataGenerator(generator.Generator):
 
     def _generate(self):
         while self._callback_started:
+            if self._stop:
+                break
             try:
                 data = self._internal_buffer.get(timeout=0.1)
                 result = self._buffering(data)

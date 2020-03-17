@@ -30,6 +30,7 @@ class Synchronizer(o.BaseOperator):
         self._num = max(0, self._num)
 
     def stop(self):
+        super().stop()
         self.reset()
 
     def reset(self):

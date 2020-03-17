@@ -187,6 +187,7 @@ class BaseOperator(abc.ABC):
 
     def __init__(self):
         self._context = {}
+        self._stop = False
         self._result = queue.Queue()
 
     @abc.abstractmethod
@@ -196,13 +197,14 @@ class BaseOperator(abc.ABC):
     def set_context(self, **context):
         self._context = context
 
-    @abc.abstractmethod
     def stop(self):
-        pass
+        self._stop = True
 
     def get_result(self):
         try:
             while True:
+                if self._stop:
+                    break
                 result, new_context = self._result.get(timeout=0.1)
                 yield result, new_context
         except queue.Empty:
