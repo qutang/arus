@@ -15,16 +15,24 @@ def test_stream(request):
         gr = generator.RandomAccelDataGenerator(
             50, buffer_size=50, max_samples=300)
     seg = segmentor.SlidingWindowSegmentor(window_size=1)
-    return stream2.Stream(gr, seg, name='{}-stream'.format(request.param))
+    stream_op = stream2.Stream(gr, seg, name='{}-stream'.format(request.param))
+    stream_op.set_context(ref_start_time=None, data_id='DW')
+    stream = o.O(
+        op=stream_op,
+        t=o.O.Type.INPUT, name='{}-stream'.format(request.param))
+    return stream
 
 
 def test_stream_lifecycle(test_stream):
     developer.set_default_logging()
     test_stream.start()
     results = []
-    for pack in test_stream.get_result():
+    while True:
+        pack = next(test_stream.produce())
         if pack.signal == o.O.Signal.DATA:
             if pack.values is not None:
+                assert 'start_time' in pack.context
+                assert 'data_id' in pack.context
                 results.append(pack)
             if len(results) == 10 or pack.values is None:
                 break
