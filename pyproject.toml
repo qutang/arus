@@ -64,7 +64,7 @@ rope = "^0.16.0"
 mkdocs = "1.0.4"
 mkdocs-material = "^4.6.3"
 mkdocs-nbconvert = "^0.1.1"
-mkdocstrings = "^0.7.1"
+mkdocstrings = "^0.7.2"
 jupyter = "^1.0.0"
 
 [tool.poetry.scripts]
