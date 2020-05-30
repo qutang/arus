@@ -2,7 +2,7 @@ import queue
 import threading
 import time
 import enum
-import logging
+from loguru import logger
 import typing
 
 from . import o
@@ -31,12 +31,12 @@ class Stream(o.BaseOperator):
                               name=self._name + '-segmentor')
 
     def run(self, *, values=None, src=None, context={}):
-        logging.info('Stream is starting.')
+        logger.info('Stream is starting.')
         self._segmentor.get_op().set_ref_time(self._context['ref_start_time'])
         self._generator.get_op().set_context(data_id=self._context['data_id'])
         self._segmentor.start()
         self._generator.start()
-        logging.info('Stream started.')
+        logger.info('Stream started.')
 
     def start(self, start_time: "str, datetime, numpy.datetime64, pandas.Timestamp" = None):
         """Method to start loading data from the provided data source.
@@ -52,14 +52,14 @@ class Stream(o.BaseOperator):
 
     def stop(self):
         """Stop the loading process."""
-        logging.info('Stream is stopping.')
+        logger.info('Stream is stopping.')
         self._segmentor.stop()
-        logging.info('Segmentor thread stopped.')
+        logger.info('Segmentor thread stopped.')
         time.sleep(0.1)
         self._generator.stop()
-        logging.info('Generator thread stopped.')
+        logger.info('Generator thread stopped.')
         super().stop()
-        logging.info('Stream stopped.')
+        logger.info('Stream stopped.')
 
     def get_result(self):
         while True:

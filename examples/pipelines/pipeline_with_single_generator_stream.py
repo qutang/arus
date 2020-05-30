@@ -8,7 +8,6 @@ This example demonstrates using pipeline with a single sensor generator stream.
 # %%
 # Imports
 # ----------
-import logging
 
 import pandas as pd
 import multiprocessing
@@ -35,11 +34,6 @@ def _pipeline_test_processor(chunk_list, **kwargs):
     result = pd.DataFrame.from_dict(result)
     return result
 
-
-# %%
-# Turn on logging info
-# ----------------------
-arus.dev.set_default_logging()
 
 # %%
 # Setup stream

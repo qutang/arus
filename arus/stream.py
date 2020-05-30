@@ -2,7 +2,7 @@ import queue
 import threading
 import time
 import enum
-import logging
+from loguru import logger
 import typing
 
 
@@ -60,7 +60,7 @@ class Stream:
             `start_time` is used to sync between multiple streams. If it is `None`, the default value would be extracted from the first sample of the loaded data.
         """
         self._status = Stream.Status.START
-        logging.info('Stream is starting.')
+        logger.info('Stream is starting.')
         self._segmentor.set_ref_time(start_time)
         self._loading_thread = self._get_thread_for_loading()
         self._loading_thread.daemon = True
@@ -70,24 +70,25 @@ class Stream:
         self._segment_thread.start()
         while not self._loading_thread.isAlive() or not self._segment_thread.isAlive():
             time.sleep(0.1)
-        logging.info('Stream started.')
+        logger.info('Stream started.')
         self._status = Stream.Status.RUN
 
     def stop(self):
         """Stop the loading process."""
-        logging.info('Stream is stopping.')
+        logger.info('Stream is stopping.')
         self._status = Stream.Status.STOP
-        self._segmentor.reset()
-        logging.info('Segmentor thread stopped.')
+        self._segmentor.stop()
+        self._generator.stop()
+        logger.info('Segmentor thread stopped.')
         time.sleep(0.1)
         self._loading_thread.join(timeout=1)
-        logging.info('Generator thread stopped.')
+        logger.info('Generator thread stopped.')
         with self._output_buffer.mutex:
             self._output_buffer.queue.clear()
         with self._input_buffer.mutex:
             self._input_buffer.queue.clear()
         self._status = Stream.Status.NOT_START
-        logging.info('Stream stopped.')
+        logger.info('Stream stopped.')
 
     def get_status(self) -> "Stream.Status":
         """Get the status code of the stream.
@@ -106,29 +107,30 @@ class Stream:
             target=self._segment, name=self._name + '-segmenting')
 
     def _generate(self):
-        logging.info('Generator thread started.')
-        for data in self._generator.generate():
-            if self._status == Stream.Status.STOP:
-                break
-            self._input_buffer.put(data)
-        self._input_buffer.put(None)
-        logging.info('Generator thread is stopping.')
+        logger.info('Generator thread started.')
+        # for data in self._generator.generate():
+        #     if self._status == Stream.Status.STOP:
+        #         break
+        #     self._input_buffer.put(data)
+        # self._input_buffer.put(None)
+        self._generator.run()
+        logger.info('Generator thread is stopping.')
 
     def _segment(self):
-        logging.info('Segmentor thread started.')
+        logger.info('Segmentor thread started.')
         while True:
             try:
-                data = self._input_buffer.get(timeout=0.1)
+                data, _ = next(self._generator.get_result())
                 if data is None:
                     break
                 for segment in self._segmentor.segment(data):
                     if self._status == Stream.Status.STOP:
                         break
                     self._output_buffer.put(segment + (self._name, ))
-            except queue.Empty:
+            except:
                 pass
             finally:
                 if self._status == Stream.Status.STOP:
                     break
         self._output_buffer.put(None)
-        logging.info('Segmentor thread is stopping.')
+        logger.info('Segmentor thread is stopping.')

@@ -5,11 +5,9 @@ Stream from metawear device
 """
 
 import arus
-import logging
 from datetime import datetime
 
 if __name__ == "__main__":
-    arus.developer.set_default_logging()
     generator = arus.plugins.metawear.MetaWearAccelDataGenerator(
         "F9:DE:3A:BD:B2:84", sr=50, grange=8, max_retries=10, buffer_size=100)
     print(generator.get_device_name())

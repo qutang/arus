@@ -6,7 +6,6 @@ from .. import developer
 
 @click.group()
 def main():
-    developer.set_default_logging()
     pass
 
 

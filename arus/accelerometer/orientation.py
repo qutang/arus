@@ -6,7 +6,7 @@ Author: Qu Tang
 
 Date: Jul 10, 2018
 """
-import logging
+
 import numpy as np
 
 from .. import extensions

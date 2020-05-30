@@ -19,7 +19,7 @@
 # import modules
 import pandas as pd
 from arus.models import muss
-import logging
+from loguru import logger
 import os
 from sklearn import metrics
 import numpy as np
@@ -28,7 +28,7 @@ import matplotlib.pyplot as plt
 
 # %%
 
-arus.dev.set_default_logging()
+arus.dev.set_default_logger()
 
 # constants
 dataset_name = 'spades_lab'
@@ -59,7 +59,7 @@ def prepare_dataset(window_sizes):
         if os.path.exists(output_path):
             continue
         else:
-            logging.info(
+            logger.info(
                 'Processing spades lab using muss with window size {}'.format(ws))
             df = arus.dataset.process_mehealth_dataset(
                 spades_lab, approach='muss', window_size=ws, sr=80)
@@ -81,14 +81,14 @@ def prepare_validation(window_sizes, dataset_paths, spades_lab):
     window_sizes = [12.8] + window_sizes
     prepared_ds = []
     for d, ws in zip(ds, window_sizes):
-        logging.info("Preparing dataset for window size: {}".format(ws))
+        logger.info("Preparing dataset for window size: {}".format(ws))
         p_feature_sets = []
         for p in placements:
             cond = d['PLACEMENT'] == p
             p_feature_set = d.loc[cond, :]
             del p_feature_set['PLACEMENT']
             p_feature_sets.append(p_feature_set)
-        logging.info('  merging placement features')
+        logger.info('  merging placement features')
         prepared, feature_names = arus.ext.pandas.merge_all(
             *p_feature_sets,
             suffix_names=placements,
@@ -112,7 +112,7 @@ def prepare_validation(window_sizes, dataset_paths, spades_lab):
             input_category='FINEST_ACTIVITIES',
             output_category='MUSS_22_ACTIVITIES'
         )
-        logging.info('  filtering classes')
+        logger.info('  filtering classes')
         prepared = arus.ext.pandas.filter_column(prepared,
                                                  'ACTIVITIES',
                                                  values_to_filter_out=['Unknown', 'Transition'])
@@ -136,7 +136,7 @@ def run_validation(prepared_ds, class_category):
     results = {}
     for prepared in prepared_ds:
         muss_model = muss.MUSSModel()
-        logging.info('Validating for window size: {} and category: {}'.format(
+        logger.info('Validating for window size: {} and category: {}'.format(
             prepared[3], class_category))
         input_class_vec, output_class_vec, class_labels, acc = muss_model.validate_classifier(
             prepared[0], prepared[1], class_col=class_category, feature_names=prepared[2], placement_names=placements, group_col=arus.mh.FEATURE_SET_PID_COL)

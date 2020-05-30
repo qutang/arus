@@ -44,7 +44,6 @@ def prepare_streams():
 
 
 if __name__ == "__main__":
-    arus.dev.set_default_logging()
     start_time = dt.datetime.now()
     muss = MUSSModel()
     model = train_test_classifier(muss)

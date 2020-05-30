@@ -1,6 +1,8 @@
 from ..plugins import actigraph
 from .. import testing
 from .. import mhealth_format as mh
+import numpy as np
+import pandas as pd
 import pytest
 
 
@@ -44,14 +46,16 @@ class TestActigraphSensorFileGenerator:
     def test_generate(self, test_file, buffer_size):
         gr = actigraph.ActigraphSensorFileGenerator(
             test_file, buffer_size=buffer_size)
-        results = []
-        for data in gr.generate():
-            results.append(data)
+        sizes = []
+        gr.run()
+        for data, _ in gr.get_result():
+            if data is None:
+                break
+            assert type(data) == pd.DataFrame
+            sizes.append(data.shape[0])
         if buffer_size is None:
-            assert len(results) == 1
-            assert results[0].shape[0] > 1000
+            assert len(sizes) == 1
+            assert sizes[0] > 18000
         else:
-            assert len(results) > 1
-            assert results[0].shape[0] == 1000
-        assert results[0].shape[1] == 4
-        assert results[0].columns[0] == mh.constants.TIMESTAMP_COL
+            sizes = sizes[:-1]
+            assert np.all(np.array(sizes) == 1000)

@@ -1,8 +1,8 @@
 # %%
 
 import arus
-import logging
-arus.dev.set_default_logging()
+from loguru import logger
+arus.dev.set_default_logger()
 
 # %% [markdown]
 # ## input operators
@@ -20,7 +20,7 @@ while True:
     data = next(op.produce())
     if data.signal == arus.O.Signal.WAIT:
         continue
-    logging.info(data)
+    logger.info(data)
     if i == 2:
         break
     i += 1
@@ -42,7 +42,7 @@ while True:
     data = next(op.produce())
     if data.signal == arus.O.Signal.WAIT:
         continue
-    logging.info(data)
+    logger.info(data)
     if i == 2:
         break
     i += 1
@@ -65,7 +65,7 @@ while True:
     data = next(op.produce())
     if data.signal == arus.O.Signal.WAIT:
         continue
-    logging.info(data)
+    logger.info(data)
     if i == 2:
         break
     i += 1
@@ -96,7 +96,7 @@ while True:
     data = next(op.produce())
     if data.signal == arus.O.Signal.WAIT:
         continue
-    logging.info(data)
+    logger.info(data)
     if i == 2:
         break
     i += 1
@@ -145,7 +145,7 @@ while True:
     data = next(op.produce())
     if data.signal == arus.O.Signal.WAIT:
         continue
-    logging.info(data)
+    logger.info(data)
     break
 op.stop()
 
@@ -185,6 +185,6 @@ while True:
     data = next(op.produce())
     if data.signal == arus.O.Signal.WAIT:
         continue
-    logging.info(data)
+    logger.info(data)
     break
 op.stop()

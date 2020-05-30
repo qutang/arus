@@ -11,7 +11,7 @@ import queue
 import pandas as pd
 from . import extensions
 from . import moment
-import logging
+from loguru import logger
 from . import o
 
 
@@ -114,7 +114,7 @@ class SlidingWindowSegmentor(Segmentor):
         else:
             et = data.iloc[-1, self._et_col]
             if self._ref_st is not None and moment.Moment(self._ref_st).to_unix_timestamp() > moment.Moment(et).to_unix_timestamp():
-                logging.warning(
+                logger.warning(
                     'Referenced start time is after the end time of the input data, this generates no segments from the data.')
                 return
             segments = self._extract_segments(data)

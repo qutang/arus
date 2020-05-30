@@ -28,7 +28,7 @@ import pathos.helpers as phelpers
 import numpy as np
 import queue
 import pandas as pd
-import logging
+from loguru import logger
 import threading
 import time
 
@@ -134,11 +134,11 @@ class Pipeline:
             bool: `True` if the pipeline is shut down correctly.
         """
         try:
-            logging.info('Stop pipeline...')
+            logger.info('Stop pipeline...')
             self._connected = False
             time.sleep(0.2)
             if self._started:
-                logging.info('Wait for processing tasks...')
+                logger.info('Wait for processing tasks...')
                 self._process_tasks.join()
                 self._process_tasks.queue.clear()
                 time.sleep(0.2)
@@ -148,18 +148,18 @@ class Pipeline:
                 self._process_cond.notify_all()
             time.sleep(0.2)
             if self._pool is not None:
-                logging.info('Close processing pool...')
+                logger.info('Close processing pool...')
                 self._pool.close()
                 self._pool.join()
-            logging.info('Stop input streams...')
+            logger.info('Stop input streams...')
             for stream in self._streams:
                 stream.stop()
-            logging.info('Clear result queue...')
+            logger.info('Clear result queue...')
             with self._queue.mutex:
                 self._queue.queue.clear()
-            logging.info('Stopped.')
+            logger.info('Stopped.')
         except Exception as e:
-            logging.error(e)
+            logger.error(e)
             return False
         return True
 
@@ -174,7 +174,7 @@ class Pipeline:
 
     def _is_running(self):
         if self.started:
-            logging.warning(
+            logger.warning(
                 'It is not allowed to modify streams while pipeline is running, please stop the pipeline at first')
             return True
         else:
@@ -265,9 +265,13 @@ class Pipeline:
             if self._started:
                 for stream in self._streams:
                     if stream.get_status() == stream.Status.RUN:
-                        for data, st, et, prev_st, prev_et, name in stream.generate():
+                        for data, context, name in stream.generate():
+                            st = context['start_time']
+                            et = context['stop_time']
+                            prev_st = context['prev_start_time']
+                            prev_et = context['prev_stop_time']
                             if self._is_data_after_start_time(st):
-                                logging.debug(
+                                logger.debug(
                                     'recieved data window from ' + name)
                                 self._chunks[st.timestamp()] = [] if st.timestamp(
                                 ) not in self._chunks else self._chunks[st.timestamp()]
@@ -279,7 +283,7 @@ class Pipeline:
                             self._process_synced_chunks(
                                 st, et, prev_st, prev_et, self.name)
                         else:
-                            logging.debug('Discard one stream window' + str(
+                            logger.debug('Discard one stream window' + str(
                                 st) + 'coming before process start time: ' + str(self._process_start_time))
                 if np.all([stream.get_status() != stream.Status.RUN for stream in self._streams]):
                     self._streams_running = False
@@ -302,7 +306,7 @@ class Pipeline:
                         self._process_tasks.task_done()
                     if self._preserve_status:
                         self._prev_output.put(result)
-                    logging.info('Sending processed results to queue...')
+                    logger.info('Sending processed results to queue...')
                     self._put_result_in_queue(
                         (result, st, et, prev_st, prev_et, name))
                 except queue.Empty:
@@ -341,7 +345,7 @@ class Pipeline:
                             (task, st, et, prev_st, prev_et, name))
                         del self._chunks[st.timestamp()]
                     except ValueError as e:
-                        logging.error(e)
+                        logger.error(e)
                         return
                 if self._preserve_status:
                     self._prev_input.put(chunk_list)
@@ -353,15 +357,15 @@ class Pipeline:
                     del self._chunks[st.timestamp()]
                 elif self._pool is not None:
                     try:
-                        logging.info('Starting a processing task...')
+                        logger.info('Starting a processing task...')
                         task = self._pool.apipe(self._processor, chunk_list,
                                                 **self._processor_kwargs)
-                        logging.info('Started a processing task...')
+                        logger.info('Started a processing task...')
                         self._process_tasks.put(
                             (task, st, et, prev_st, prev_et, name))
                         del self._chunks[st.timestamp()]
                     except Exception as e:
-                        logging.error(e)
+                        logger.error(e)
                         return
 
     def _put_result_in_queue(self, result):

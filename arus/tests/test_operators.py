@@ -5,7 +5,6 @@ from .. import processor as pr
 from .. import scheduler as sch
 from .. import o
 import numpy as np
-import logging
 
 
 def test_random_data_generator_operator():

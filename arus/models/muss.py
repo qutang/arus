@@ -58,6 +58,8 @@ def muss_inference_processor(chunk_list, **kwargs):
         combined_df, feature_names=model[-1])
     predicted_probs = muss.predict(
         filtered_combined_df, model=model, output_prob=True)
+    print(model[0].classes_)
+    print(predicted_probs)
     return predicted_probs, filtered_combined_df, None
 
 

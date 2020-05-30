@@ -1,5 +1,5 @@
 import queue
-import logging
+from loguru import logger
 import threading
 import time
 import enum
@@ -57,10 +57,10 @@ class O:
 
     def start(self):
         if self._status == O.Status.OFF:
-            logging.warn('Please turn on the operator at first')
+            logger.warn('Please turn on the operator at first')
             return
         self._status = O.Status.START
-        logging.info('Operator is starting.')
+        logger.info('Operator is starting.')
         self._produce_thread = threading.Thread(
             target=self._produce, name=self._name + '-produce')
         self._produce_thread.daemon = True
@@ -72,21 +72,21 @@ class O:
         self._result_thread.start()
         while not self._produce_thread.is_alive() or not self._result_thread.is_alive():
             time.sleep(0.1)
-        logging.info('Operator started.')
+        logger.info('Operator started.')
 
     def stop(self):
-        logging.info('Operator is stopping.')
+        logger.info('Operator is stopping.')
         self._operator.stop()
         self._status = O.Status.STOP
         self._produce_thread.join()
         self._result_thread.join()
-        logging.info('Operator thread stopped.')
+        logger.info('Operator thread stopped.')
         with self._input_buffer.mutex:
             self._input_buffer.queue.clear()
         with self._output_buffer.mutex:
             self._output_buffer.queue.clear()
         self._status = O.Status.ON
-        logging.info('Stream stopped.')
+        logger.info('Stream stopped.')
 
     def consume(self, pack):
         if self._type != O.Type.INPUT:
@@ -95,7 +95,7 @@ class O:
             else:
                 self._input_buffer.put(pack)
         else:
-            logging.warn('INPUT operator does not support consume method')
+            logger.warn('INPUT operator does not support consume method')
 
     def produce(self):
         """A python generator function to get the output of the operator.
@@ -171,7 +171,7 @@ class O:
                 O.Pack(values=None, signal=O.Signal.STOP, context={}, src=self._name))
 
     def _produce(self):
-        logging.info('Operator thread started.')
+        logger.info('Operator thread started.')
         if self._type == O.Type.INPUT:
             self._produce_from_input()
         elif self._type == O.Type.OUTPUT:
@@ -179,8 +179,8 @@ class O:
         elif self._type == O.Type.PIPE:
             self._produce_from_pipe()
         else:
-            logging.error('Unknown type for the operator')
-        logging.info('Operator thread is stopping.')
+            logger.error('Unknown type for the operator')
+        logger.info('Operator thread is stopping.')
 
 
 class BaseOperator(abc.ABC):

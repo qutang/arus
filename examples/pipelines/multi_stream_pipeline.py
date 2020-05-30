@@ -9,7 +9,6 @@ from arus.core.pipeline import Pipeline
 import arus
 import datetime as dt
 import pandas as pd
-import logging
 
 
 def _pipeline_test_processor(chunk_list, **kwargs):
@@ -25,7 +24,6 @@ def _pipeline_test_processor(chunk_list, **kwargs):
 
 
 if __name__ == "__main__":
-    arus.dev.set_default_logging()
 
     window_size = 12.8
     start_time = dt.datetime.now()

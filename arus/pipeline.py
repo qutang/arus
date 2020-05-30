@@ -2,7 +2,7 @@ import queue
 import threading
 import time
 import enum
-import logging
+from loguru import logger
 import typing
 
 from . import o
@@ -35,12 +35,12 @@ class Pipeline(o.BaseOperator):
                               name=self._name + '-processor')
 
     def run(self, *, values=None, src=None, context={}):
-        logging.info('Stream is starting.')
+        logger.info('Stream is starting.')
         for stream in self._streams:
             stream.start()
         self._synchronizer.start()
         self._processor.start()
-        logging.info('Stream started.')
+        logger.info('Stream started.')
 
     def start(self, start_time: "str, datetime, numpy.datetime64, pandas.Timestamp" = None):
         """Method to start loading data from the provided data source.
@@ -57,17 +57,17 @@ class Pipeline(o.BaseOperator):
     def stop(self):
         super().stop()
         """Stop the loading process."""
-        logging.info('Stream is stopping.')
+        logger.info('Stream is stopping.')
         self._processor.stop()
-        logging.info('Processor thread stopped.')
+        logger.info('Processor thread stopped.')
         time.sleep(0.1)
         self._synchronizer.stop()
-        logging.info('Synchronizer thread stopped.')
+        logger.info('Synchronizer thread stopped.')
         time.sleep(0.1)
         for stream in self._streams:
             stream.stop()
-        logging.info('Stream threads stopped.')
-        logging.info('Stream stopped.')
+        logger.info('Stream threads stopped.')
+        logger.info('Stream stopped.')
 
     def shutdown(self):
         self._processor.get_op().shutdown()

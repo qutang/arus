@@ -4,7 +4,7 @@ Utilities for developers.
 1. Zip and release datasets to github.
 2. Bump package versions.
 3. Build packages and apps.
-4. Control logging handlers.
+4. Control logger handlers.
 
 Author: Qu Tang
 Date: 01/30/2020
@@ -12,7 +12,7 @@ License: GNU v3
 """
 import tarfile
 import os
-import logging
+from loguru import logger
 import sys
 
 import dephell_versioning as deph
@@ -28,12 +28,12 @@ from . import mhealth_format as mh
 def compress_dataset(source_dir, out_dir, out_name):
     os.makedirs(out_dir, exist_ok=True)
     if command_is_available('tar --version'):
-        logging.info('Use tar to compress dataset...')
+        logger.info('Use tar to compress dataset...')
         output_path = os.path.join(out_dir, out_name)
         subprocess.run(
             'tar --exclude=".git" --exclude="DerivedCrossParticipants" --exclude=".gitignore" -zcvf {} -C {} *'.format(output_path, source_dir), shell=True)
     else:
-        logging.info('Use Python tar module to compress dataset...')
+        logger.info('Use Python tar module to compress dataset...')
 
         def exclude(tarinfo):
             if 'DerivedCrossParticipants' in tarinfo.name or '.git' in tarinfo.name or '.gitignore' in tarinfo.name:
@@ -44,7 +44,7 @@ def compress_dataset(source_dir, out_dir, out_name):
             tar.add(source_dir, arcname=os.path.basename(
                 source_dir), filter=exclude)
 
-    logging.info('Compression is completed.')
+    logger.info('Compression is completed.')
 
 
 def command_is_available(cmd):
@@ -94,20 +94,20 @@ def bump_package_version(root, name, nver, dev=False):
             version=cver, rule=nver, scheme='semver')
     if dev:
         nver = nver + '+9000'
-    logging.info('new version is ' + nver)
+    logger.info('new version is ' + nver)
     confirm = input("Confirm to continue [y/n]?")
     if confirm.lower() == 'y':
         if command_is_available('poetry') and os.path.exists(os.path.join(root, 'pyproject.toml')):
-            logging.info('Bump poetry package version')
+            logger.info('Bump poetry package version')
             subprocess.run("poetry version " + nver, shell=True, cwd=root)
 
         if os.path.exists(os.path.join(root, name, '__init__.py')):
-            logging.info('Bump package version file')
+            logger.info('Bump package version file')
             deph.bump_file(path=pathlib.Path('arus', '__init__.py'),
                            old=cver, new=nver)
 
         if os.path.exists(os.path.join(root, 'news.md')):
-            logging.info('Update news')
+            logger.info('Update news')
             _bump_news_version(nver, dev_version=dev)
         return nver
     else:
@@ -117,7 +117,7 @@ def bump_package_version(root, name, nver, dev=False):
 def commit_repo(message, repo_root=None):
     assert command_is_available('git')
     repo_root = repo_root or os.getcwd()
-    logging.info('Commit with message: ' + message)
+    logger.info('Commit with message: ' + message)
     subprocess.run('git add .', cwd=repo_root, shell=True)
     subprocess.run('git commit -m "{}"'.format(message),
                    cwd=repo_root, shell=True)
@@ -127,7 +127,7 @@ def tag_repo(version, message=None, repo_root=None):
     assert command_is_available('git')
     repo_root = repo_root or os.getcwd()
     message = message or "Tag with version {}".format(version)
-    logging.info(
+    logger.info(
         'Tag repo with version {} and message: {}'.format(version, message))
     subprocess.run('git tag -a v{} -m {}'.format(version,
                                                  message), cwd=repo_root, shell=True)
@@ -143,12 +143,12 @@ def push_repo(branch='master', repo_root=None):
 def push_tag(version, repo_root=None):
     assert command_is_available('git')
     repo_root = repo_root or os.getcwd()
-    logging.info('Push tag v{}'.format(version))
+    logger.info('Push tag v{}'.format(version))
     subprocess.run('git push origin v' + version, cwd=repo_root, shell=True)
 
 
 def make_sphinx_website(repo_root, docs_folder):
-    logging.info('Clean up old documentation website')
+    logger.info('Clean up old documentation website')
     shutil.rmtree(os.path.join(repo_root, docs_folder,
                                'build'), ignore_errors=True)
     shutil.rmtree(os.path.join(repo_root, docs_folder, 'source',
@@ -156,14 +156,14 @@ def make_sphinx_website(repo_root, docs_folder):
     shutil.rmtree(os.path.join(repo_root, docs_folder,
                                'source', 'examples'), ignore_errors=True)
 
-    logging.info('Making sphinx documentation website')
+    logger.info('Making sphinx documentation website')
     # build docs
     cwd = os.path.join(repo_root, docs_folder)
     subprocess.run("make html", shell=True, cwd=cwd)
 
 
 def build_arus_app(root, app_name, version):
-    logging.info('Build {}'.format(app_name))
+    logger.info('Build {}'.format(app_name))
     shutil.rmtree('./apps/{}/build'.format(app_name), ignore_errors=True)
     shutil.rmtree('./apps/{}/dist'.format(app_name), ignore_errors=True)
 
@@ -181,24 +181,12 @@ def build_arus_app(root, app_name, version):
     shutil.rmtree('./apps/{}/build'.format(app_name), ignore_errors=True)
 
 
-def logging_dict(data, level=logging.INFO):
+def logger_dict(data):
     info = pprint.pformat(data, width=1)
-    logging.log(level=level, msg=info)
+    logger.info(info)
 
 
-def logging_st_and_et(st, et, level=logging.INFO):
+def logger_st_and_et(st, et):
     st_str = st.strftime('%Y-%m-%d %H:%M:%S.%f')
     et_str = et.strftime('%Y-%m-%d %H:%M:%S.%f')
-    logging.log(level=level, msg="{} - {}".format(st_str, et_str))
-
-
-def set_default_logging(to_file=None):
-    handlers = []
-    if to_file is not None:
-        handlers.append(logging.FileHandler(to_file))
-    handlers.append(logging.StreamHandler(sys.stdout))
-    logging.root.handlers = []
-    logging.basicConfig(
-        level=logging.INFO,
-        format='[%(levelname)s]%(asctime)s <P%(process)d-%(threadName)s> %(message)s',
-        handlers=handlers)
+    logger.info("{} - {}".format(st_str, et_str))

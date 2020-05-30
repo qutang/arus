@@ -7,7 +7,7 @@ License: GNU v3
 """
 
 import functools
-import logging
+from loguru import logger
 import os
 import subprocess
 import tarfile
@@ -69,7 +69,7 @@ def process_dataset(dataset_name, approach='muss'):
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
     processed_dataset.to_csv(
         output_path, float_format='%.6f', header=True, index=False)
-    logging.info('Processed {} dataset is saved to {}'.format(
+    logger.info('Processed {} dataset is saved to {}'.format(
         dataset_name, output_path))
     dataset_dict['processed'][approach] = output_path
     return dataset_dict
@@ -89,12 +89,12 @@ def decompress_dataset(dataset_path, original_name):
     cwd = os.path.dirname(dataset_path)
     name = os.path.basename(dataset_path).split('.')[0]
     if developer.command_is_available('tar --version'):
-        logging.info('Using system tar command to decompress dataset file')
+        logger.info('Using system tar command to decompress dataset file')
         decompress_cmd = ['tar', '-xzf', dataset_path]
         subprocess.run(' '.join(decompress_cmd),
                        check=True, shell=True, cwd=cwd)
     else:
-        logging.info('Using Python tar module to decompress data file')
+        logger.info('Using Python tar module to decompress data file')
         tar = tarfile.open(dataset_path)
         tar.extractall(path=cwd)
         tar.close()

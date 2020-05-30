@@ -58,7 +58,6 @@ def sample_pipeline(spades_lab):
 
 
 def test_pipeline_lifecycle(sample_pipeline):
-    developer.set_default_logging()
     sample_pipeline.start()
     results = []
     while True:

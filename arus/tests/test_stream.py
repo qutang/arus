@@ -24,7 +24,6 @@ def test_stream(request):
 
 
 def test_stream_lifecycle(test_stream):
-    developer.set_default_logging()
     test_stream.start()
     results = []
     while True:

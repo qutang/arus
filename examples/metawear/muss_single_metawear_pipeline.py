@@ -9,7 +9,6 @@ from arus.testing import load_test_data
 import pandas as pd
 import arus
 from datetime import datetime
-import logging
 
 
 def train_test_classifier(muss):
@@ -43,7 +42,6 @@ def prepare_streams():
 
 
 if __name__ == "__main__":
-    arus.developer.set_default_logging()
     muss = MUSSModel()
     model = train_test_classifier(muss)
     stream = prepare_streams()

@@ -4,13 +4,13 @@
 
 # %%
 import arus
-import logging
+from loguru import logger
 
 # %% [markdown]
 # ## stream with random data generator
 
 # %%
-arus.dev.set_default_logging()
+arus.dev.set_default_logger()
 
 gr = arus.generator.RandomAccelDataGenerator(
     50, buffer_size=25, max_samples=75)
@@ -24,7 +24,7 @@ stream.start()
 i = 0
 for data in stream.get_result():
     if data.signal == arus.O.Signal.DATA:
-        logging.info(data)
+        logger.info(data)
         if i == 3 or data.values is None:
             break
         i += 1
@@ -35,7 +35,7 @@ stream.stop()
 # ## stream with metawear generator
 
 # %%
-arus.dev.set_default_logging()
+arus.dev.set_default_logger()
 
 addrs = arus.plugins.metawear.MetaWearScanner().get_nearby_devices(max_devices=1)
 gr = arus.plugins.metawear.MetaWearAccelDataGenerator(
@@ -50,7 +50,7 @@ stream.start()
 i = 0
 for data in stream.get_result():
     if data.signal == arus.O.Signal.DATA:
-        logging.info(data)
+        logger.info(data)
         if i == 3 or data.values is None:
             break
         i += 1

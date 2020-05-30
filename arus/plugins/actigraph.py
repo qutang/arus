@@ -9,14 +9,19 @@ class ActigraphSensorFileGenerator(generator.Generator):
         self._filepaths = filepaths
         self._reader = None
 
-    def generate(self):
+    def run(self, values=None, src=None, context={}):
         for filepath in self._filepaths:
             self._reader = ActigraphReader(filepath)
             self._reader.read(chunksize=self._buffer_size)
             for data in self._reader.get_data():
+                if self._stop:
+                    break
                 result = self._buffering(data)
                 if result is not None:
-                    yield result
+                    self._result.put((result, self._context))
+            if self._stop:
+                break
+        self._result.put((None, self._context))
 
 
 class ActigraphReader:

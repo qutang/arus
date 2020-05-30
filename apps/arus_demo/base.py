@@ -1,7 +1,7 @@
 import queue
 import PySimpleGUI as sg
 import enum
-import logging
+from loguru import logger
 
 
 class BaseEvent(enum.Enum):
@@ -46,7 +46,7 @@ class BaseWindow:
 
     def dispatch_events(self):
         for event in self._events.queue:
-            logging.info('Dispatch event: ' + str(event))
+            logger.info('Dispatch event: ' + str(event))
             if event == BaseEvent.CLOSE_WINDOW:
                 return True
             else:

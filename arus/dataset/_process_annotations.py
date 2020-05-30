@@ -1,6 +1,5 @@
 import numpy as np
 from .. import moment
-import logging
 from .. import mhealth_format as mh
 
 

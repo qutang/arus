@@ -1,5 +1,5 @@
 import enum
-import logging
+from loguru import logger
 import queue
 import time
 
@@ -140,8 +140,8 @@ class TaskWindow(base.BaseWindow):
                     self._timer.get_total_lapsed_time(
                         formatted=True) + ' seconds.'
                 self._task = None
-                logging.info("Training lapsed time: " +
-                             self._timer.get_total_lapsed_time(formatted=True))
+                logger.info("Training lapsed time: " +
+                            self._timer.get_total_lapsed_time(formatted=True))
 
     def _dispatch_events(self, event):
         if event == Event.START_TASK:

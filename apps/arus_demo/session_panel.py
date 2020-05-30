@@ -3,7 +3,7 @@ import app_state as app
 import dashboard
 import backend
 import os
-import logging
+from loguru import logger
 import traceback
 import arus
 
@@ -34,7 +34,7 @@ class SessionSelectionPanel:
         while True:
             event, _ = window.read()
             if event == self._continue_button.Key:
-                logging.info('Restoring application status..')
+                logger.info('Restoring application status..')
                 file_path = sg.PopupGetFile('Select the pkl file to restore session', title='Continue a session',
                                             default_extension='.pkl', initial_folder=app.AppState._snapshot_path)
                 if file_path is None:
@@ -67,7 +67,7 @@ class SessionSelectionPanel:
                     log_file = os.path.join(
                         app.AppState._path, 'logs', app_state.pid + '.log')
                     os.makedirs(os.path.dirname(log_file), exist_ok=True)
-                    arus.dev.set_default_logging(to_file=log_file)
+                    arus.dev.set_default_logger(to_file=log_file)
                     demo = dashboard.Dashboard(
                         title='Arus Demo Session: ' + app_state.pid)
                     demo.start()
@@ -75,6 +75,6 @@ class SessionSelectionPanel:
                     print(e)
                     print(traceback.format_exc())
                 finally:
-                    logging.info('Saving application status..')
+                    logger.info('Saving application status..')
                     app.AppState.snapshot()
         window.close()

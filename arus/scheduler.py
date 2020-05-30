@@ -12,7 +12,7 @@ import enum
 from concurrent import futures
 import queue
 import threading
-import logging
+from loguru import logger
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -103,7 +103,7 @@ class Scheduler:
             A future instance of the pending submitted task.
         """
         if self._close:
-            logging.warning('Scheduler is closed for new tasks.')
+            logger.warning('Scheduler is closed for new tasks.')
             raise Scheduler.ClosedError('Scheduler is closed for new tasks.')
         if self._scheme == Scheduler.Scheme.AFTER_PREVIOUS_DONE:
             try:

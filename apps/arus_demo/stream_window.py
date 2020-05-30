@@ -1,5 +1,5 @@
 import enum
-import logging
+from loguru import logger
 import queue
 import time
 import datetime as dt
@@ -242,17 +242,21 @@ class StreamWindow(base.BaseWindow):
                 self._selected_placements.append(event)
             else:
                 self._selected_placements.remove(event)
-            logging.info('Selected placements: ' +
-                         str(self._selected_placements))
+            logger.info('Selected placements: ' +
+                        str(self._selected_placements))
 
-        if self._state.nearby_devices is not None:
-            self._selected_placement_addrs = [self._selected_devices[[
-                'DW', 'DA', 'DT'].index(placement)] for placement in self._selected_placements]
+        if self._state.nearby_devices is not None and len(self._selected_devices) >= 3:
+            self._selected_placement_addrs = [
+                self._selected_devices[
+                    ['DW', 'DA', 'DT'].index(placement)
+                ] for placement in self._selected_placements
+            ]
 
         if self._pipeline is not None:
             self._latest_inference, st, et, _, _, _ = next(
                 self._pipeline.get_iterator(timeout=0.02))
             if self._latest_inference is not None:
+                logger.info(self._latest_inference)
                 self.format_inference_result()
                 self.add_to_result()
                 self._events.put(Event.INFERENCE_UPDATE)
@@ -345,7 +349,7 @@ class StreamWindow(base.BaseWindow):
         elif event == Event.SAVE_ANNOTATION:
             self.save_annotation()
         elif event == Event.ANNOTATION_SAVED:
-            logging.info('Annotation is saved.')
+            logger.info('Annotation is saved.')
         elif event == Event.MODE_CHANGED:
             if self._selected_mode == backend.PROCESSOR_MODE.COLLECT_ONLY:
                 self.enable_placement_selections()
@@ -527,7 +531,7 @@ class StreamWindow(base.BaseWindow):
             pid=self._state.pid,
             session_name=session_name
         )
-        logging.info('Saving annotation...')
+        logger.info('Saving annotation...')
 
     def disable_scan_button(self):
         self._scan_button.update('Scanning...', disabled=True)

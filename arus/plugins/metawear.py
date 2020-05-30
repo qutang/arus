@@ -1,6 +1,6 @@
 
 
-import logging
+from loguru import logger
 import queue
 import time
 
@@ -33,7 +33,7 @@ class MetaWearScanner():
         retries = 0
         max_devices = 100 if max_devices is None else max_devices
         while retries < 5 and len(metawears) < max_devices:
-            logging.info('Scanning metawear devices nearby...')
+            logger.info('Scanning metawear devices nearby...')
             try:
                 retries += 1
                 candidates = mw_discover.discover_devices(timeout=1)
@@ -41,7 +41,7 @@ class MetaWearScanner():
                     map(lambda d: d[0],
                         filter(lambda d: d[1] == 'MetaWear', candidates)))
             except ValueError as e:
-                logging.error(str(e))
+                logger.error(str(e))
                 continue
         return list(metawears)
 
@@ -140,7 +140,7 @@ class MetaWearAccelDataGenerator(generator.Generator):
         self._device.accelerometer.notifications(callback=None)
         time.sleep(1)
         self._device.disconnect()
-        logging.info('Disconnected.')
+        logger.info('Disconnected.')
         self._callback_started = False
         self._internal_buffer.queue.clear()
         super().stop()
@@ -175,25 +175,25 @@ class MetaWearAccelDataGenerator(generator.Generator):
             formatted = self._format_data_as_mhealth(data)
             self._internal_buffer.put(formatted)
             if self._input_count == 0:
-                logging.info('Accelerometer callback starts running...')
+                logger.info('Accelerometer callback starts running...')
                 with self._start_condition:
                     self._callback_started = True
                     self._start_condition.notify_all()
 
             self._input_count = self._input_count + 1
             if self._input_count == self._sr:
-                logging.debug('Received data for one second')
+                logger.debug('Received data for one second')
                 self._input_count = 1
 
         def _start():
-            logging.info('starting accelerometer module...')
+            logger.info('starting accelerometer module...')
             self._device.accelerometer.notifications(
                 callback=_callback)
             with self._start_condition:
-                logging.info("Waiting for accelerometer callback to start...")
+                logger.info("Waiting for accelerometer callback to start...")
                 self._start_condition.wait(timeout=2)
             if self._callback_started:
-                logging.info(
+                logger.info(
                     'Accelerometer callback started successfully.')
                 pattern = self._device.led.load_preset_pattern(
                     'solid', repeat_count=0xff)
@@ -201,7 +201,7 @@ class MetaWearAccelDataGenerator(generator.Generator):
                 self._device.led.play()
                 return True
             else:
-                logging.warning(
+                logger.warning(
                     'Accelerometer callback did not start successfully.')
                 return False
         return _start()
@@ -217,12 +217,12 @@ class MetaWearAccelDataGenerator(generator.Generator):
                 if count_retry == self._max_retries:
                     raise Exception(
                         "Max retry reaches, still cannot connect to device: " + self._addr)
-                logging.error(str(e))
-                logging.info(str(count_retry) +
-                             ' retry connect to ' + self._addr)
+                logger.error(str(e))
+                logger.info(str(count_retry) +
+                            ' retry connect to ' + self._addr)
                 count_retry = count_retry + 1
                 time.sleep(1)
-        logging.info("New metawear connected: {0}".format(
+        logger.info("New metawear connected: {0}".format(
             self._device))
         mw.libmetawear.mbl_mw_metawearboard_set_time_for_response(
             self._device.mw.board, 4000)

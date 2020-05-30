@@ -9,7 +9,7 @@ import os
 import enum
 import queue
 import numpy as np
-import logging
+from loguru import logger
 
 muss = MUSSModel()
 
@@ -204,7 +204,7 @@ def prepare_new_dataset(dataset, labels, class_col, progress_queue):
     progress_queue.put(
         'Preparing feature and classes for the new collected data...')
     new_feature = dataset.iloc[:, :-2]
-    new_class = dataset.iloc[:, [0, 1, 2, -3]]
+    new_class = dataset.iloc[:, [0, 1, 2, -2]]
     new_class = new_class.rename(
         columns={'GT_LABEL': class_col})
     progress_queue.put('Filtering out unused class labels...')
@@ -345,8 +345,8 @@ def get_classification_report_table(validation_result):
 
 
 def connect_devices(devices, model, placement_names=['DW', 'DA'], mode=PROCESSOR_MODE.TEST_ONLY, output_folder=None, pid=None, pool=None):
-    logging.info('device addrs: ' + str(devices))
-    logging.info('device placements: ' + str(placement_names))
+    logger.info('device addrs: ' + str(devices))
+    logger.info('device placements: ' + str(placement_names))
     pool = pool or pools.ThreadPool(nodes=1)
     pool.restart(force=True)
     device_addrs = devices
@@ -359,7 +359,7 @@ def connect_devices(devices, model, placement_names=['DW', 'DA'], mode=PROCESSOR
     for addr, placement in zip(device_addrs, placement_names):
         generator = arus.plugins.metawear.MetaWearAccelDataGenerator(
             addr, sr=50, grange=8, buffer_size=100)
-        segmentor = arus.segmentor.SlidingWindowSegmentor(window_size=2)
+        segmentor = arus.segmentor.SlidingWindowSegmentor(window_size=4)
         stream = arus.Stream(generator, segmentor, name=placement)
         streams.append(stream)
         kwargs[placement] = {'sr': 50}

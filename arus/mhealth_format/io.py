@@ -7,7 +7,7 @@ from . import helper
 from . import constants
 import functools
 import os
-import logging
+from loguru import logger
 import numpy as np
 from concurrent import futures
 
@@ -74,7 +74,7 @@ class MhealthFileWriter:
             if len(done) != len(writing_tasks):
                 raise IOError('Some chunks are not written to files correctly')
             else:
-                logging.info('All chunks have been written to files.')
+                logger.info('All chunks have been written to files.')
                 return [f.result() for f in done]
         else:
             return writing_tasks
@@ -144,14 +144,14 @@ class MhealthFileWriter:
         elif self._file_type == constants.ANNOTATION_FILE_TYPE:
             fmt = '%s'
         if append == False or not os.path.exists(output_filepath):
-            logging.debug(
+            logger.debug(
                 'Overwriting existing file for {} if there are any'.format(
                     output_filepath)
             )
             np.savetxt(output_filepath, text, delimiter=",",
                        fmt=fmt, header=header, comments='')
         else:
-            logging.debug(
+            logger.debug(
                 'Appending to existing file for {} if there are any'.format(output_filepath))
             with open(output_filepath, 'ab') as f:
                 np.savetxt(f, text, delimiter=",",

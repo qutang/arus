@@ -4,9 +4,9 @@
 import arus
 import pandas as pd
 import numpy as np
-import logging
+from loguru import logger
 import time
-arus.dev.set_default_logging()
+arus.dev.set_default_logger()
 
 
 # %%
@@ -46,7 +46,7 @@ while True:
             data['ST'] = st
             data['ET'] = et
             i = streams.index(stream)
-            logging.info('data from: {}, {}'.format(
+            logger.info('data from: {}, {}'.format(
                 name, i))
             results[name].append(data)
             if len(results[name]) == 20:
