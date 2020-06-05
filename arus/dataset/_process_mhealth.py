@@ -48,7 +48,7 @@ def _parse_kwargs(approach, kwargs):
     if 'sr' not in kwargs:
         raise NotImplementedError('You must provide a valid sampling rate')
 
-    developer.logging_dict(kwargs, level=logging.INFO)
+    developer.logging_dict(kwargs)
     logging.info('sr: {}'.format(kwargs['sr']))
     logging.info('window size: {}'.format(kwargs['window_size']))
     return kwargs

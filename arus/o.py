@@ -57,7 +57,7 @@ class O:
 
     def start(self):
         if self._status == O.Status.OFF:
-            logger.warn('Please turn on the operator at first')
+            logger.warning('Please turn on the operator at first')
             return
         self._status = O.Status.START
         logger.info('Operator is starting.')
@@ -95,7 +95,7 @@ class O:
             else:
                 self._input_buffer.put(pack)
         else:
-            logger.warn('INPUT operator does not support consume method')
+            logger.warning('INPUT operator does not support consume method')
 
     def produce(self):
         """A python generator function to get the output of the operator.

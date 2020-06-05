@@ -181,12 +181,12 @@ def build_arus_app(root, app_name, version):
     shutil.rmtree('./apps/{}/build'.format(app_name), ignore_errors=True)
 
 
-def logger_dict(data):
+def logging_dict(data):
     info = pprint.pformat(data, width=1)
     logger.info(info)
 
 
-def logger_st_and_et(st, et):
+def logging_st_and_et(st, et):
     st_str = st.strftime('%Y-%m-%d %H:%M:%S.%f')
     et_str = et.strftime('%Y-%m-%d %H:%M:%S.%f')
     logger.info("{} - {}".format(st_str, et_str))
