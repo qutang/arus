@@ -24,13 +24,6 @@ def bump(root, name, nver, dev=False, release=False):
         developer.push_tag(new_version)
 
 
-@main.command(short_help='make documentation website')
-@click.argument('root')
-@click.option('-f', '--folder', default='docs', help='The folder storing sphinx docs')
-def website(root, folder):
-    developer.make_sphinx_website(root, folder)
-
-
 @main.group(short_help='build or run arus apps')
 @click.pass_context
 def app(ctx):

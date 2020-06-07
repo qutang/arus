@@ -147,21 +147,6 @@ def push_tag(version, repo_root=None):
     subprocess.run('git push origin v' + version, cwd=repo_root, shell=True)
 
 
-def make_sphinx_website(repo_root, docs_folder):
-    logger.info('Clean up old documentation website')
-    shutil.rmtree(os.path.join(repo_root, docs_folder,
-                               'build'), ignore_errors=True)
-    shutil.rmtree(os.path.join(repo_root, docs_folder, 'source',
-                               'generated'), ignore_errors=True)
-    shutil.rmtree(os.path.join(repo_root, docs_folder,
-                               'source', 'examples'), ignore_errors=True)
-
-    logger.info('Making sphinx documentation website')
-    # build docs
-    cwd = os.path.join(repo_root, docs_folder)
-    subprocess.run("make html", shell=True, cwd=cwd)
-
-
 def build_arus_app(root, app_name, version):
     logger.info('Build {}'.format(app_name))
     shutil.rmtree('./apps/{}/build'.format(app_name), ignore_errors=True)
