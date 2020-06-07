@@ -112,8 +112,8 @@ class TestCore:
             '%Y-%m-%d-%H-%M-%S') == '2015-09-24-16-00-00'
 
     def test_get_date_folders(self, spades_lab):
-        date_folders = mh.get_date_folders(
-            'SPADES_1', spades_lab['meta']['root'])
+        date_folders = sorted(mh.get_date_folders(
+            'SPADES_1', spades_lab['meta']['root']))
         test_dates = [
             '2015/09/24/14',
             '2015/09/24/15',
