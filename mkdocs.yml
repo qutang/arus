@@ -41,6 +41,9 @@ theme:
   include_homepage_in_sidebar: false
   prev_next_buttons_location: none
 
+extra_css:
+  - assets/css/extra.css
+
 plugins:
   - search
   - mkdocstrings:
