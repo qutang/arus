@@ -1,6 +1,20 @@
 from .. import generator
 from .. import mhealth_format as mh
 import pandas as pd
+import datetime
+import os
+
+ACTIGRAPH_TEMPLATE = """------------ Data File Created By ActiGraph GT3X+ ActiLife v6.13.3 Firmware v2.5.0 date format M/d/yyyy at {} Hz  Filter Normal -----------
+Serial Number: CLE2B2013XXXX
+Start Time {}
+Start Date {}
+Epoch Period (hh:mm:ss) 00:00:00
+Download Time {}
+Download Date {}
+Current Memory Address: 0
+Current Battery Voltage: 4.21     Mode = 12
+--------------------------------------------------
+Accelerometer X,Accelerometer Y,Accelerometer Z"""
 
 
 class ActigraphSensorFileGenerator(generator.Generator):
@@ -93,3 +107,24 @@ def convert_actigraph_timestamp(timestamps):
         timestamps, format='%m/%d/%Y %H:%M:%S.%f')
     result = result.astype('datetime64[ms]')
     return result
+
+
+def save_as_actigraph(out_df, output_filepath, session_st=None, session_et=None, sr=50):
+    session_st = session_st or out_df.iloc[0, 0].to_datetime()
+    session_et = session_et or out_df.iloc[-1, 0].to_datetime()
+    meta_sdate_str = '{dt.month}/{dt.day}/{dt.year}'.format(
+        dt=session_st)
+    meta_stime_str = session_st.strftime('%H:%M:%S')
+    meta_edate_str = '{dt.month}/{dt.day}/{dt.year}'.format(
+        dt=session_et)
+    meta_etime_str = (session_et +
+                      datetime.timedelta(hours=1)).strftime('%H:%M:%S')
+    if not os.path.exists(output_filepath):
+        # create
+        with open(output_filepath, mode='w') as f:
+            f.write(ACTIGRAPH_TEMPLATE.format(
+                sr, meta_stime_str, meta_sdate_str, meta_etime_str, meta_edate_str))
+            f.write('\n')
+    # append
+    out_df.to_csv(output_filepath, mode='a', index=False,
+                  header=False, float_format='%.6f')
