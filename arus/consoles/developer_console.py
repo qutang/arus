@@ -24,30 +24,6 @@ def bump(root, name, nver, dev=False, release=False):
         developer.push_tag(new_version)
 
 
-@main.group(short_help='build or run arus apps')
-@click.pass_context
-def app(ctx):
-    ctx.ensure_object(dict)
-
-
-@app.command(short_help='build app')
-@click.argument('root')
-@click.argument('name')
-@click.argument('version')
-@click.pass_context
-def build(ctx, root, name, version):
-    developer.build_arus_app(root, name, version)
-
-
-@app.command(short_help='run app')
-@click.argument('root')
-@click.argument('name')
-@click.pass_context
-def run(ctx, root, name):
-    subprocess.run(['python', os.path.join(
-        root, 'apps', name, 'main.py')], shell=True)
-
-
 @main.group(short_help="manipulate dataset")
 @click.argument('name')
 @click.pass_context

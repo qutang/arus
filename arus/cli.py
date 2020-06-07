@@ -2,16 +2,17 @@
 
 Usage:
   arus signaligner [<file_type> -f | --folder <folder> -p | --pid <pid> --sr <sampling_rate> --method <method> --debug]
-  arus mhealth --pattern <file_pattern> --flat --hourly -p | --pid <pid> --data_id <data_id>
+  arus app [<app_command> -f | --folder <folder> --name <name> --version <version>]
   arus -h | --help
   arus -v | --version
 
 Options:
   -h, --help                        Show help message
-  -v, --version                     Show program version
+  -v, --version                     Program/app version
   --pattern <file_pattern>          Filepath pattern to get the files
   --sr <sampling_rate>              The sampling rate of the converted data
-  -f <folder>, --folder <folder>    Dataset folder
+  -f <folder>, --folder <folder>    Dataset folder.
+  --name <name>                     Provided name string.
   --method <method>                 The method used for conversion: "interp" or "closest"
   --flat                            Flat mhealth folder structure (date folder only)
   --hourly                          Split into hourly files
@@ -28,6 +29,7 @@ import glob
 import os
 import alive_progress as progress
 import sys
+import subprocess
 
 
 def cli():
@@ -42,23 +44,29 @@ def cli():
     logger.debug(arguments)
 
     if arguments['signaligner']:
-        pid = arguments['--pid'][0]
-        root = arguments['--folder'][0]
-        file_type = arguments['<file_type>']
-        if file_type == 'sensor':
-            sr = int(arguments['--sr'])
-            method = arguments['--method']
-            convert_to_signaligner(root, pid, file_type, sr=sr, method=method)
-        elif file_type == 'annotation':
-            sr = None
-            method = None
-            convert_to_signaligner(root, pid, file_type, sr=sr, method=method)
-        elif file_type is None:
-            sr = int(arguments['--sr'])
-            method = arguments['--method']
-            convert_to_signaligner_both(root, pid, sr=sr, method=method)
+        signaligner_command(arguments)
+    elif arguments['app']:
+        app_command(arguments)
     elif arguments['mhealth']:
         raise NotImplementedError("This command is not implemented yet")
+
+
+def signaligner_command(arguments):
+    pid = arguments['--pid'][0]
+    root = arguments['--folder'][0]
+    file_type = arguments['<file_type>']
+    if file_type == 'sensor':
+        sr = int(arguments['--sr'])
+        method = arguments['--method']
+        convert_to_signaligner(root, pid, file_type, sr=sr, method=method)
+    elif file_type == 'annotation':
+        sr = None
+        method = None
+        convert_to_signaligner(root, pid, file_type, sr=sr, method=method)
+    elif file_type is None:
+        sr = int(arguments['--sr'])
+        method = arguments['--method']
+        convert_to_signaligner_both(root, pid, sr=sr, method=method)
 
 
 def convert_to_signaligner_both(root, pid, sr, method):
@@ -97,6 +105,20 @@ def convert_to_signaligner(root, pid, file_type, sr, method):
             os.makedirs(os.path.dirname(output_annotation_path), exist_ok=True)
             signaligner.signify_sensor_files(
                 group_files, group, output_path, output_annotation_path, session_span, sr)
+
+
+def app_command(arguments):
+    if arguments['<app_command>'] == 'build':
+        root = arguments['--folder'][0]
+        name = arguments['--name']
+        version = arguments['--version'] or developer._find_current_version(
+            '.', 'arus')
+        developer.build_arus_app(root, name, version)
+    elif arguments['<app_command>'] == 'run':
+        root = arguments['--folder'][0]
+        name = arguments['--name']
+        subprocess.run(['python', os.path.join(
+            root, 'apps', name, 'main.py')], shell=True)
 
 
 if __name__ == "__main__":
