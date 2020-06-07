@@ -67,7 +67,7 @@ class SessionSelectionPanel:
                     log_file = os.path.join(
                         app.AppState._path, 'logs', app_state.pid + '.log')
                     os.makedirs(os.path.dirname(log_file), exist_ok=True)
-                    arus.dev.set_default_logger(to_file=log_file)
+                    logger.add(log_file)
                     demo = dashboard.Dashboard(
                         title='Arus Demo Session: ' + app_state.pid)
                     demo.start()
