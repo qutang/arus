@@ -69,6 +69,10 @@ mkdocs-material = "^4.6.3"
 mkdocs-nbconvert = "^0.1.1"
 mkdocstrings = "^0.7.2"
 jupyter = "^1.0.0"
+mkdocs-minify-plugin = "^0.3.0"
+mkdocs-git-revision-date-localized-plugin = "^0.5.2"
+pygments = "^2.6.1"
+pymdown-extensions = "^7.1"
 
 [tool.poetry.scripts]
 arus_dev = 'arus.consoles.developer_console:main'

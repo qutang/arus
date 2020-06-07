@@ -1,10 +1,84 @@
-site_name: Arus
+# site config
+site_name: ARUS Python package
 site_url: https://qutang.github.io/arus/
-repo_name: "qutang/arus"
-repo_url: https://github.com/qutang/arus/
-site_description: Arus package provides a computational framework to manage and process ubiquitous sensory data for activity recognition.
+site_description: ARUS package provides a computational framework to manage and process ubiquitous sensory data for human activity recognition.
 site_author: Qu Tang
+
+# repo
+repo_name: qutang/arus
+repo_url: https://github.com/qutang/arus
+edit_uri: blob/master/docs/
+
+#Copyright text in the footer
 copyright: 2020 © Qu Tang
+
+# Customization
+extra:
+  social:
+    - type: globe
+      link: https://qutang.dev
+    - type: github
+      link: https://github.com/qutang
+    - type: linkedin
+      link: https://www.linkedin.com/in/qutang
+
+# Material theme for MkDocs : https://github.com/squidfunk/mkdocs-material/
+theme:
+  name: material
+  palette:
+    primary: white
+    accent: orange
+  logo:
+    icon: directions_run
+  font:
+    text: Roboto
+    code: Roboto Mono
+  feature:
+    tabs: true
+  hljs_style: github
+  nav_style: light
+  navigation_depth: 2
+  include_homepage_in_sidebar: false
+  prev_next_buttons_location: none
+
+plugins:
+  - search
+  - mkdocstrings:
+      watch:
+        - arus
+  - minify:
+      minify_html: true
+  - git-revision-date-localized
+
+markdown_extensions:
+  - admonition
+  - markdown.extensions.admonition
+  - markdown.extensions.toc:
+      permalink: "true"
+  - markdown.extensions.attr_list
+  # PyMdown Extensions
+  - pymdownx.caret
+  - pymdownx.critic
+  - pymdownx.details
+  - pymdownx.emoji:
+      emoji_index: !!python/name:pymdownx.emoji.twemoji
+      emoji_generator: !!python/name:pymdownx.emoji.to_svg
+  - pymdownx.inlinehilite
+  - pymdownx.keys
+  - pymdownx.mark
+  - pymdownx.smartsymbols
+  - pymdownx.superfences
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.tilde
+  - codehilite:
+      guess_lang: false
+  - smarty
+  - toc:
+      permalink: "#"
+      baselevel: 2
+
+# Site navigation in the side bar
 nav:
   - Home:
       - "/"
@@ -38,42 +112,5 @@ nav:
           - "examples/dataset/process_raw_dataset.md"
   - Changelog:
       - Changelogs: "news.md"
-theme:
-  name: material
-  palette:
-    primary: "blue grey"
-    accent: "blue"
-  logo:
-    icon: "directions_run"
-  feature:
-    tabs: true
-  hljs_style: github
-  nav_style: light
-  navigation_depth: 2
-  include_homepage_in_sidebar: false
-  prev_next_buttons_location: none
+
 use_directory_urls: true
-markdown_extensions:
-  - admonition
-  - codehilite:
-      guess_lang: false
-  - smarty
-  - toc:
-      permalink: "#"
-      baselevel: 2
-  - pymdownx.superfences
-extra:
-  social:
-    - type: "github"
-      link: "https://github.com/qutang"
-    - type: "linkedin"
-      link: "https://www.linkedin.com/in/qutang"
-plugins:
-  - nbconvert:
-      input_dir: examples
-      recursive: true
-      output_dir: examples
-  - search
-  - mkdocstrings:
-      watch:
-        - arus
