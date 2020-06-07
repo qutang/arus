@@ -27,6 +27,28 @@ def parse_placement_from_str(placement_str):
     return result
 
 
+def parse_date_from_filepath(filepath, ignore_tz=True):
+    tokens = filepath.split(constants.MASTER_FOLDER)[1].split(os.sep)
+    if '-' in tokens[0]:
+        sep = '-'
+    else:
+        sep = os.sep
+    if sep == os.sep:
+        hour = tokens[4].split('-')[0]
+        day = tokens[3]
+        month = tokens[2]
+        year = tokens[1]
+    elif sep == '-':
+        hour = tokens[2].split('-')[0]
+        sub_tokens = tokens[1].split('-')
+        day = sub_tokens[-1]
+        month = sub_tokens[1]
+        year = sub_tokens[0]
+    file_date = dt.datetime(year=int(year), month=int(month), day=int(
+        day), hour=int(hour), minute=0, second=0, microsecond=0)
+    return file_date
+
+
 def parse_timestamp_from_filepath(filepath, ignore_tz=True):
     filename = os.path.basename(filepath)
     if filename.endswith('gz'):
@@ -77,6 +99,19 @@ def parse_pid_from_filepath(filepath):
             )
         )
         return pid
+    except Exception:
+        raise ParseError('Fail to parse pid for the given filepath')
+
+
+def parse_subject_path_from_filepath(filepath):
+    try:
+        assert is_mhealth_filepath(
+            filepath) or is_mhealth_flat_filepath(filepath)
+        subject_folder = os.path.dirname(
+            filepath.split(constants.MASTER_FOLDER)[
+                0].split(constants.DERIVED_FOLDER)[0]
+        )
+        return subject_folder
     except Exception:
         raise ParseError('Fail to parse pid for the given filepath')
 
@@ -138,7 +173,7 @@ def format_date_folder_path_from_data(data, filetype):
     month = st.strftime('%m')
     day = st.strftime('%d')
     hour = st.strftime('%H')
-    return year + os.sep + month + os.sep + day + os.sep + hour
+    return year + '-' + month + '-' + day + os.sep + hour
 
 
 def compare_two_mhealth_filepaths(filepath1, filepath2):

@@ -88,6 +88,31 @@ def get_annotation_files(pid, dataset_path, annotation_type=None, annotator=None
     return sorted(files)
 
 
+def get_date_folders(pid, dataset_path):
+    folder_names = os.listdir(os.path.join(
+        dataset_path, pid, constants.MASTER_FOLDER))
+    if '-' in folder_names:
+        sep = '-'
+    else:
+        sep = os.sep
+    if sep == os.sep:
+        date_folders = glob.glob(os.path.join(
+            dataset_path, pid, constants.MASTER_FOLDER, '*', '*', '*', '*'), recursive=True)
+    elif sep == '-':
+        date_folders = glob.glob(os.path.join(
+            dataset_path, pid, constants.MASTER_FOLDER, '*', '*'), recursive=True)
+    date_folders = list(filter(lambda path: os.path.isdir(path), date_folders))
+    return date_folders
+
+
+def get_session_span(pid, dataset_path):
+    date_folders = get_date_folders(pid, dataset_path)
+    folders_as_ts = list(
+        map(helper.parse_date_from_filepath, date_folders))
+    folders_as_ts = sorted(folders_as_ts)
+    return folders_as_ts[0], folders_as_ts[-1]
+
+
 def get_session_start_time(pid, dataset_path, round_to='hour'):
     smallest = dt.datetime.now()
     filepaths = get_sensor_files(

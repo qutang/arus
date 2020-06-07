@@ -103,6 +103,25 @@ class TestCore:
         assert start_time.strftime(
             '%Y-%m-%d-%H-%M-%S') == '2015-12-14-11-00-00'
 
+    def test_get_session_span(self, spades_lab):
+        session_st, session_et = mh.get_session_span(
+            'SPADES_1', spades_lab['meta']['root'])
+        assert session_st.strftime(
+            '%Y-%m-%d-%H-%M-%S') == '2015-09-24-14-00-00'
+        assert session_et.strftime(
+            '%Y-%m-%d-%H-%M-%S') == '2015-09-24-16-00-00'
+
+    def test_get_date_folders(self, spades_lab):
+        date_folders = mh.get_date_folders(
+            'SPADES_1', spades_lab['meta']['root'])
+        test_dates = [
+            '2015/09/24/14',
+            '2015/09/24/15',
+            '2015/09/24/16',
+        ]
+        for date_folder, test_date in zip(date_folders, test_dates):
+            assert test_date in date_folder.replace(os.sep, '/')
+
 
 class TestHelper:
     def test_is_mhealth_filepath(self, filepath_test_cases):
@@ -238,6 +257,36 @@ class TestHelper:
             ts = mh.parse_timestamp_from_filepath(test_case, ignore_tz=True)
             ts_unix = moment.Moment(ts).to_unix_timestamp()
             assert dt.datetime.fromtimestamp(ts_unix) == ts
+
+    def test_parse_date_from_filepath(self, spades_lab):
+        test_sensor_files = spades_lab['subjects']['SPADES_1']['sensors']['DW']
+        test_dates = [
+            '2015-09-24-14-00-00',
+            '2015-09-24-15-00-00'
+            '2015-09-24-16-00-00'
+        ]
+        for test_case, test_date in zip(test_sensor_files, test_dates):
+            date = mh.parse_date_from_filepath(test_case)
+            date.strftime('%Y-%m-%d-%H-%M-%S') == test_date
+
+        test_annotation_files = spades_lab['subjects']['SPADES_1']['annotations']['SPADESInLab']
+        test_dates = [
+            '2015-09-24-14-00-00',
+            '2015-09-24-15-00-00'
+            '2015-09-24-16-00-00'
+        ]
+        for test_case, test_date in zip(test_annotation_files, test_dates):
+            date = mh.parse_date_from_filepath(test_case)
+            date.strftime('%Y-%m-%d-%H-%M-%S') == test_date
+
+    def test_parse_subject_path_from_filepath(self, spades_lab):
+        test_sensor_file = spades_lab['subjects']['SPADES_1']['sensors']['DW'][0]
+        subject_path = mh.parse_subject_path_from_filepath(test_sensor_file)
+        assert subject_path.endswith('SPADES_1')
+        test_annotation_file = spades_lab['subjects']['SPADES_1']['annotations']['SPADESInLab'][0]
+        subject_path = mh.parse_subject_path_from_filepath(
+            test_annotation_file)
+        assert subject_path.endswith('SPADES_1')
 
     def test_transform_class_category(self, spades_lab):
         class_category = spades_lab['meta']['class_category']
