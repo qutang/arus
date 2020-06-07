@@ -72,6 +72,7 @@ jupyter = "^1.0.0"
 
 [tool.poetry.scripts]
 arus_dev = 'arus.consoles.developer_console:main'
+arus = 'arus.cli:cli'
 
 [build-system]
 requires = ["poetry>=0.12"]
