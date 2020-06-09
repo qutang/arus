@@ -106,11 +106,12 @@ class Scheduler:
             logger.warning('Scheduler is closed for new tasks.')
             raise Scheduler.ClosedError('Scheduler is closed for new tasks.')
         if self._scheme == Scheduler.Scheme.AFTER_PREVIOUS_DONE:
-            try:
-                prev_task = self._tasks.get(timeout=0.05)
-                self._add_to_results(prev_task)
-            except queue.Empty:
-                pass
+            if not self._tasks.empty():
+                try:
+                    prev_task = self._tasks.get()
+                    self._add_to_results(prev_task)
+                except queue.Empty:
+                    pass
             task = self._executor.submit(func, *args, **kwargs)
             self._tasks.put(task)
         else:
