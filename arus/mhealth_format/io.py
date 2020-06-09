@@ -5,6 +5,7 @@
 import pandas as pd
 from . import helper
 from . import constants
+from .. import scheduler
 import functools
 import os
 from loguru import logger
@@ -19,6 +20,10 @@ class MhealthFileReader:
         self._iterator = None
 
     def read_csv(self, chunksize=None, datetime_cols=[0]):
+        """
+        Known isuee:
+        When used with writer, chunksize has to be None
+        """
         reader = pd.read_csv(
             self._filepath, parse_dates=datetime_cols, infer_datetime_format=True, chunksize=chunksize, engine='c')
         if type(reader) == pd.DataFrame:
@@ -42,6 +47,10 @@ class MhealthFileReader:
 
 class MhealthFileWriter:
     def __init__(self, dataset_path, pid, hourly=False, date_folders=False):
+        """
+        Known issue: 
+        hourly has to be set True
+        """
         self._dataset_path = dataset_path
         self._pid = pid
         self._hourly = hourly
@@ -69,13 +78,12 @@ class MhealthFileWriter:
             task = self._executor.submit(self._write_csv, group, append)
             writing_tasks.append(task)
         if block:
-            done, pending = futures.wait(
-                writing_tasks, return_when=futures.ALL_COMPLETED)
-            if len(done) != len(writing_tasks):
+            results = self._executor.get_all_remaining_results()
+            if len(results) != len(writing_tasks):
                 raise IOError('Some chunks are not written to files correctly')
             else:
                 logger.info('All chunks have been written to files.')
-                return [f.result() for f in done]
+                return results
         else:
             return writing_tasks
 
@@ -87,14 +95,15 @@ class MhealthFileWriter:
                 group_key = constants.START_TIME_COL
             groups = data.groupby(pd.Grouper(key=group_key, freq='H'))
             groups = [group for name, group in groups]
+            groups = list(filter(lambda group: not group.empty, groups))
         else:
             groups = [data]
         return groups
 
     def _init_executor(self, n_chunks):
         n = max(min(n_chunks, os.cpu_count() - 8), 1)
-        self._executor = futures.ThreadPoolExecutor(
-            n, thread_name_prefix='mhealth-file-writer')
+        self._executor = scheduler.Scheduler(
+            mode=scheduler.Scheduler.Mode.THREAD, scheme=scheduler.Scheduler.Scheme.SUBMIT_ORDER, max_workers=n)
 
     def _get_output_filename(self, data):
         timestamp_str = helper.format_file_timestamp_from_data(
@@ -140,9 +149,9 @@ class MhealthFileWriter:
         header = ','.join(data.columns.values)
 
         if self._file_type == constants.SENSOR_FILE_TYPE:
-            fmt = ['%s'] + ['%.3f'] * (len(data.columns) - 1)
+            fmt = ['%.23s'] + ['%.3f'] * (len(data.columns) - 1)
         elif self._file_type == constants.ANNOTATION_FILE_TYPE:
-            fmt = '%s'
+            fmt = ['%.23s', '%.23s', '%.23s', '%s']
         if append == False or not os.path.exists(output_filepath):
             logger.debug(
                 'Overwriting existing file for {} if there are any'.format(
