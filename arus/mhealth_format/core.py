@@ -91,7 +91,7 @@ def get_annotation_files(pid, dataset_path, annotation_type=None, annotator=None
 def get_date_folders(pid, dataset_path):
     folder_names = os.listdir(os.path.join(
         dataset_path, pid, constants.MASTER_FOLDER))
-    if '-' in folder_names:
+    if '-' in folder_names[0]:
         sep = '-'
     else:
         sep = os.sep

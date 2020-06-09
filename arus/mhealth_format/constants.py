@@ -18,7 +18,6 @@ META_SUBJECTS_FILENAME = 'subjects.csv'
 META_CLASS_CATEGORY = 'class_category.csv'
 
 FILE_TIMESTAMP_FORMAT = '%Y-%m-%d-%H-%M-%S-%f'
-FILE_TIMESTAMP_FORMAT_WITH_TZ = '%Y-%m-%d-%H-%M-%S-%f-%z'
 
 SENSOR_FILE_TYPE = 'sensor'
 ANNOTATION_FILE_TYPE = 'annotation'

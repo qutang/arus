@@ -29,7 +29,7 @@ def parse_placement_from_str(placement_str):
 
 def parse_date_from_filepath(filepath, ignore_tz=True):
     tokens = filepath.split(constants.MASTER_FOLDER)[1].split(os.sep)
-    if '-' in tokens[0]:
+    if '-' in tokens[1]:
         sep = '-'
     else:
         sep = os.sep
@@ -158,7 +158,9 @@ def format_file_timestamp_from_data(data, filetype):
         col = 1
     st = moment.Moment(data.iloc[0, col]).to_datetime(
         tz=moment.Moment.get_local_timezone())
-    timestamp_str = st.strftime(constants.FILE_TIMESTAMP_FORMAT_WITH_TZ)
+    timestamp_str = st.strftime(constants.FILE_TIMESTAMP_FORMAT)[:-3]
+    timestamp_str += '-' + \
+        st.strftime('%z').replace('-', 'M').replace('+', 'P')
     return timestamp_str
 
 
