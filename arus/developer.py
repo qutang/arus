@@ -186,13 +186,13 @@ def _copy_files_for_website():
 def dev_website():
     _copy_files_for_website()
     generate_changelogs()
-    subprocess.run("mkdocs serve -v")
+    subprocess.run("mkdocs serve -v", shell=True)
 
 
 def build_website():
     _copy_files_for_website()
     generate_changelogs()
-    subprocess.run("mkdocs build -v")
+    subprocess.run("mkdocs build -v", shell=True)
 
 
 def get_git_tags():
