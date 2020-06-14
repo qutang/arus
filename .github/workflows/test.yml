@@ -56,7 +56,7 @@ jobs:
         run: poetry build
 
       - name: Test building apps
-        run: poetry run arus app build -f . --name arus_demo
+        run: poetry run arus app build . arus_demo
 
       - name: Test building website
         run: poetry run mkdocs build --clean
