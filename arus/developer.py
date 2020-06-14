@@ -1,5 +1,5 @@
 """
-Utilities for developers. 
+Utilities for developers.
 
 1. Zip and release datasets to github.
 2. Bump package versions.
@@ -31,7 +31,7 @@ def compress_dataset(source_dir, out_dir, out_name):
         logger.info('Use tar to compress dataset...')
         output_path = os.path.join(out_dir, out_name)
         subprocess.run(
-            'tar --exclude=".git" --exclude="DerivedCrossParticipants" --exclude=".gitignore" -zcvf {} -C {} *'.format(output_path, source_dir), shell=True)
+            f'tar --exclude=".git" --exclude="DerivedCrossParticipants" --exclude=".gitignore" -zcvf {output_path} -C {source_dir} *', shell=True)
     else:
         logger.info('Use Python tar module to compress dataset...')
 
@@ -44,7 +44,7 @@ def compress_dataset(source_dir, out_dir, out_name):
             tar.add(source_dir, arcname=os.path.basename(
                 source_dir), filter=exclude)
 
-    logger.info('Compression is completed.')
+        logger.info('Compression is completed.')
 
 
 def command_is_available(cmd):

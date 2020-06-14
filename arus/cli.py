@@ -1,23 +1,28 @@
 """arus command line application
 
 Usage:
-  arus signaligner [<file_type> -f | --folder <folder> -p | --pid <pid> --sr <sampling_rate> --method <method> --debug]
-  arus app [<app_command> -f | --folder <folder> --name <name> --version <version>]
-  arus -h | --help
-  arus -v | --version
+  arus signaligner FOLDER PID [SR] [-t <file_type>] [--date_range=<date_range>] [--auto_range=<auto_range>] [--debug]
+  arus app APP_COMMAND FOLDER NAME [--app_version=<app_version>]
+  arus dataset DATASET_COMMAND FOLDER DATASET_NAME OUTPUT_FOLDER
+  arus package PACK_COMMAND NEW_VERSION [--dev] [--release]
+  arus --help
+  arus --version
+
+Arguments:
+  FOLDER                                        Dataset folder.
+  PID                                           Participant ID.
+  SR                                            Sampling rate in Hz.
+  APP_COMMAND                                   Sub commands for app command. Either "build" or "run".
+  NAME                                          Name of the app.
+  NEW_VERSION                                   "major", "minor", "patch" or number.
 
 Options:
-  -h, --help                        Show help message
-  -v, --version                     Program/app version
-  --pattern <file_pattern>          Filepath pattern to get the files
-  --sr <sampling_rate>              The sampling rate of the converted data
-  -f <folder>, --folder <folder>    Dataset folder.
-  --name <name>                     Provided name string.
-  --method <method>                 The method used for conversion: "interp" or "closest"
-  --flat                            Flat mhealth folder structure (date folder only)
-  --hourly                          Split into hourly files
-  -p <pid>, --pid <pid>             Participant ID
-  --data_id <data_id>               ID for the data file
+  -t <file_type>, --file_type=<file_type>       File type: either "sensor" or "annotation". If omit, both are included.
+  --date_range=<date_range>                     Date range. E.g., "--date_range 2020-06-01,2020-06-10", or "--date_range 2020-06-01," or "--date_range ,2020-06-10".
+  --auto_range=<auto_range>                     Auto date freq. Default is "W-SUN", or weekly starting from Sunday.
+  --app_version=<app_version>                   App version. If omit, default is the same as the version of arus package.
+  -h, --help                                    Show help message.
+  -v, --version                                 Program/app version.
 """
 
 from docopt import docopt
@@ -26,6 +31,7 @@ from . import developer
 from . import mhealth_format as mh
 from .plugins import signaligner
 import glob
+from datetime import datetime, timedelta
 import os
 import alive_progress as progress
 import sys
@@ -47,40 +53,52 @@ def cli():
         signaligner_command(arguments)
     elif arguments['app']:
         app_command(arguments)
-    elif arguments['mhealth']:
-        raise NotImplementedError("This command is not implemented yet")
+    elif arguments['dataset']:
+        dataset_command(arguments)
+    elif arguments['package']:
+        package_command(arguments)
 
 
 def signaligner_command(arguments):
-    pid = arguments['--pid'][0]
-    root = arguments['--folder'][0]
-    file_type = arguments['<file_type>']
+    pid = arguments['PID']
+    root = arguments['FOLDER']
+    file_type = arguments['--file_type']
+    date_range = arguments['--date_range'].split(
+        ',') if arguments['--date_range'] is not None else None
+    # auto range would be weekly files starting from Sunday
+    auto_range = arguments['--auto_range'] or 'W-SUN'
+    sr = int(arguments['SR']) if arguments['SR'] is not None else None
+
+    logger.debug('Signaligner arguments: {}', [
+                 root, pid, file_type, sr, date_range, auto_range])
+
     if file_type == 'sensor':
-        sr = int(arguments['--sr'])
-        method = arguments['--method']
-        convert_to_signaligner(root, pid, file_type, sr=sr, method=method)
+        convert_to_signaligner(root, pid, file_type, sr=sr,
+                               date_range=date_range, auto_range=auto_range)
     elif file_type == 'annotation':
-        sr = None
-        method = None
-        convert_to_signaligner(root, pid, file_type, sr=sr, method=method)
+        convert_to_signaligner(root, pid, file_type, sr=sr,
+                               date_range=date_range, auto_range=auto_range)
     elif file_type is None:
-        sr = int(arguments['--sr'])
-        method = arguments['--method']
-        convert_to_signaligner_both(root, pid, sr=sr, method=method)
+        convert_to_signaligner_both(
+            root, pid, sr=sr, date_range=date_range, auto_range=auto_range)
 
 
-def convert_to_signaligner_both(root, pid, sr, method):
-    convert_to_signaligner(root, pid, 'annotation', None, None)
-    convert_to_signaligner(root, pid, 'sensor', sr, method)
+def convert_to_signaligner_both(root, pid, sr, date_range=None, auto_range='W-SUN'):
+    convert_to_signaligner(root, pid, 'annotation', sr, date_range, auto_range)
+    convert_to_signaligner(root, pid, 'sensor', sr, date_range, auto_range)
 
 
-def convert_to_signaligner(root, pid, file_type, sr, method):
+def convert_to_signaligner(root, pid, file_type, sr=None, date_range=None, auto_range='W_SUN'):
+    session_span = mh.get_session_span(pid, root)
+    session_span = signaligner.shrink_session_span(session_span, date_range)
+    logger.info('Session span: {}'.format(session_span))
     if file_type == 'annotation':
         filepaths = mh.get_annotation_files(pid, root)
         groups = set(map(mh.parse_annotation_type_from_filepath, filepaths))
     elif file_type == 'sensor':
+        assert sr is not None
         filepaths = mh.get_sensor_files(pid, root)
-        session_span = mh.get_session_span(pid, root)
+        logger.debug(session_span)
         groups = set(map(mh.parse_sensor_id_from_filepath, filepaths))
     logger.debug(groups)
     for group in groups:
@@ -88,37 +106,75 @@ def convert_to_signaligner(root, pid, file_type, sr, method):
         group_files = list(filter(lambda f: group in f, filepaths))
         sensor_type = mh.parse_sensor_type_from_filepath(group_files[0])
 
-        # call signify functions
-        if file_type == 'annotation':
-            output_path = os.path.join(
-                root, pid, mh.DERIVED_FOLDER, 'signaligner', '{}-labelsets'.format(pid), '{0}.{0}-Signaligner.{1}.csv'.format(group, file_type))
-            os.makedirs(os.path.dirname(output_path), exist_ok=True)
-            signaligner.signify_annotation_files(
-                group_files, group, output_path)
-        elif file_type == 'sensor':
-            # set output file paths
-            output_path = os.path.join(
-                root, pid, mh.DERIVED_FOLDER, 'signaligner', '{}-sensors'.format(pid), '{0}-{1}.{1}-Signaligner.{2}.csv'.format(sensor_type, group, file_type))
-            os.makedirs(os.path.dirname(output_path), exist_ok=True)
-            output_annotation_path = os.path.join(os.path.dirname(
-                output_path.replace('sensors', 'labelsets')), 'Missing.{}.annotation.csv'.format(group))
-            os.makedirs(os.path.dirname(output_annotation_path), exist_ok=True)
-            signaligner.signify_sensor_files(
-                group_files, group, output_path, output_annotation_path, session_span, sr)
+        sub_session_markers = signaligner.auto_split_session_span(
+            session_span, auto_range)
+        logger.debug(sub_session_markers)
+        for i in range(len(sub_session_markers) - 1):
+            sub_session_span = sub_session_markers[i:i + 2]
+            st_display = sub_session_span[0].strftime('%Y%m%d%H')
+            et_display = sub_session_span[1].strftime('%Y%m%d%H')
+            logger.info(
+                f'Process sub session: {st_display} - {et_display} based on {auto_range}')
+
+            # call signify functions
+            if file_type == 'annotation':
+                output_path = os.path.join(
+                    root, pid, mh.DERIVED_FOLDER, 'signaligner', f'{pid}_{st_display}_{et_display}_labelsets', f'{pid}_{group}_{st_display}_{et_display}.{file_type}.csv')
+                os.makedirs(os.path.dirname(output_path), exist_ok=True)
+                signaligner.signify_annotation_files(
+                    group_files, group, output_path, sub_session_span)
+            elif file_type == 'sensor':
+                # set output file paths
+                output_path = os.path.join(
+                    root, pid, mh.DERIVED_FOLDER, 'signaligner', f'{pid}_{st_display}_{et_display}_sensors', f'{pid}_{sensor_type}_{group}_{st_display}_{et_display}.{file_type}.csv')
+                os.makedirs(os.path.dirname(output_path), exist_ok=True)
+                output_annotation_path = os.path.join(os.path.dirname(
+                    output_path.replace('sensors', 'labelsets')), f'{pid}_missing_{group}_{st_display}_{et_display}.annotation.csv')
+                os.makedirs(os.path.dirname(
+                    output_annotation_path), exist_ok=True)
+                signaligner.signify_sensor_files(
+                    group_files, group, output_path, output_annotation_path, sub_session_span, sr)
 
 
 def app_command(arguments):
-    if arguments['<app_command>'] == 'build':
-        root = arguments['--folder'][0]
-        name = arguments['--name']
-        version = arguments['--version'] or developer._find_current_version(
+    if arguments['APP_COMMAND'] == 'build':
+        root = arguments['FOLDER']
+        name = arguments['NAME']
+        version = arguments['--app_version'] or developer._find_current_version(
             '.', 'arus')
         developer.build_arus_app(root, name, version)
-    elif arguments['<app_command>'] == 'run':
-        root = arguments['--folder'][0]
-        name = arguments['--name']
+    elif arguments['APP_COMMAND'] == 'run':
+        root = arguments['FOLDER']
+        name = arguments['NAME']
         subprocess.run(['python', os.path.join(
             root, 'apps', name, 'main.py')], shell=True)
+
+
+def dataset_command(arguments):
+    if arguments['DATASET_COMMAND'] == 'compress':
+        root = arguments['FOLDER']
+        name = arguments['DATASET_NAME']
+        output_folder = arguments['OUTPUT_FOLDER']
+        logger.info(
+            f'Compressing dataset as {name}.tar.gz in folder {output_folder}')
+        developer.compress_dataset(root, output_folder, f'{name}.tar.gz')
+
+
+def package_command(arguments):
+    if arguments['PACK_COMMAND'] == 'release':
+        is_dev = arguments['--dev']
+        nver = arguments['NEW_VERSION']
+        release = arguments['--release']
+        _release_package(nver, dev=is_dev, release=release)
+
+
+def _release_package(nver, dev=False, release=False):
+    new_version = developer.bump_package_version('.', 'arus', nver, dev)
+    if new_version is not None and developer.command_is_available('git') and release:
+        developer.commit_repo("Bump version to {}" % new_version)
+        developer.tag_repo(new_version)
+        developer.push_repo()
+        developer.push_tag(new_version)
 
 
 if __name__ == "__main__":
