@@ -197,7 +197,7 @@ def build_website():
 
 def get_git_tags():
     tags = subprocess.check_output(
-        ['git', 'tag'], shell=True, encoding='utf-8', text=True, universal_newlines=True)
+        " ".join(['git', 'tag']), shell=True, encoding='utf-8', text=True, universal_newlines=True)
     tags = tags.split('\n')
     tags = list(map(lambda tag: tag.strip('v'), filter(
         lambda tag: tag.startswith('v'), tags)))
@@ -212,7 +212,7 @@ def generate_changelogs(by_version=True):
         for start_tag in tags:
             start_tag = f'v{start_tag}'
             changelogs = subprocess.check_output(
-                ['git', 'log', f'{start_tag}...{stop_tag}', '--pretty=format:%s-%h'], shell=True, encoding='utf-8',
+                " ".join(['git', 'log', f'{start_tag}...{stop_tag}', '--pretty=format:%s-%h']), shell=True, encoding='utf-8',
                 text=True, universal_newlines=True).split('\n')
             parsed = parse_changelogs(changelogs)
             write_changelog_to_file(parsed, start_tag, stop_tag)
