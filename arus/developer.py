@@ -166,29 +166,30 @@ def build_arus_app(root, app_name, version):
     shutil.rmtree('./apps/{}/build'.format(app_name), ignore_errors=True)
 
 
-def _copy_readme_and_news():
-    readme = os.path.join('.', 'README.md')
-    doc_readme = os.path.join('.', 'docs', 'README.md')
-    if os.path.exists(doc_readme):
-        os.remove(doc_readme)
-    logger.info('Copy README to docs folder')
-    shutil.copyfile(readme, doc_readme)
-
-    news = os.path.join('.', 'news.md')
-    doc_news = os.path.join('.', 'docs', 'news.md')
-    if os.path.exists(doc_news):
-        os.remove(doc_news)
-    logger.info('Copy news.md to docs folder')
-    shutil.copyfile(news, doc_news)
+def _copy_files_for_website():
+    src_files = [
+        "README.md",
+        "news.md",
+        "LICENSE.md",
+        "CODE_OF_CONDUCT.md"
+    ]
+    dest_files = list(map(lambda f: os.path.join('docs', f), src_files))
+    for src_file, dest_file in zip(src_files, dest_files):
+        src_file = os.path.join('.', src_file)
+        dest_file = os.path.join('.', dest_file)
+        if os.path.exists(dest_file):
+            os.remove(dest_file)
+        logger.info(f'Copy {os.path.basename(src_file)} to docs folder')
+        shutil.copyfile(src_file, dest_file)
 
 
 def dev_website():
-    _copy_readme_and_news()
+    _copy_files_for_website()
     subprocess.run("mkdocs serve -v")
 
 
 def build_website():
-    _copy_readme_and_news()
+    _copy_files_for_website()
     subprocess.run("mkdocs build -v")
 
 

@@ -84,7 +84,9 @@ markdown_extensions:
 # Site navigation in the side bar
 nav:
   - Home:
-      - "/"
+      - Overview: "README.md"
+      - License: "LICENSE.md"
+      - Code of conduct: "CODE_OF_CONDUCT.md"
   - API reference:
       - Data Flow:
           - "references/stream.md"
@@ -105,14 +107,14 @@ nav:
       - "references/dataset.md"
       - "references/developer.md"
       - "references/moment.md"
-  - Examples:
-      - Streams:
-          - "examples/streams/run_actigraph_sensor_stream.md"
-          - "examples/streams/run_mhealth_annotation_stream.md"
-          - "examples/streams/run_mhealth_sensor_stream.md"
-      - Scheduler: "examples/scheduler/run_scheduler.md"
-      - Dataset:
-          - "examples/dataset/process_raw_dataset.md"
+  # - Examples:
+  #     - Streams:
+  #         - "examples/streams/run_actigraph_sensor_stream.md"
+  #         - "examples/streams/run_mhealth_annotation_stream.md"
+  #         - "examples/streams/run_mhealth_sensor_stream.md"
+  #     - Scheduler: "examples/scheduler/run_scheduler.md"
+  #     - Dataset:
+  #         - "examples/dataset/process_raw_dataset.md"
   - Changelog:
       - Changelogs: "news.md"
 
