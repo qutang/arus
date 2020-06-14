@@ -59,4 +59,4 @@ jobs:
         run: poetry run arus app build . arus_demo
 
       - name: Test building website
-        run: poetry run mkdocs build --clean
+        run: poetry run arus package docs --release
