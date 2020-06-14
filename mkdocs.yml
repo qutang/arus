@@ -87,6 +87,7 @@ nav:
       - Overview: "README.md"
       - License: "LICENSE.md"
       - Code of conduct: "CODE_OF_CONDUCT.md"
+      - Changelogs: "changelogs/index.md"
   - API reference:
       - Data Flow:
           - "references/stream.md"
@@ -115,7 +116,5 @@ nav:
   #     - Scheduler: "examples/scheduler/run_scheduler.md"
   #     - Dataset:
   #         - "examples/dataset/process_raw_dataset.md"
-  - Changelog:
-      - Changelogs: "news.md"
 
 use_directory_urls: true

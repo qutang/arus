@@ -46,6 +46,7 @@ loky = "^2.6.0"
 loguru = "^0.5.0"
 docopt = "^0.6.2"
 alive-progress = "^1.5.1"
+semver = "^2.10.1"
 
 [tool.poetry.extras]
 metawear = ["pymetawear"]

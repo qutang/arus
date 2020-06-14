@@ -14,13 +14,14 @@ import tarfile
 import os
 from loguru import logger
 import sys
-
+import semver
 import dephell_versioning as deph
 import subprocess
 import pathlib
 import shutil
 import importlib
 import pprint
+import re
 
 from . import mhealth_format as mh
 
@@ -169,7 +170,6 @@ def build_arus_app(root, app_name, version):
 def _copy_files_for_website():
     src_files = [
         "README.md",
-        "news.md",
         "LICENSE.md",
         "CODE_OF_CONDUCT.md"
     ]
@@ -185,12 +185,118 @@ def _copy_files_for_website():
 
 def dev_website():
     _copy_files_for_website()
+    generate_changelogs()
     subprocess.run("mkdocs serve -v")
 
 
 def build_website():
     _copy_files_for_website()
+    generate_changelogs()
     subprocess.run("mkdocs build -v")
+
+
+def get_git_tags():
+    tags = subprocess.check_output(
+        ['git', 'tag'], shell=True, encoding='utf-8', text=True, universal_newlines=True)
+    tags = tags.split('\n')
+    tags = list(map(lambda tag: tag.strip('v'), filter(
+        lambda tag: tag.startswith('v'), tags)))
+    tags = sorted(tags, key=semver.VersionInfo.parse, reverse=True)
+    return tags
+
+
+def generate_changelogs(by_version=True):
+    tags = get_git_tags()
+    stop_tag = 'HEAD'
+    if by_version:
+        for start_tag in tags:
+            start_tag = f'v{start_tag}'
+            changelogs = subprocess.check_output(
+                ['git', 'log', f'{start_tag}...{stop_tag}', '--pretty=format:%s-%h'], shell=True, encoding='utf-8',
+                text=True, universal_newlines=True).split('\n')
+            parsed = parse_changelogs(changelogs)
+            write_changelog_to_file(parsed, start_tag, stop_tag)
+            stop_tag = start_tag
+    write_changelog_index_to_file(tags)
+    return True
+
+
+def parse_changelogs(changelogs):
+    parsed = {}
+    category_map = {
+        'feat': "Features",
+        'refactor': "Refactors",
+        'fix': "Bug fixes",
+        'test': "Test cases"
+    }
+    for changelog in changelogs:
+        tokens = changelog.split('-')
+        msg = tokens[0]
+        commit = tokens[1]
+        category, scope, title = parse_conventional_commit(msg)
+        category = category.lower()
+        if category == "" or category not in category_map:
+            logger.warning(
+                f'Commit {commit} is not a conventional commit, ignore it')
+            continue
+        category = category_map[category]
+        if category in parsed:
+            parsed[category].append(
+                {'scope': scope, 'title': title, 'commit': commit})
+        else:
+            parsed[category] = [
+                {'scope': scope, 'title': title, 'commit': commit}]
+    return parsed
+
+
+def write_changelog_index_to_file(tags):
+    item_template = "* [{tag}]({tag}/)\n"
+    with open(os.path.join('.', 'docs', 'changelogs', 'index.md'), 'w') as f:
+        f.write(f'# Changelogs (Latest stable version: {tags[0]})\n\n')
+        f.write(item_template.format(tag='dev'))
+        for tag in tags:
+            tag = f'v{tag}'
+            f.write(item_template.format(tag=tag))
+
+
+def write_changelog_to_file(parsed_changelogs, start_tag, stop_tag):
+    template = "## {category}"
+
+    item_template = "* {scope}: {title} [{commit}](https://github.com/qutang/arus/commit/{commit})"
+    item_template2 = "* {title} [{commit}](https://github.com/qutang/arus/commit/{commit})"
+
+    if stop_tag == 'HEAD':
+        stop_tag = 'dev'
+
+    os.makedirs(os.path.join('.', 'docs', 'changelogs'), exist_ok=True)
+    with open(os.path.join('.', 'docs', 'changelogs', f'{stop_tag}.md'), 'w') as f:
+        f.write(f'# {stop_tag.upper()}\n')
+        for category in parsed_changelogs:
+            f.write(template.format(category=category))
+            f.write('\n')
+            for item in parsed_changelogs[category]:
+                if item['scope'] == '':
+                    f.write(item_template2.format(
+                        title=item['title'], commit=item['commit']))
+                else:
+                    f.write(item_template.format(
+                        scope=item['scope'], title=item['title'], commit=item['commit']))
+                f.write('\n')
+
+
+def parse_conventional_commit(msg):
+    tokens = msg.split(':')
+    if len(tokens) == 1:
+        return "", "", ""
+    category_scope = tokens[0]
+    title = tokens[1].strip(' ')
+    sub_tokens = re.match(r'(\w+)', category_scope).groups()
+    category = sub_tokens[0]
+    if len(sub_tokens) > 1:
+        scope = sub_tokens[1]
+    else:
+        scope = ""
+    return category, scope, title
 
 
 def logging_dict(data):

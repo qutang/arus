@@ -1438,6 +1438,14 @@ pandas = ">=0.17.1"
 scipy = ">=0.17.1"
 
 [[package]]
+category = "main"
+description = "Python helper for Semantic Versioning (http://semver.org/)"
+name = "semver"
+optional = false
+python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
+version = "2.10.1"
+
+[[package]]
 category = "dev"
 description = "Send file to trash natively under Mac OS X, Windows and Linux."
 name = "send2trash"
@@ -1773,7 +1781,7 @@ demo = ["pysimplegui", "playsound"]
 metawear = ["pymetawear"]
 
 [metadata]
-content-hash = "f8893b2028aebe028b555f6212c9cbe6377b70a42aa5681f0fcc650f96eedf54"
+content-hash = "eaac51f96cbb932bf74cd03cd3bb28d85306336c688c3ac184205ecd8dee7664"
 python-versions = "^3.6.1"
 
 [metadata.files]
@@ -2481,6 +2489,10 @@ scipy = [
 seaborn = [
     {file = "seaborn-0.9.1-py2.py3-none-any.whl", hash = "sha256:2b285662f727c3a94f01c71a96a9c84f3552fa12a57c36ea971e3be3a3e2d5bb"},
     {file = "seaborn-0.9.1.tar.gz", hash = "sha256:da33aa8c20a9a342ce73831d02831a10413f54a05471c7f31edf34f225d456ae"},
+]
+semver = [
+    {file = "semver-2.10.1-py2.py3-none-any.whl", hash = "sha256:21eb9deafc627dfd122e294f96acd0deadf1b5b7758ab3bbdf3698155dca4705"},
+    {file = "semver-2.10.1.tar.gz", hash = "sha256:b08a84f604ef579e474ce448672a05c8d50d1ee0b24cee9fb58a12b260e4d0dc"},
 ]
 send2trash = [
     {file = "Send2Trash-1.5.0-py3-none-any.whl", hash = "sha256:f1691922577b6fa12821234aeb57599d887c4900b9ca537948d2dac34aea888b"},
