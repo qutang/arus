@@ -109,7 +109,7 @@ class TestCore:
         assert session_st.strftime(
             '%Y-%m-%d-%H-%M-%S') == '2015-09-24-14-00-00'
         assert session_et.strftime(
-            '%Y-%m-%d-%H-%M-%S') == '2015-09-24-16-00-00'
+            '%Y-%m-%d-%H-%M-%S') == '2015-09-24-17-00-00'
 
     def test_get_date_folders(self, spades_lab):
         date_folders = sorted(mh.get_date_folders(
