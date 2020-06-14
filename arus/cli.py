@@ -4,7 +4,7 @@ Usage:
   arus signaligner FOLDER PID [SR] [-t <file_type>] [--date_range=<date_range>] [--auto_range=<auto_range>] [--debug]
   arus app APP_COMMAND FOLDER NAME [--app_version=<app_version>]
   arus dataset DATASET_COMMAND FOLDER DATASET_NAME OUTPUT_FOLDER
-  arus package PACK_COMMAND NEW_VERSION [--dev] [--release]
+  arus package PACK_COMMAND [NEW_VERSION] [--dev] [--release]
   arus --help
   arus --version
 
@@ -14,6 +14,7 @@ Arguments:
   SR                                            Sampling rate in Hz.
   APP_COMMAND                                   Sub commands for app command. Either "build" or "run".
   NAME                                          Name of the app.
+  PACK_COMMAND                                  "release", "docs"
   NEW_VERSION                                   "major", "minor", "patch" or number.
 
 Options:
@@ -162,10 +163,18 @@ def dataset_command(arguments):
 
 def package_command(arguments):
     if arguments['PACK_COMMAND'] == 'release':
-        is_dev = arguments['--dev']
+        is_dev = arguments['--dev'] or False
         nver = arguments['NEW_VERSION']
-        release = arguments['--release']
+        assert nver is not None
+        release = arguments['--release'] or False
         _release_package(nver, dev=is_dev, release=release)
+    elif arguments['PACK_COMMAND'] == 'docs':
+        is_dev = arguments['--dev'] or True
+        release = arguments['--release'] or False
+        if is_dev and not release:
+            developer.dev_website()
+        elif release:
+            developer.build_website()
 
 
 def _release_package(nver, dev=False, release=False):

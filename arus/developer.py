@@ -166,6 +166,32 @@ def build_arus_app(root, app_name, version):
     shutil.rmtree('./apps/{}/build'.format(app_name), ignore_errors=True)
 
 
+def _copy_readme_and_news():
+    readme = os.path.join('.', 'README.md')
+    doc_readme = os.path.join('.', 'docs', 'README.md')
+    if os.path.exists(doc_readme):
+        os.remove(doc_readme)
+    logger.info('Copy README to docs folder')
+    shutil.copyfile(readme, doc_readme)
+
+    news = os.path.join('.', 'news.md')
+    doc_news = os.path.join('.', 'docs', 'news.md')
+    if os.path.exists(doc_news):
+        os.remove(doc_news)
+    logger.info('Copy news.md to docs folder')
+    shutil.copyfile(news, doc_news)
+
+
+def dev_website():
+    _copy_readme_and_news()
+    subprocess.run("mkdocs serve -v")
+
+
+def build_website():
+    _copy_readme_and_news()
+    subprocess.run("mkdocs build -v")
+
+
 def logging_dict(data):
     info = pprint.pformat(data, width=1)
     logger.info(info)
