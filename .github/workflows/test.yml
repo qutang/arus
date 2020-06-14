@@ -60,3 +60,12 @@ jobs:
 
       - name: Test building website
         run: poetry run arus package docs --release
+
+      - name: Deploy website
+        uses: peaceiris/actions-gh-pages@v2
+        env:
+          PERSONAL_TOKEN: ${{ secrets.PERSONAL_TOKEN }}
+          PUBLISH_BRANCH: gh-pages
+          PUBLISH_DIR: ./site
+        with:
+          emptyCommits: false
