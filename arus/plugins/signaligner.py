@@ -5,9 +5,11 @@ import alive_progress as progress
 import datetime
 import numpy as np
 from . import actigraph
+from ..extensions.pandas import segment_by_time
+import math
 
 
-def signify_annotation_files(filepaths, data_id, output_path):
+def signify_annotation_files(filepaths, data_id, output_path, session_span):
     dfs = []
     with progress.alive_bar(len(filepaths), bar='blocks') as bar:
         for filepath in filepaths:
@@ -16,19 +18,69 @@ def signify_annotation_files(filepaths, data_id, output_path):
                 filepath, header=0, sep=',', compression="infer", quotechar='"', parse_dates=[0, 1, 2], infer_datetime_format=True)
             df = df[['START_TIME', 'STOP_TIME', 'LABEL_NAME']]
             df.rename(columns={'LABEL_NAME': 'PREDICTION'}, inplace=True)
-            df['SOURCE'] = data_id
+            df['SOURCE'] = "Algo"
             df['LABELSET'] = data_id
             dfs.append(df)
     # merge and sort
     merged = pd.concat(dfs, axis=0)
     merged = merged.sort_values(by=['START_TIME'])
-    merged.to_csv(output_path, index=False)
+    # segment by session span
+    segmented = segment_by_time(
+        merged, seg_st=session_span[0], seg_et=session_span[1], st_col=0, et_col=1)
+
+    segmented['START_TIME'] = segmented['START_TIME'].apply(format_time)
+    segmented['STOP_TIME'] = segmented['STOP_TIME'].apply(format_time)
+    segmented = segmented.loc[segmented['START_TIME']
+                              != segmented['STOP_TIME'], :]
+    segmented.to_csv(output_path, index=False)
+
+
+def format_time(ts):
+    s = ts.strftime('%Y-%m-%d %H:%M:%S')
+    ms = '{:03.0f}'.format(math.floor(ts.microsecond / 1000.0))
+    result = "{}.{}".format(s, ms)
+    return result
+
+
+def auto_split_session_span(session_span, auto_range='W-SUN'):
+    sub_sessions = pd.date_range(session_span[0], session_span[1],
+                                 freq=auto_range, normalize=True).to_pydatetime().tolist()
+    if len(sub_sessions) == 0:
+        sub_sessions = list(session_span)
+    else:
+        if sub_sessions[0].strftime('%Y-%m-%d-%H') != session_span[0].strftime('%Y-%m-%d-%H'):
+            sub_sessions = [session_span[0]] + sub_sessions
+        if sub_sessions[-1].strftime('%Y-%m-%d-%H') != session_span[1].strftime('%Y-%m-%d-%H'):
+            sub_sessions += [session_span[1]]
+    return sub_sessions
+
+
+def shrink_session_span(session_span, date_range=None):
+    if date_range is None:
+        return session_span
+    else:
+        if len(date_range) == 1:
+            st = datetime.datetime.strptime(date_range[0], '%Y-%m-%d')
+            et = None
+        elif len(date_range) == 2:
+            if date_range[0] == '':
+                et = datetime.datetime.strptime(date_range[1], '%Y-%m-%d')
+                st = None
+            else:
+                st = datetime.datetime.strptime(date_range[0], '%Y-%m-%d')
+                et = datetime.datetime.strptime(date_range[1], '%Y-%m-%d')
+        if st > session_span[1] or et < session_span[0]:
+            logger.warning(
+                'Input date range is beyond the available date range of the dataset, ignore it')
+            return session_span
+        st = max(session_span[0], st or session_span[0])
+        et = min(session_span[1], et or session_span[1])
+        return st, et
 
 
 def signify_sensor_files(filepaths, data_id, output_path, output_annotation_path, session_span, sr):
-    logger.debug(sr)
     hourly_markers = pd.date_range(session_span[0], session_span[1],
-                                   freq='1H').to_pydatetime().tolist()
+                                   freq='1H', closed='left').to_pydatetime().tolist()
     n = len(hourly_markers)
     if os.path.exists(output_path):
         logger.info('Remove the existing file')
@@ -72,8 +124,8 @@ def signify_sensor_files(filepaths, data_id, output_path, output_annotation_path
 
 
 def _regularize_samples(start_time, filepath=None, sr=50):
-    freq = str(int(1000 / sr)) + 'L'
-    tolerance = str(int(500 / sr)) + 'L'
+    freq = str(1000 / sr) + 'L'
+    tolerance = str(500 / sr) + 'L'
     sample_ts = pd.date_range(start_time, start_time +
                               datetime.timedelta(hours=1), freq=freq)
     if filepath is None:
@@ -117,7 +169,9 @@ def _data_to_annotation(hourly_df, sr=50):
         'START_TIME': sts,
         'STOP_TIME': ets,
         'PREDICTION': "Missing",
-        'SOURCE': "sensor",
+        'SOURCE': "Algo",
         'LABELSET': "Missing"
     }, index=range(len(sts)))
+    out_df['START_TIME'] = out_df['START_TIME'].apply(format_time)
+    out_df['STOP_TIME'] = out_df['STOP_TIME'].apply(format_time)
     return out_df

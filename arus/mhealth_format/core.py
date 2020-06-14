@@ -110,7 +110,7 @@ def get_session_span(pid, dataset_path):
     folders_as_ts = list(
         map(helper.parse_date_from_filepath, date_folders))
     folders_as_ts = sorted(folders_as_ts)
-    return folders_as_ts[0], folders_as_ts[-1]
+    return folders_as_ts[0], folders_as_ts[-1] + dt.timedelta(hours=1)
 
 
 def get_session_start_time(pid, dataset_path, round_to='hour'):
