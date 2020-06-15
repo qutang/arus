@@ -1,6 +1,7 @@
-# Changelogs (Latest stable version: 0.6.2)
+# Changelogs (Latest stable version: 1.0.0)
 
 * [dev](dev/)
+* [v1.0.0](v1.0.0/)
 * [v0.6.2](v0.6.2/)
 * [v0.6.1](v0.6.1/)
 * [v0.6.0](v0.6.0/)
