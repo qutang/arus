@@ -1,6 +1,0 @@
-arus.core.libs.mhealth\_format.get\_pids\_list
-==============================================
-
-.. currentmodule:: arus.core.libs.mhealth_format
-
-.. autofunction:: get_pids_list

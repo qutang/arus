@@ -1,6 +1,0 @@
-arus.core.stream.GeneratorSlidingWindowStream.started
-=====================================================
-
-.. currentmodule:: arus.core.stream
-
-.. autoproperty:: GeneratorSlidingWindowStream.started

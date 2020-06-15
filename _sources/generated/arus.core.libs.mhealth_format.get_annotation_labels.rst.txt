@@ -1,6 +1,0 @@
-arus.core.libs.mhealth\_format.get\_annotation\_labels
-======================================================
-
-.. currentmodule:: arus.core.libs.mhealth_format
-
-.. autofunction:: get_annotation_labels

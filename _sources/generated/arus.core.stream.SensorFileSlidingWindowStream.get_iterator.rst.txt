@@ -1,6 +1,0 @@
-arus.core.stream.SensorFileSlidingWindowStream.get\_iterator
-============================================================
-
-.. currentmodule:: arus.core.stream
-
-.. automethod:: SensorFileSlidingWindowStream.get_iterator

@@ -1,6 +1,0 @@
-arus.core.stream.AnnotationFileSlidingWindowStream.get\_iterator
-================================================================
-
-.. currentmodule:: arus.core.stream
-
-.. automethod:: AnnotationFileSlidingWindowStream.get_iterator

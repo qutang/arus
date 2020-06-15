@@ -1,6 +1,0 @@
-arus.core.libs.dsp.fill\_nan
-============================
-
-.. currentmodule:: arus.core.libs.dsp
-
-.. autofunction:: fill_nan

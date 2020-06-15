@@ -1,6 +1,0 @@
-arus.core.stream.AnnotationFileSlidingWindowStream.load\_data\_source\_
-=======================================================================
-
-.. currentmodule:: arus.core.stream
-
-.. automethod:: AnnotationFileSlidingWindowStream.load_data_source_

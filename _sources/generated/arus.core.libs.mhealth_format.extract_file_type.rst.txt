@@ -1,6 +1,0 @@
-arus.core.libs.mhealth\_format.extract\_file\_type
-==================================================
-
-.. currentmodule:: arus.core.libs.mhealth_format
-
-.. autofunction:: extract_file_type

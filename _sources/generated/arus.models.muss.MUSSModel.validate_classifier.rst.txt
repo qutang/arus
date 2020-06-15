@@ -1,6 +1,0 @@
-arus.models.muss.MUSSModel.validate\_classifier
-===============================================
-
-.. currentmodule:: arus.models.muss
-
-.. automethod:: MUSSModel.validate_classifier

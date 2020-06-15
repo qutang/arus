@@ -1,6 +1,0 @@
-arus.core.stream.Stream.next
-============================
-
-.. currentmodule:: arus.core.stream
-
-.. automethod:: Stream.next

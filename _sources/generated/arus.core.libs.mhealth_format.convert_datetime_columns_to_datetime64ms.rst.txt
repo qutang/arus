@@ -1,6 +1,0 @@
-arus.core.libs.mhealth\_format.convert\_datetime\_columns\_to\_datetime64ms
-===========================================================================
-
-.. currentmodule:: arus.core.libs.mhealth_format
-
-.. autofunction:: convert_datetime_columns_to_datetime64ms

@@ -1,6 +1,0 @@
-arus.core.accelerometer.features.mean
-=====================================
-
-.. currentmodule:: arus.core.accelerometer.features
-
-.. autofunction:: mean

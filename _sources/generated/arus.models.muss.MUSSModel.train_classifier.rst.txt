@@ -1,6 +1,0 @@
-arus.models.muss.MUSSModel.train\_classifier
-============================================
-
-.. currentmodule:: arus.models.muss
-
-.. automethod:: MUSSModel.train_classifier

@@ -1,6 +1,0 @@
-arus.core.libs.mhealth\_format.get\_start\_time
-===============================================
-
-.. currentmodule:: arus.core.libs.mhealth_format
-
-.. autofunction:: get_start_time

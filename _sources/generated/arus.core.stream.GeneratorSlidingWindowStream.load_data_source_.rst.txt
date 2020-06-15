@@ -1,6 +1,0 @@
-arus.core.stream.GeneratorSlidingWindowStream.load\_data\_source\_
-==================================================================
-
-.. currentmodule:: arus.core.stream
-
-.. automethod:: GeneratorSlidingWindowStream.load_data_source_

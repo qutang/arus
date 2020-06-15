@@ -1,6 +1,0 @@
-arus.core.stream.Stream.get\_iterator
-=====================================
-
-.. currentmodule:: arus.core.stream
-
-.. automethod:: Stream.get_iterator

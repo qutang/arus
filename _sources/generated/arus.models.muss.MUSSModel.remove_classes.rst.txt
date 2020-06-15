@@ -1,6 +1,0 @@
-arus.models.muss.MUSSModel.remove\_classes
-==========================================
-
-.. currentmodule:: arus.models.muss
-
-.. automethod:: MUSSModel.remove_classes

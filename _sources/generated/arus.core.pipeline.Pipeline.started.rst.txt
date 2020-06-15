@@ -1,6 +1,0 @@
-arus.core.pipeline.Pipeline.started
-===================================
-
-.. currentmodule:: arus.core.pipeline
-
-.. autoproperty:: Pipeline.started

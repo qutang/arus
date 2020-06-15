@@ -1,6 +1,0 @@
-arus.core.accelerometer.transformation.vector\_magnitude
-========================================================
-
-.. currentmodule:: arus.core.accelerometer.transformation
-
-.. autofunction:: vector_magnitude

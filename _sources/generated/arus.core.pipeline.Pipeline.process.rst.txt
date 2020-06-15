@@ -1,6 +1,0 @@
-arus.core.pipeline.Pipeline.process
-===================================
-
-.. currentmodule:: arus.core.pipeline
-
-.. automethod:: Pipeline.process

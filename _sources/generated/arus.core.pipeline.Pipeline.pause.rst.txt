@@ -1,6 +1,0 @@
-arus.core.pipeline.Pipeline.pause
-=================================
-
-.. currentmodule:: arus.core.pipeline
-
-.. automethod:: Pipeline.pause

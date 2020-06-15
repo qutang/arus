@@ -1,6 +1,0 @@
-arus.core.pipeline.Pipeline.get\_iterator
-=========================================
-
-.. currentmodule:: arus.core.pipeline
-
-.. automethod:: Pipeline.get_iterator

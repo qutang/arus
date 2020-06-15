@@ -1,6 +1,0 @@
-arus.core.stream.AnnotationFileSlidingWindowStream.start
-========================================================
-
-.. currentmodule:: arus.core.stream
-
-.. automethod:: AnnotationFileSlidingWindowStream.start

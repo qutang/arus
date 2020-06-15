@@ -1,6 +1,0 @@
-arus.core.libs.mhealth\_format.display\_start\_and\_stop\_time
-==============================================================
-
-.. currentmodule:: arus.core.libs.mhealth_format
-
-.. autofunction:: display_start_and_stop_time

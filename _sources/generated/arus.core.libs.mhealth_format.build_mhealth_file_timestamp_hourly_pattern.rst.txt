@@ -1,6 +1,0 @@
-arus.core.libs.mhealth\_format.build\_mhealth\_file\_timestamp\_hourly\_pattern
-===============================================================================
-
-.. currentmodule:: arus.core.libs.mhealth_format
-
-.. autofunction:: build_mhealth_file_timestamp_hourly_pattern

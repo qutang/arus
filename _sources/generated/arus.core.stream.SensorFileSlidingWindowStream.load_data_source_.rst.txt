@@ -1,6 +1,0 @@
-arus.core.stream.SensorFileSlidingWindowStream.load\_data\_source\_
-===================================================================
-
-.. currentmodule:: arus.core.stream
-
-.. automethod:: SensorFileSlidingWindowStream.load_data_source_

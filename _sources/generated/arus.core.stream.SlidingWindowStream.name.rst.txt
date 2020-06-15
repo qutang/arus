@@ -1,6 +1,0 @@
-arus.core.stream.SlidingWindowStream.name
-=========================================
-
-.. currentmodule:: arus.core.stream
-
-.. autoproperty:: SlidingWindowStream.name

@@ -1,6 +1,0 @@
-arus.core.libs.mhealth\_format.get\_init\_placement
-===================================================
-
-.. currentmodule:: arus.core.libs.mhealth_format
-
-.. autofunction:: get_init_placement

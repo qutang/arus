@@ -1,6 +1,0 @@
-arus.models.muss.MUSSModel.remove\_groups
-=========================================
-
-.. currentmodule:: arus.models.muss
-
-.. automethod:: MUSSModel.remove_groups

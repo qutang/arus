@@ -1,6 +1,0 @@
-arus.core.libs.date.datetime2unix
-=================================
-
-.. currentmodule:: arus.core.libs.date
-
-.. autofunction:: datetime2unix

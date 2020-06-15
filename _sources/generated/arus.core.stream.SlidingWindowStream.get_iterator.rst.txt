@@ -1,6 +1,0 @@
-arus.core.stream.SlidingWindowStream.get\_iterator
-==================================================
-
-.. currentmodule:: arus.core.stream
-
-.. automethod:: SlidingWindowStream.get_iterator

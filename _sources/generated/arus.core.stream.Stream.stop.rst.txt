@@ -1,6 +1,0 @@
-arus.core.stream.Stream.stop
-============================
-
-.. currentmodule:: arus.core.stream
-
-.. automethod:: Stream.stop

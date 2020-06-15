@@ -1,6 +1,0 @@
-arus.models.muss.MUSSModel.get\_data\_collection\_pipeline
-==========================================================
-
-.. currentmodule:: arus.models.muss
-
-.. automethod:: MUSSModel.get_data_collection_pipeline

@@ -1,6 +1,0 @@
-arus.core.libs.mhealth\_format.segment\_sensor
-==============================================
-
-.. currentmodule:: arus.core.libs.mhealth_format
-
-.. autofunction:: segment_sensor

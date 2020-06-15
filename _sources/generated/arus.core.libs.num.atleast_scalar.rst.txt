@@ -1,6 +1,0 @@
-arus.core.libs.num.atleast\_scalar
-==================================
-
-.. currentmodule:: arus.core.libs.num
-
-.. autofunction:: atleast_scalar

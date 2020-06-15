@@ -1,6 +1,0 @@
-arus.core.stream.SlidingWindowStream.start
-==========================================
-
-.. currentmodule:: arus.core.stream
-
-.. automethod:: SlidingWindowStream.start

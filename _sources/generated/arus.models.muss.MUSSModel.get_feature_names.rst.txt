@@ -1,6 +1,0 @@
-arus.models.muss.MUSSModel.get\_feature\_names
-==============================================
-
-.. currentmodule:: arus.models.muss
-
-.. automethod:: MUSSModel.get_feature_names

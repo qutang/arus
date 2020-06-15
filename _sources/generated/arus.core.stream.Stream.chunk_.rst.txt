@@ -1,6 +1,0 @@
-arus.core.stream.Stream.chunk\_
-===============================
-
-.. currentmodule:: arus.core.stream
-
-.. automethod:: Stream.chunk_

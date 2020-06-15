@@ -1,6 +1,0 @@
-arus.core.stream.SensorFileSlidingWindowStream.chunk\_
-======================================================
-
-.. currentmodule:: arus.core.stream
-
-.. automethod:: SensorFileSlidingWindowStream.chunk_

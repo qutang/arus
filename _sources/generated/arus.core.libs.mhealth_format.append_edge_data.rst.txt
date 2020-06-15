@@ -1,6 +1,0 @@
-arus.core.libs.mhealth\_format.append\_edge\_data
-=================================================
-
-.. currentmodule:: arus.core.libs.mhealth_format
-
-.. autofunction:: append_edge_data

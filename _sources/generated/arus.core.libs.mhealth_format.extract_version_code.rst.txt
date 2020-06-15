@@ -1,6 +1,0 @@
-arus.core.libs.mhealth\_format.extract\_version\_code
-=====================================================
-
-.. currentmodule:: arus.core.libs.mhealth_format
-
-.. autofunction:: extract_version_code

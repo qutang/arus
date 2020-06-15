@@ -1,6 +1,0 @@
-arus.core.libs.mhealth\_format.get\_placement\_abbr
-===================================================
-
-.. currentmodule:: arus.core.libs.mhealth_format
-
-.. autofunction:: get_placement_abbr

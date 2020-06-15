@@ -1,6 +1,0 @@
-arus.models.muss.MUSSModel.get\_inference\_pipeline
-===================================================
-
-.. currentmodule:: arus.models.muss
-
-.. automethod:: MUSSModel.get_inference_pipeline

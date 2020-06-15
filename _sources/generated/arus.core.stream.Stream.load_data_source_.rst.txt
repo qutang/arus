@@ -1,6 +1,0 @@
-arus.core.stream.Stream.load\_data\_source\_
-============================================
-
-.. currentmodule:: arus.core.stream
-
-.. automethod:: Stream.load_data_source_

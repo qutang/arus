@@ -1,6 +1,0 @@
-arus.core.stream.GeneratorSlidingWindowStream.get\_iterator
-===========================================================
-
-.. currentmodule:: arus.core.stream
-
-.. automethod:: GeneratorSlidingWindowStream.get_iterator

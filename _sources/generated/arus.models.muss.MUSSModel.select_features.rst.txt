@@ -1,6 +1,0 @@
-arus.models.muss.MUSSModel.select\_features
-===========================================
-
-.. currentmodule:: arus.models.muss
-
-.. automethod:: MUSSModel.select_features

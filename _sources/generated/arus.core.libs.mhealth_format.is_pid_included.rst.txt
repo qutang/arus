@@ -1,6 +1,0 @@
-arus.core.libs.mhealth\_format.is\_pid\_included
-================================================
-
-.. currentmodule:: arus.core.libs.mhealth_format
-
-.. autofunction:: is_pid_included

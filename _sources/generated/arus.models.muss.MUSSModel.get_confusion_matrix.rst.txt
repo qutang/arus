@@ -1,6 +1,0 @@
-arus.models.muss.MUSSModel.get\_confusion\_matrix
-=================================================
-
-.. currentmodule:: arus.models.muss
-
-.. automethod:: MUSSModel.get_confusion_matrix

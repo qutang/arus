@@ -1,6 +1,0 @@
-arus.core.libs.mhealth\_format.extract\_pid\_exceptions\_filepath
-=================================================================
-
-.. currentmodule:: arus.core.libs.mhealth_format
-
-.. autofunction:: extract_pid_exceptions_filepath

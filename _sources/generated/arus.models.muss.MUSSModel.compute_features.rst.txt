@@ -1,6 +1,0 @@
-arus.models.muss.MUSSModel.compute\_features
-============================================
-
-.. currentmodule:: arus.models.muss
-
-.. automethod:: MUSSModel.compute_features

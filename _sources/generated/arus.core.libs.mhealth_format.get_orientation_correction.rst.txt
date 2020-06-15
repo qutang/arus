@@ -1,6 +1,0 @@
-arus.core.libs.mhealth\_format.get\_orientation\_correction
-===========================================================
-
-.. currentmodule:: arus.core.libs.mhealth_format
-
-.. autofunction:: get_orientation_correction

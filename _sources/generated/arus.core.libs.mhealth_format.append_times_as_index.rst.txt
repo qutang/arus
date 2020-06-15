@@ -1,6 +1,0 @@
-arus.core.libs.mhealth\_format.append\_times\_as\_index
-=======================================================
-
-.. currentmodule:: arus.core.libs.mhealth_format
-
-.. autofunction:: append_times_as_index

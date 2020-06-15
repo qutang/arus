@@ -1,6 +1,0 @@
-arus.core.stream.AnnotationFileSlidingWindowStream.chunk\_
-==========================================================
-
-.. currentmodule:: arus.core.stream
-
-.. automethod:: AnnotationFileSlidingWindowStream.chunk_

@@ -1,6 +1,0 @@
-arus.models.muss.MUSSModel.combine\_features
-============================================
-
-.. currentmodule:: arus.models.muss
-
-.. automethod:: MUSSModel.combine_features

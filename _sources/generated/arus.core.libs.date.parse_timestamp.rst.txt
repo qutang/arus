@@ -1,6 +1,0 @@
-arus.core.libs.date.parse\_timestamp
-====================================
-
-.. currentmodule:: arus.core.libs.date
-
-.. autofunction:: parse_timestamp

@@ -1,6 +1,0 @@
-arus.core.libs.mhealth\_format.build\_mhealth\_filename
-=======================================================
-
-.. currentmodule:: arus.core.libs.mhealth_format
-
-.. autofunction:: build_mhealth_filename
