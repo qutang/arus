@@ -2,7 +2,7 @@
 
 __ARUS__ python package provides a computational and experimental framework to manage and process sensory data or wireless devices, to develop and run activity recognition algorithms on the data, and to create interactive programs using the algorithms and wireless devices.
 
-This package is licensed under [GNU version 3](/LICENSE).
+This package is licensed under [GPL version 3](https://qutang.github.io/arus/LICENSE/).
 
 [![PyPI version](https://badge.fury.io/py/arus.svg)](https://badge.fury.io/py/arus)  
 [![Downloads](https://pepy.tech/badge/arus)](https://pepy.tech/project/arus)  
@@ -35,6 +35,7 @@ bluez
 # Optionally, you may install plugins via pip extra syntax.
 > pip install arus[metawear]
 > pip install arus[demo]
+> pip install arus[dev]
 ```
 
 ## Optional components
@@ -42,6 +43,8 @@ bluez
 `arus[metawear]`: This optional component installs dependency supports for streaming data from Bluetooth metawear sensors.
 
 `arus[demo]`: This optional component installs dependency supports for running the demo app that demonstrates a real-time interactive activity recognition training and testing program.
+
+`arus[dev]`: These optional component installs dependency supports for running some package and version management functions in the `arus.dev` module.
 
 ## Get started for development
 
@@ -56,7 +59,7 @@ bluez
 > # Install package dependencies
 > poetry install
 > # Install optional component dependencies
-> poetry install --extras "metawear demo"
+> poetry install --extras "metawear demo dev"
 > # Run unit tests
 > poetry run pytest
 ```
