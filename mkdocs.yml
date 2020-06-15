@@ -81,6 +81,7 @@ markdown_extensions:
   - pymdownx.superfences
   - pymdownx.tasklist:
       custom_checkbox: true
+  - pymdownx.tabbed
   - pymdownx.tilde
   - codehilite:
       guess_lang: false
@@ -94,15 +95,17 @@ nav:
   - Home:
       - Overview: "README.md"
       - License: "LICENSE.md"
-      - Code of conduct: "CODE_OF_CONDUCT.md"
+      - Code Of Conduct: "CODE_OF_CONDUCT.md"
       - Changelogs: "changelogs/index.md"
+  - Use the package:
+      - Overview: "tutorials/overview.md"
   - API reference:
       - Data Flow:
           - "references/stream.md"
           - "references/generator.md"
           - "references/segmentor.md"
           - "references/scheduler.md"
-      - Data processing:
+      - Data Processing:
           - "references/accelerometer.md"
       - Plugins:
           - "references/metawear.md"

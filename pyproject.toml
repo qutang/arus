@@ -49,7 +49,7 @@ semver = {version = "^2.10.1", optional = true}
 
 [tool.poetry.extras]
 metawear = ["pymetawear"]
-demo = ["pymetawer", "pysimplegui",'playsound']
+demo = ["pymetawear", "pysimplegui",'playsound']
 dev = ["dephell_versioning", "semver"]
 
 [tool.poetry.dev-dependencies]
