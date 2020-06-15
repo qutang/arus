@@ -1,5 +1,6 @@
 # DEV
 ## Bug fixes
+* set shell to be True when calling subprocess command [9ca6732](https://github.com/qutang/arus/commit/9ca6732)
 * args format when calling subprocess command in developer module [4b74da4](https://github.com/qutang/arus/commit/4b74da4)
 * test case for get_session_span [81d8637](https://github.com/qutang/arus/commit/81d8637)
 * fix outdated commands in test github action [01903f2](https://github.com/qutang/arus/commit/01903f2)
