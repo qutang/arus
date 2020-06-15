@@ -15,3 +15,4 @@ docs/source/examples
 releases/
 .ipynb_checkpoints
 site
+docs/changelogs
