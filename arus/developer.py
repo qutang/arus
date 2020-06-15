@@ -49,7 +49,7 @@ def compress_dataset(source_dir, out_dir, out_name):
 
 
 def command_is_available(cmd):
-    status, output = subprocess.getstatusoutput(cmd)
+    status, output = subprocess.getstatusoutput(cmd + " --version")
     if status == 0:
         return True
     else:
@@ -106,10 +106,6 @@ def bump_package_version(root, name, nver, dev=False):
             logger.info('Bump package version file')
             deph.bump_file(path=pathlib.Path('arus', '__init__.py'),
                            old=cver, new=nver)
-
-        if os.path.exists(os.path.join(root, 'news.md')):
-            logger.info('Update news')
-            _bump_news_version(nver, dev_version=dev)
         return nver
     else:
         return None

@@ -180,7 +180,7 @@ def package_command(arguments):
 def _release_package(nver, dev=False, release=False):
     new_version = developer.bump_package_version('.', 'arus', nver, dev)
     if new_version is not None and developer.command_is_available('git') and release:
-        developer.commit_repo("Bump version to {}" % new_version)
+        developer.commit_repo(f"Bump version to {new_version}")
         developer.tag_repo(new_version)
         developer.push_repo()
         developer.push_tag(new_version)
