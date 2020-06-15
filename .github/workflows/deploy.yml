@@ -61,19 +61,5 @@ jobs:
       - name: Build package
         run: poetry build
 
-      # - name: Build website
-      #   run: |
-      #     poetry run python build_website.py
-      #     touch ./docs/build/html/.nojekyll
-
-      # - name: Deploy website
-      #   uses: peaceiris/actions-gh-pages@v2
-      #   env:
-      #     PERSONAL_TOKEN: ${{ secrets.PERSONAL_TOKEN }}
-      #     PUBLISH_BRANCH: gh-pages
-      #     PUBLISH_DIR: ./docs/build/html
-      #   with:
-      #     emptyCommits: false
-
       - name: Deploy to pypi
         run: poetry run twine upload dist/* --skip-existing -u ${{ secrets.PYPI_USERNAME }} -p ${{ secrets.PYPI_PASSWORD }}
