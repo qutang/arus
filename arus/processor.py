@@ -1,8 +1,8 @@
-from . import o
+from . import operator
 from . import scheduler
 
 
-class Processor(o.BaseOperator):
+class Processor(operator.Operator):
     def __init__(self, func, **kwargs):
         super().__init__()
         self._func = func

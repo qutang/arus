@@ -12,10 +12,10 @@ import pandas as pd
 from . import extensions
 from . import moment
 from loguru import logger
-from . import o
+from . import operator
 
 
-class Segmentor(o.BaseOperator):
+class Segmentor(operator.Operator):
     """Base class for segmentors.
 
     Segmentors are used to segment streaming data and generate chunks in different ways.

@@ -3,7 +3,7 @@ from .. import stream2
 from .. import generator
 from .. import segmentor
 from .. import developer
-from .. import o
+from .. import node
 import pytest
 
 
@@ -17,9 +17,9 @@ def test_stream(request):
     seg = segmentor.SlidingWindowSegmentor(window_size=1)
     stream_op = stream2.Stream(gr, seg, name='{}-stream'.format(request.param))
     stream_op.set_context(ref_start_time=None, data_id='DW')
-    stream = o.O(
+    stream = node.Node(
         op=stream_op,
-        t=o.O.Type.INPUT, name='{}-stream'.format(request.param))
+        t=node.Node.Type.INPUT, name='{}-stream'.format(request.param))
     return stream
 
 
@@ -28,7 +28,7 @@ def test_stream_lifecycle(test_stream):
     results = []
     while True:
         pack = next(test_stream.produce())
-        if pack.signal == o.O.Signal.DATA:
+        if pack.signal == node.Node.Signal.DATA:
             if pack.values is not None:
                 assert 'start_time' in pack.context
                 assert 'data_id' in pack.context

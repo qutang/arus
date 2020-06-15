@@ -6,7 +6,7 @@ from .. import synchronizer
 from .. import processor
 from .. import scheduler
 from .. import pipeline
-from .. import o
+from .. import node
 from .. import mh
 from .. import developer
 import pytest
@@ -51,9 +51,9 @@ def sample_pipeline(spades_lab):
     proc = processor.Processor(
         compute_mean, mode=scheduler.Scheduler.Mode.PROCESS, scheme=scheduler.Scheduler.Scheme.SUBMIT_ORDER, max_workers=10)
 
-    pip = o.O(op=pipeline.Pipeline(dw_stream, da_stream, synchronizer=sync,
-                                   processor=proc, name='test-pipeline'),
-              t=o.O.Type.INPUT, name='test-pipeline')
+    pip = node.Node(op=pipeline.Pipeline(dw_stream, da_stream, synchronizer=sync,
+                                         processor=proc, name='test-pipeline'),
+                    t=node.Node.Type.INPUT, name='test-pipeline')
     return pip
 
 
@@ -62,7 +62,7 @@ def test_pipeline_lifecycle(sample_pipeline):
     results = []
     while True:
         pack = next(sample_pipeline.produce())
-        if pack.signal == o.O.Signal.DATA:
+        if pack.signal == node.Node.Signal.DATA:
             if pack.values is not None:
                 results.append(pack.values)
             if len(results) == 3 or pack.values is None:

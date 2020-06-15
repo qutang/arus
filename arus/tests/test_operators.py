@@ -3,19 +3,19 @@ from .. import segmentor as seg
 from .. import synchronizer as sync
 from .. import processor as pr
 from .. import scheduler as sch
-from .. import o
+from .. import node
 import numpy as np
 
 
 def test_random_data_generator_operator():
     generator = gr.RandomAccelDataGenerator(sr=80, buffer_size=10)
-    op = o.O(generator, name='accel', t=o.O.Type.INPUT)
+    op = node.Node(generator, name='accel', t=node.Node.Type.INPUT)
 
     op.start()
     i = 0
     while True:
         data = next(op.produce())
-        if data.signal == o.O.Signal.WAIT:
+        if data.signal == node.Node.Signal.WAIT:
             continue
         assert data.values.shape[0] == 10
         if i == 2:
@@ -29,13 +29,13 @@ def test_mhealth_file_generator_operator(spades_lab):
     generator = gr.MhealthSensorFileGenerator(
         mhealth_filepath, buffer_size=10)
 
-    op = o.O(generator, name='SPADES_2-DW', t=o.O.Type.INPUT)
+    op = node.Node(generator, name='SPADES_2-DW', t=node.Node.Type.INPUT)
 
     op.start()
     i = 0
     while True:
         data = next(op.produce())
-        if data.signal == o.O.Signal.WAIT:
+        if data.signal == node.Node.Signal.WAIT:
             continue
         assert data.values.shape[0] == 10
         if i == 2:
@@ -52,15 +52,15 @@ def test_segmentor_operator(spades_lab):
     values, context = next(generator.get_result())
     generator.stop()
     segmentor = seg.SlidingWindowSegmentor(window_size=1)
-    op = o.O(segmentor, name='segmentor-1s')
+    op = node.Node(segmentor, name='segmentor-1s')
 
     op.start()
-    op.consume(o.O.Pack(values=values, signal=o.O.Signal.DATA,
-                        context=context, src='SPADES_2-dw'))
+    op.consume(node.Node.Pack(values=values, signal=node.Node.Signal.DATA,
+                              context=context, src='SPADES_2-dw'))
     i = 0
     while True:
         data = next(op.produce())
-        if data.signal == o.O.Signal.WAIT:
+        if data.signal == node.Node.Signal.WAIT:
             continue
         assert data.values.shape[0] == 80
         if i == 2:
@@ -96,15 +96,15 @@ def test_synchronizer_operator(spades_lab):
 
     synchronizer = sync.Synchronizer()
     synchronizer.add_sources(2)
-    op = o.O(synchronizer, name='sync-dw-da')
+    op = node.Node(synchronizer, name='sync-dw-da')
     op.start()
-    op.consume(o.O.Pack(values=seg_dw_values,
-                        signal=o.O.Signal.DATA, context=dw_context, src='dw'))
-    op.consume(o.O.Pack(values=seg_da_values,
-                        signal=o.O.Signal.DATA, context=da_context, src='da'))
+    op.consume(node.Node.Pack(values=seg_dw_values,
+                              signal=node.Node.Signal.DATA, context=dw_context, src='dw'))
+    op.consume(node.Node.Pack(values=seg_da_values,
+                              signal=node.Node.Signal.DATA, context=da_context, src='da'))
     while True:
         data = next(op.produce())
-        if data.signal == o.O.Signal.WAIT:
+        if data.signal == node.Node.Signal.WAIT:
             continue
         assert data.values[0].shape[0] == 80
         assert data.values[1].shape[0] == 80
@@ -132,13 +132,13 @@ def test_processor_operator(spades_lab):
                              mode=sch.Scheduler.Mode.PROCESS,
                              scheme=sch.Scheduler.Scheme.SUBMIT_ORDER, max_workers=2)
 
-    op = o.O(processor, name='compute-mean')
+    op = node.Node(processor, name='compute-mean')
     op.start()
-    op.consume(o.O.Pack(values=dw_values, signal=o.O.Signal.DATA,
-                        context=dw_context, src='dw'))
+    op.consume(node.Node.Pack(values=dw_values, signal=node.Node.Signal.DATA,
+                              context=dw_context, src='dw'))
     while True:
         data = next(op.produce())
-        if data.signal == o.O.Signal.WAIT:
+        if data.signal == node.Node.Signal.WAIT:
             continue
         assert len(data.values) == 3
         break

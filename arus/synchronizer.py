@@ -6,10 +6,10 @@ Date: 02/07/2020
 License: GNU v3
 """
 from . import moment
-from . import o
+from . import operator
 
 
-class Synchronizer(o.BaseOperator):
+class Synchronizer(operator.Operator):
     def __init__(self):
         super().__init__()
         self._buffer = {}

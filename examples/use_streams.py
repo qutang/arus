@@ -23,7 +23,7 @@ stream.start()
 
 i = 0
 for data in stream.get_result():
-    if data.signal == arus.O.Signal.DATA:
+    if data.signal == arus.Node.Signal.DATA:
         logger.info(data)
         if i == 3 or data.values is None:
             break
@@ -49,7 +49,7 @@ stream.start()
 
 i = 0
 for data in stream.get_result():
-    if data.signal == arus.O.Signal.DATA:
+    if data.signal == arus.Node.Signal.DATA:
         logger.info(data)
         if i == 3 or data.values is None:
             break

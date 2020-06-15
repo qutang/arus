@@ -5,10 +5,11 @@ import enum
 from loguru import logger
 import typing
 
-from . import o
+from . import node
+from . import operator
 
 
-class Stream(o.BaseOperator):
+class Stream(operator.Operator):
     """
     The base class for data stream.
 
@@ -25,10 +26,10 @@ class Stream(o.BaseOperator):
         """
         super().__init__()
         self._name = name
-        self._generator = o.O(op=generator, t=o.O.Type.INPUT,
-                              name=self._name + '-generator')
-        self._segmentor = o.O(op=segmentor, t=o.O.Type.PIPE,
-                              name=self._name + '-segmentor')
+        self._generator = node.Node(op=generator, t=node.Node.Type.INPUT,
+                                    name=self._name + '-generator')
+        self._segmentor = node.Node(op=segmentor, t=node.Node.Type.PIPE,
+                                    name=self._name + '-segmentor')
 
     def run(self, *, values=None, src=None, context={}):
         logger.info('Stream is starting.')
@@ -68,9 +69,9 @@ class Stream(o.BaseOperator):
             data = next(self._generator.produce())
             self._segmentor.consume(data)
             data = next(self._segmentor.produce())
-            if data.signal == o.O.Signal.WAIT:
+            if data.signal == node.Node.Signal.WAIT:
                 pass
-            elif data.signal == o.O.Signal.DATA:
+            elif data.signal == node.Node.Signal.DATA:
                 yield data.values, data.context
             else:
                 pass

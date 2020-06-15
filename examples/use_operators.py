@@ -12,13 +12,13 @@ arus.dev.set_default_logger()
 
 # %%
 generator = arus.generator.RandomAccelDataGenerator(sr=80, buffer_size=10)
-op = arus.O(generator, name='accel', t=arus.O.Type.INPUT)
+op = arus.Node(generator, name='accel', t=arus.Node.Type.INPUT)
 
 op.start()
 i = 0
 while True:
     data = next(op.produce())
-    if data.signal == arus.O.Signal.WAIT:
+    if data.signal == arus.Node.Signal.WAIT:
         continue
     logger.info(data)
     if i == 2:
@@ -34,13 +34,13 @@ scanner = arus.plugins.metawear.MetaWearScanner()
 addrs = scanner.get_nearby_devices(max_devices=1)
 generator = arus.plugins.metawear.MetaWearAccelDataGenerator(
     addrs[0], sr=50, grange=8, buffer_size=10)
-op = arus.O(generator, name=addrs[0], t=arus.O.Type.INPUT)
+op = arus.Node(generator, name=addrs[0], t=arus.Node.Type.INPUT)
 
 op.start()
 i = 0
 while True:
     data = next(op.produce())
-    if data.signal == arus.O.Signal.WAIT:
+    if data.signal == arus.Node.Signal.WAIT:
         continue
     logger.info(data)
     if i == 2:
@@ -57,13 +57,13 @@ mhealth_filepath = spades_lab['subjects']['SPADES_2']['sensors']['DW'][0]
 generator = arus.generator.MhealthSensorFileGenerator(
     mhealth_filepath, buffer_size=10)
 
-op = arus.O(generator, name='SPADES_2-DW', t=arus.O.Type.INPUT)
+op = arus.Node(generator, name='SPADES_2-DW', t=arus.Node.Type.INPUT)
 
 op.start()
 i = 0
 while True:
     data = next(op.produce())
-    if data.signal == arus.O.Signal.WAIT:
+    if data.signal == arus.Node.Signal.WAIT:
         continue
     logger.info(data)
     if i == 2:
@@ -86,15 +86,15 @@ generator.run()
 values, context = next(generator.get_result())
 generator.stop()
 segmentor = arus.segmentor.SlidingWindowSegmentor(window_size=1)
-op = arus.O(segmentor, name='segmentor-1s')
+op = arus.Node(segmentor, name='segmentor-1s')
 
 op.start()
-op.consume(arus.O.Pack(values=values, signal=arus.O.Signal.DATA,
-                       context=context, src='SPADES_2-dw'))
+op.consume(arus.Node.Pack(values=values, signal=arus.Node.Signal.DATA,
+                          context=context, src='SPADES_2-dw'))
 i = 0
 while True:
     data = next(op.produce())
-    if data.signal == arus.O.Signal.WAIT:
+    if data.signal == arus.Node.Signal.WAIT:
         continue
     logger.info(data)
     if i == 2:
@@ -135,15 +135,15 @@ seg_da_values, da_context = next(segmentor.get_result())
 
 synchronizer = arus.synchronizer.Synchronizer()
 synchronizer.add_sources(2)
-op = arus.O(synchronizer, name='sync-dw-da')
+op = arus.Node(synchronizer, name='sync-dw-da')
 op.start()
-op.consume(arus.O.Pack(values=seg_dw_values,
-                       signal=arus.O.Signal.DATA, context=dw_context, src='dw'))
-op.consume(arus.O.Pack(values=seg_da_values,
-                       signal=arus.O.Signal.DATA, context=da_context, src='da'))
+op.consume(arus.Node.Pack(values=seg_dw_values,
+                          signal=arus.Node.Signal.DATA, context=dw_context, src='dw'))
+op.consume(arus.Node.Pack(values=seg_da_values,
+                          signal=arus.Node.Signal.DATA, context=da_context, src='da'))
 while True:
     data = next(op.produce())
-    if data.signal == arus.O.Signal.WAIT:
+    if data.signal == arus.Node.Signal.WAIT:
         continue
     logger.info(data)
     break
@@ -177,13 +177,13 @@ processor = arus.processor.Processor(compute_mean,
                                      mode=arus.Scheduler.Mode.THREAD,
                                      scheme=arus.Scheduler.Scheme.SUBMIT_ORDER, max_workers=2)
 
-op = arus.O(processor, name='compute-mean')
+op = arus.Node(processor, name='compute-mean')
 op.start()
-op.consume(arus.O.Pack(values=dw_values, signal=arus.O.Signal.DATA,
-                       context=dw_context, src='dw'))
+op.consume(arus.Node.Pack(values=dw_values, signal=arus.Node.Signal.DATA,
+                          context=dw_context, src='dw'))
 while True:
     data = next(op.produce())
-    if data.signal == arus.O.Signal.WAIT:
+    if data.signal == arus.Node.Signal.WAIT:
         continue
     logger.info(data)
     break

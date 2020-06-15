@@ -10,14 +10,14 @@ License: GNU v3
 
 from . import mhealth_format as mh
 from . import moment
-from . import o
+from . import operator
 import datetime as dt
 import pandas as pd
 import numpy as np
 import time
 
 
-class Generator(o.BaseOperator):
+class Generator(operator.Operator):
     """Abstract class for instances that generate data streams.
     """
 
