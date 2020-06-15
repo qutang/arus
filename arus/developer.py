@@ -227,6 +227,9 @@ def parse_changelogs(changelogs):
     }
     for changelog in changelogs:
         tokens = changelog.split('-')
+        if len(tokens) < 2:
+            logger.warning(f'Commit {changelog} is invalid, ignore it')
+            continue
         msg = tokens[0]
         commit = tokens[1]
         category, scope, title = parse_conventional_commit(msg)
