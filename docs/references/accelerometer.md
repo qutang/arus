@@ -8,4 +8,4 @@
 
 ::: arus.accelerometer.orientation
 
-::: arus.accelerometer.counts
+<!-- ::: arus.accelerometer.counts -->

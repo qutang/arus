@@ -108,11 +108,6 @@ class Stream:
 
     def _generate(self):
         logger.info('Generator thread started.')
-        # for data in self._generator.generate():
-        #     if self._status == Stream.Status.STOP:
-        #         break
-        #     self._input_buffer.put(data)
-        # self._input_buffer.put(None)
         self._generator.run()
         logger.info('Generator thread is stopping.')
 

@@ -15,11 +15,11 @@ copyright: 2020 © Qu Tang
 # Customization
 extra:
   social:
-    - type: globe
+    - icon: fontawesome/solid/at
       link: https://qutang.dev
-    - type: github
+    - icon: fontawesome/brands/github-alt
       link: https://github.com/qutang
-    - type: linkedin
+    - icon: fontawesome/brands/linkedin
       link: https://www.linkedin.com/in/qutang
 
 # Material theme for MkDocs : https://github.com/squidfunk/mkdocs-material/
@@ -28,13 +28,16 @@ theme:
   palette:
     primary: white
     accent: orange
-  logo:
-    icon: directions_run
+    scheme: default
+  icon:
+    logo: material/run-fast
+    repo: fontawesome/brands/github-alt
   font:
     text: Roboto
     code: Roboto Mono
-  feature:
-    tabs: true
+  features:
+    - tabs
+    - instant
   hljs_style: github
   nav_style: light
   navigation_depth: 2
@@ -47,6 +50,11 @@ extra_css:
 plugins:
   - search
   - mkdocstrings:
+      default_handler: python
+      handlers:
+        python:
+          rendering:
+            show_source: true
       watch:
         - arus
   - minify:

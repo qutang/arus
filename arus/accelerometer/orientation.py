@@ -1,10 +1,5 @@
 """
-
 Computing features about accelerometer orientations
-
-Author: Qu Tang
-
-Date: Jul 10, 2018
 """
 
 import numpy as np

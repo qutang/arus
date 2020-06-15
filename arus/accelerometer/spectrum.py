@@ -1,8 +1,5 @@
 """
-=======================================================================
-Frequency features
-=======================================================================
-'''Frequency domain features for numerical time series data'''
+Frequency domain features for numerical time series data
 """
 from scipy import signal
 import numpy as np

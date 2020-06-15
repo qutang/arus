@@ -35,22 +35,22 @@ matplotlib = "^3.1"
 scikit-learn = "^0.22"
 seaborn = "^0.9.0"
 joblib = "0.11"
-pymetawear = {version = "^0.12.0", optional = true}
-pysimplegui = {version = "^4.14.1", optional = true}
-playsound = {version = "^1.2.2", optional = true}
 wget = "^3.2"
-dephell_versioning = "^0.1.1"
-click = "^7.0"
 tzlocal = "^2.0.0"
 loky = "^2.6.0"
 loguru = "^0.5.0"
 docopt = "^0.6.2"
 alive-progress = "^1.5.1"
-semver = "^2.10.1"
+pymetawear = {version = "^0.12.0", optional = true}
+pysimplegui = {version = "^4.14.1", optional = true}
+playsound = {version = "^1.2.2", optional = true}
+dephell_versioning = {version = "^0.1.2", optional = true}
+semver = {version = "^2.10.1", optional = true}
 
 [tool.poetry.extras]
 metawear = ["pymetawear"]
 demo = ["pymetawer", "pysimplegui",'playsound']
+dev = ["dephell_versioning", "semver"]
 
 [tool.poetry.dev-dependencies]
 pylint = "^2.4"
@@ -59,24 +59,20 @@ autopep8 = "^1.4"
 twine = "^1.12"
 pytest-cov = "^2.8"
 codecov = "^2.0"
-recommonmark = "^0.6.0"
-m2r = "^0.2.1"
 pyinstaller = "^3.5"
 pywin32-ctypes = "^0.2.0"
-pefile = "^2019.4.18"
 rope = "^0.16.0"
-mkdocs = "1.0.4"
-mkdocs-material = "^4.6.3"
-mkdocs-nbconvert = "^0.1.1"
-mkdocstrings = "^0.7.2"
+mkdocs = "^1.0.4"
 jupyter = "^1.0.0"
-mkdocs-minify-plugin = "^0.3.0"
-mkdocs-git-revision-date-localized-plugin = "^0.5.2"
 pygments = "^2.6.1"
 pymdown-extensions = "^7.1"
+mkdocstrings = "^0.11.4"
+mkdocs-material = "^5.2.3"
+mkdocs-git-revision-date-localized-plugin = "^0.5.2"
+mkdocs-minify-plugin = "^0.3.0"
+
 
 [tool.poetry.scripts]
-arus_dev = 'arus.consoles.developer_console:main'
 arus = 'arus.cli:cli'
 
 [build-system]

@@ -1,11 +1,5 @@
 """
-
 Computing features about different versions of counts
-
-Author: Qu Tang
-
-Date: Jul 10, 2018
-
 """
 import numpy as np
 from . import transformation
@@ -14,12 +8,10 @@ from .. import extensions
 
 def enmo(X):
     """
-
     Computing ENMO value of accelerometer data
 
     Arguments:
-        X {numpy.ndarray} -- 2D numpy array M x N, M is the number of samples
-         and N is the dimension of the data
+        X {numpy.ndarray} -- 2D numpy array M x N, M is the number of samples and N is the dimension of the data.
 
     Returns:
         [numpy.ndarray] -- 1 x 1

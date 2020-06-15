@@ -1,11 +1,5 @@
 """
-
 Computing features of descriptive statistics for accelerometer data
-
-Author: Qu Tang
-
-Date: Oct 16, 2019
-
 """
 import numpy as np
 from scipy import stats as sp_stats

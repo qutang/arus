@@ -1,6 +1,6 @@
 `arus.mh`
 
-::: arus.mhealth_format.core
+<!-- ::: arus.mhealth_format.core -->
 
 ::: arus.mhealth_format.helper
 
