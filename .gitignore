@@ -16,3 +16,6 @@ releases/
 .ipynb_checkpoints
 site
 docs/changelogs
+docs/README.md
+docs/LICENSE.md
+docs/CODE_OF_CONDUCT.md
