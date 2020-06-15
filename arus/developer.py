@@ -126,8 +126,8 @@ def tag_repo(version, message=None, repo_root=None):
     message = message or "Tag with version {}".format(version)
     logger.info(
         'Tag repo with version {} and message: {}'.format(version, message))
-    subprocess.run('git tag -a v{} -m {}'.format(version,
-                                                 message), cwd=repo_root, shell=True)
+    subprocess.run(
+        f'git tag -a v{version} -m {message}', cwd=repo_root, shell=True)
 
 
 def push_repo(branch='master', repo_root=None):
