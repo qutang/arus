@@ -188,7 +188,7 @@ def dev_website():
 def build_website():
     _copy_files_for_website()
     generate_changelogs()
-    subprocess.run("mkdocs build -v", shell=True)
+    subprocess.run("mkdocs gh-deploy -v", shell=True)
 
 
 def get_git_tags():
