@@ -220,6 +220,7 @@ def generate_changelogs(by_version=True):
 def parse_changelogs(changelogs):
     parsed = {}
     category_map = {
+        'api': "API changes",
         'feat': "Features",
         'refactor': "Refactors",
         'fix': "Bug fixes",
@@ -264,13 +265,21 @@ def write_changelog_to_file(parsed_changelogs, start_tag, stop_tag):
     item_template = "* {scope}: {title} [{commit}](https://github.com/qutang/arus/commit/{commit})"
     item_template2 = "* {title} [{commit}](https://github.com/qutang/arus/commit/{commit})"
 
+    category_order = ['API changes',
+                      'Features',
+                      'Bug fixes',
+                      'Refactors',
+                      'Test cases']
+
     if stop_tag == 'HEAD':
         stop_tag = 'dev'
 
     os.makedirs(os.path.join('.', 'docs', 'changelogs'), exist_ok=True)
     with open(os.path.join('.', 'docs', 'changelogs', f'{stop_tag}.md'), 'w') as f:
         f.write(f'# {stop_tag.upper()}\n')
-        for category in parsed_changelogs:
+        for category in category_order:
+            if category not in parsed_changelogs:
+                continue
             f.write(template.format(category=category))
             f.write('\n')
             for item in parsed_changelogs[category]:
