@@ -47,7 +47,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          poetry install --extras "metawear demo"
+          poetry install --extras "metawear demo dev"
 
       - name: Run tests
         run: poetry run pytest --cov --cov-report=xml arus
