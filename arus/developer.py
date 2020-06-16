@@ -14,8 +14,16 @@ import tarfile
 import os
 from loguru import logger
 import sys
-import semver
-import dephell_versioning as deph
+try:
+    import semver
+    import dephell_versioning as deph
+except ImportError as e:
+    msg = (
+        "Arus developer module requirements are not installed. Some functionality may not be working.\n\n"
+        "To use the full functionality, please install the metawear extra packages as follows:\n\n"
+        "  pip install arus[dev]\n\n"
+    )
+    print(str(e) + "\n\n" + msg)
 import subprocess
 import pathlib
 import shutil
