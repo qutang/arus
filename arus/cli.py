@@ -89,7 +89,7 @@ def convert_to_signaligner_both(root, pid, sr, date_range=None, auto_range='W-SU
     convert_to_signaligner(root, pid, 'sensor', sr, date_range, auto_range)
 
 
-def convert_to_signaligner(root, pid, file_type, sr=None, date_range=None, auto_range='W_SUN'):
+def convert_to_signaligner(root, pid, file_type, sr=None, date_range=None, auto_range='W-SUN'):
     session_span = mh.get_session_span(pid, root)
     session_span = signaligner.shrink_session_span(session_span, date_range)
     logger.info('Session span: {}'.format(session_span))
