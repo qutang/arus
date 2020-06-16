@@ -3,7 +3,7 @@ __arus__ python package provides a computation framework to manage and process u
 
 """
 
-__version__ = '1.0.4'
+__version__ = '1.0.5'
 
 from . import dataset
 from . import developer as dev
