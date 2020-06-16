@@ -259,7 +259,7 @@ def parse_changelogs(changelogs):
 
 def write_changelog_index_to_file(tags):
     item_template = "* [{tag}]({tag}/)\n"
-    with open(os.path.join('.', 'docs', 'changelogs', 'index.md'), 'w') as f:
+    with open(os.path.join('.', 'docs', 'changelogs', 'index.md'), 'w', encoding='utf-8') as f:
         f.write(f'# Changelogs (Latest stable version: {tags[0]})\n\n')
         f.write(item_template.format(tag='dev'))
         for tag in tags:
@@ -283,7 +283,7 @@ def write_changelog_to_file(parsed_changelogs, start_tag, stop_tag):
         stop_tag = 'dev'
 
     os.makedirs(os.path.join('.', 'docs', 'changelogs'), exist_ok=True)
-    with open(os.path.join('.', 'docs', 'changelogs', f'{stop_tag}.md'), 'w') as f:
+    with open(os.path.join('.', 'docs', 'changelogs', f'{stop_tag}.md'), 'w', encoding='utf-8') as f:
         f.write(f'# {stop_tag.upper()}\n')
         for category in category_order:
             if category not in parsed_changelogs:
