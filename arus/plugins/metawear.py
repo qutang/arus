@@ -15,12 +15,11 @@ try:
     from pymetawear import discover as mw_discover
 except ImportError as e:
     msg = (
-        "Arus plugin metawear requirements are not installed.\n\n"
+        "Arus plugin metawear requirements are not installed. Some functionality will not be usable.\n\n"
         "Please install the metawear extra packages as follows:\n\n"
         "  pip install arus[metawear]\n\n"
-        "  poetry add arus --extras metawear"
     )
-    raise ImportError(str(e) + "\n\n" + msg)
+    print(str(e) + "\n\n" + msg)
 
 
 class StartFailure(Exception):
