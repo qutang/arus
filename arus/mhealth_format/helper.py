@@ -148,6 +148,10 @@ def format_columns(data, filetype):
     if filetype == constants.ANNOTATION_FILE_TYPE:
         data.columns = constants.FEATURE_SET_TIMESTAMP_COLS + \
             [constants.ANNOTATION_LABEL_COL]
+    elif filetype == constants.SENSOR_FILE_TYPE:
+        # COLUMN names should be A-Z0-9_
+        data.columns = list(
+            map(lambda col: col.upper().replace(' ', '_'), data.columns))
     return data
 
 
