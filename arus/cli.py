@@ -162,8 +162,12 @@ def dataset_command(arguments):
         developer.compress_dataset(root, output_folder, f'{name}.tar.gz')
     elif arguments['DATASET_COMMAND'] == 'query':
         name = arguments['DATASET_NAME']
-        logger.info(f'Query dataset: {name} in ARUS package')
-        logger.info(dataset.get_sample_datapath('actigraph_imu'))
+        if name == 'all':
+            logger.info("Available sample data names")
+            logger.info(dataset.get_available_sample_data())
+        else:
+            logger.info(f'Query dataset: {name} in ARUS package')
+            logger.info(dataset.get_sample_datapath(name))
 
 
 def package_command(arguments):
