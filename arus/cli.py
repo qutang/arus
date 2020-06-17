@@ -3,7 +3,7 @@
 Usage:
   arus signaligner FOLDER PID [SR] [-t <file_type>] [--date_range=<date_range>] [--auto_range=<auto_range>] [--debug]
   arus app APP_COMMAND FOLDER NAME [--app_version=<app_version>]
-  arus dataset DATASET_COMMAND FOLDER DATASET_NAME OUTPUT_FOLDER
+  arus dataset DATASET_COMMAND DATASET_NAME [FOLDER] [OUTPUT_FOLDER] [--debug]
   arus package PACK_COMMAND [NEW_VERSION] [--dev] [--release]
   arus --help
   arus --version
@@ -29,6 +29,7 @@ Options:
 from docopt import docopt
 from loguru import logger
 from . import developer
+from . import dataset
 from . import mhealth_format as mh
 from .plugins import signaligner
 import glob
@@ -159,6 +160,10 @@ def dataset_command(arguments):
         logger.info(
             f'Compressing dataset as {name}.tar.gz in folder {output_folder}')
         developer.compress_dataset(root, output_folder, f'{name}.tar.gz')
+    elif arguments['DATASET_COMMAND'] == 'query':
+        name = arguments['DATASET_NAME']
+        logger.info(f'Query dataset: {name} in ARUS package')
+        logger.info(dataset.get_sample_datapath('actigraph_imu'))
 
 
 def package_command(arguments):
