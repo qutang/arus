@@ -23,20 +23,20 @@
         <span class=k>if</span> <span class=bp>self</span><span class=o>.</span><span class=n>_stop</span><span class=p>:</span>
             <span class=k>break</span>
     <span class=bp>self</span><span class=o>.</span><span class=n>_result</span><span class=o>.</span><span class=n>put</span><span class=p>((</span><span class=kc>None</span><span class=p>,</span> <span class=bp>self</span><span class=o>.</span><span class=n>_context</span><span class=p>))</span>
-</code></pre> </div> </td> </tr> </table> </details> </div> </div> </div> </div> </div> <div class="doc doc-object doc-function"> <h2 class="doc doc-heading" id=arus.plugins.actigraph.convert_actigraph_timestamp> <code class="highlight language-python"> convert_actigraph_timestamp<span class=p>(</span><span class=n>timestamps</span><span class=p>)</span> </code> <a class=headerlink href=#arus.plugins.actigraph.convert_actigraph_timestamp title="Permanent link">¶</a></h2> <div class="doc doc-contents"> <p>Convert elements in the timestamp columns of the input dataframe to <code>datetime64[ms]</code> type.</p> <p><strong>Returns:</strong></p> <table> <thead> <tr> <th>Type</th> <th>Description</th> </tr> </thead> <tbody> <tr> <td><code></code></td> <td> <p>result (same as input)</p> </td> </tr> </tbody> </table> <details class=quote> <summary>Source code in <code>arus\plugins\actigraph.py</code></summary> <table class=highlighttable> <tr> <td class=linenos> <div class=linenodiv> <pre><span></span> 96
- 97
- 98
- 99
-100
-101
-102
-103
-104
-105
-106
-107
-108
-109</pre> </div> </td> <td class=code> <div class=highlight> <pre><span></span><code><span class=k>def</span> <span class=nf>convert_actigraph_timestamp</span><span class=p>(</span><span class=n>timestamps</span><span class=p>):</span>
+</code></pre> </div> </td> </tr> </table> </details> </div> </div> </div> </div> </div> <div class="doc doc-object doc-function"> <h2 class="doc doc-heading" id=arus.plugins.actigraph.convert_actigraph_timestamp> <code class="highlight language-python"> convert_actigraph_timestamp<span class=p>(</span><span class=n>timestamps</span><span class=p>)</span> </code> <a class=headerlink href=#arus.plugins.actigraph.convert_actigraph_timestamp title="Permanent link">¶</a></h2> <div class="doc doc-contents"> <p>Convert elements in the timestamp columns of the input dataframe to <code>datetime64[ms]</code> type.</p> <p><strong>Returns:</strong></p> <table> <thead> <tr> <th>Type</th> <th>Description</th> </tr> </thead> <tbody> <tr> <td><code></code></td> <td> <p>result (same as input)</p> </td> </tr> </tbody> </table> <details class=quote> <summary>Source code in <code>arus\plugins\actigraph.py</code></summary> <table class=highlighttable> <tr> <td class=linenos> <div class=linenodiv> <pre><span></span>108
+109
+110
+111
+112
+113
+114
+115
+116
+117
+118
+119
+120
+121</pre> </div> </td> <td class=code> <div class=highlight> <pre><span></span><code><span class=k>def</span> <span class=nf>convert_actigraph_timestamp</span><span class=p>(</span><span class=n>timestamps</span><span class=p>):</span>
     <span class=sd>"""Convert elements in the timestamp columns of the input dataframe to `datetime64[ms]` type.</span>
 
 <span class=sd>    Args:</span>
