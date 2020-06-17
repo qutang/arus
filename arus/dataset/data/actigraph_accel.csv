@@ -1,0 +1,20 @@
+------------ Data File Created By ActiGraph GT3X+ ActiLife v6.11.9 Firmware v1.4.0 date format M/d/yyyy at 80 Hz  Filter Normal -----------
+Serial Number: TAS1E23150152
+Start Time 15:35:00
+Start Date 12/4/2015
+Epoch Period (hh:mm:ss) 00:00:00
+Download Time 17:32:27
+Download Date 12/4/2015
+Current Memory Address: 0
+Current Battery Voltage: 4.16     Mode = 12
+--------------------------------------------------
+Timestamp,Accelerometer X,Accelerometer Y,Accelerometer Z
+12/4/2015 15:35:00.000,0,0,0
+12/4/2015 15:35:00.013,0,0,0
+12/4/2015 15:35:00.025,0,0,0
+12/4/2015 15:35:00.038,0,0,0
+12/4/2015 15:35:00.050,0,0,0
+12/4/2015 15:35:00.063,0,0,0
+12/4/2015 15:35:00.075,0,0,0
+12/4/2015 15:35:00.088,0,0,0
+12/4/2015 15:35:00.100,0,0,0

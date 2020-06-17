@@ -11,6 +11,7 @@ from loguru import logger
 import os
 import subprocess
 import tarfile
+import pkg_resources
 
 import numpy as np
 import pandas as pd
@@ -20,6 +21,21 @@ from .. import developer, env, generator, moment, segmentor, stream
 from .. import mhealth_format as mh
 from ..models import muss as arus_muss
 from . import _process_mhealth, _process_annotations
+
+
+def get_available_sample_data():
+    data_names = os.listdir(pkg_resources.resource_filename(__name__, 'data'))
+    data_names = list(map(lambda name: name.replace('.csv', ''), data_names))
+    return data_names
+
+
+def get_sample_datapath(name):
+    if name in get_available_sample_data():
+        filepath = pkg_resources.resource_filename(
+            __name__, f'data/{name}.csv')
+    else:
+        raise FileNotFoundError('The given sample data name is not supported.')
+    return filepath
 
 
 def get_dataset_names():
