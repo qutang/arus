@@ -815,13 +815,13 @@ description = "Automatic documentation from sources, for MkDocs."
 name = "mkdocstrings"
 optional = false
 python-versions = ">=3.6,<4.0"
-version = "0.11.4"
+version = "0.12.0"
 
 [package.dependencies]
 beautifulsoup4 = ">=4.8.2,<5.0.0"
 mkdocs = ">=1.1,<2.0"
 pymdown-extensions = ">=6.3,<8.0"
-pytkdocs = ">=0.2.0,<0.6.0"
+pytkdocs = ">=0.2.0,<0.7.0"
 
 [[package]]
 category = "dev"
@@ -1705,7 +1705,7 @@ dev = ["dephell_versioning", "semver"]
 metawear = ["pymetawear"]
 
 [metadata]
-content-hash = "5714c4b535c292f1d7e63195c347c876418e8531b0deee9b06bd3800fe77149a"
+content-hash = "4894eebb6ae79a40e6ec2b0a8d6dc8ec9974b9bb3ee34dc862c14496ee247833"
 python-versions = "^3.6.1"
 
 [metadata.files]
@@ -2088,8 +2088,8 @@ mkdocs-minify-plugin = [
     {file = "mkdocs_minify_plugin-0.3.0-py2-none-any.whl", hash = "sha256:9bac96276b1681debb3eb2cf5bae972586b4c1138e8d78ea63a984ea6276563d"},
 ]
 mkdocstrings = [
-    {file = "mkdocstrings-0.11.4-py3-none-any.whl", hash = "sha256:2fa3180e6bedcc3aac7861f051f624544109af47730c269b6ffa23903f8a46b0"},
-    {file = "mkdocstrings-0.11.4.tar.gz", hash = "sha256:e71e6b0636e1a072071d5ec0bf8047b386b42a46f57f464e383b279dc85514e4"},
+    {file = "mkdocstrings-0.12.0-py3-none-any.whl", hash = "sha256:b140e6631cac8a5910c4d05b7bfe6da4ef35fc101c1a8fdc721d581fcb23ac33"},
+    {file = "mkdocstrings-0.12.0.tar.gz", hash = "sha256:c34b96c69740cf7ad45a4e66d980e287615e7c67dc1c07b3d476c4f7151c4862"},
 ]
 more-itertools = [
     {file = "more-itertools-8.4.0.tar.gz", hash = "sha256:68c70cc7167bdf5c7c9d8f6954a7837089c6a36bf565383919bb595efb8a17e5"},
