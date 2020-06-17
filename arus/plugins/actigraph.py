@@ -46,15 +46,18 @@ class ActigraphReader:
         self._meta = None
 
     def get_data(self):
+        assert self._meta is not None
+        ts_func = convert_actigraph_imu_timestamp if self._meta[
+            'IMU'] else convert_actigraph_timestamp
         if self._data is not None:
             data = self._data.copy()
-            data.iloc[:, 0] = convert_actigraph_timestamp(data.iloc[:, 0])
+            data.iloc[:, 0] = ts_func(data.iloc[:, 0])
             data = mh.helper.format_columns(
                 data, filetype=mh.constants.SENSOR_FILE_TYPE)
             yield data
         else:
             for data in self._iterator:
-                data.iloc[:, 0] = convert_actigraph_timestamp(data.iloc[:, 0])
+                data.iloc[:, 0] = ts_func(data.iloc[:, 0])
                 data = mh.helper.format_columns(
                     data, filetype=mh.constants.SENSOR_FILE_TYPE)
                 yield data
@@ -63,8 +66,8 @@ class ActigraphReader:
         return self._meta.copy()
 
     def read(self, **kwargs):
-        self.read_csv(**kwargs)
         self.read_meta()
+        self.read_csv(**kwargs)
         return self
 
     def read_csv(self, chunksize=None):
@@ -80,15 +83,24 @@ class ActigraphReader:
         with open(self._filepath, 'r') as f:
             first_line = f.readline()
             second_line = f.readline()
+            is_imu = 'IMU' in first_line
             firmware = list(
                 filter(lambda token: token.startswith('v'), first_line.split(" ")))[1]
             sr = int(
                 list(filter(lambda token: token.isnumeric(), first_line.split(" ")))[0])
             sid = second_line.split(" ")[-1].strip()
+        if 'TAS' in sid and is_imu:
+            g_range = 16
+        elif 'TAS' in sid and not is_imu:
+            g_range = 8
+        else:
+            g_range = None
         self._meta = {
             'VERSION_CODE': firmware,
             'SAMPLING_RATE': sr,
-            'SENSOR_ID': sid
+            'SENSOR_ID': sid,
+            'IMU': is_imu,
+            'DYNAMIC_RANGE': g_range
         }
         return self
 
@@ -105,6 +117,12 @@ def convert_actigraph_timestamp(timestamps):
 
     result = pd.to_datetime(
         timestamps, format='%m/%d/%Y %H:%M:%S.%f')
+    result = result.astype('datetime64[ms]')
+    return result
+
+
+def convert_actigraph_imu_timestamp(timestamps):
+    result = pd.to_datetime(timestamps, infer_datetime_format=True)
     result = result.astype('datetime64[ms]')
     return result
 
