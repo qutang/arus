@@ -55,6 +55,7 @@ plugins:
         python:
           rendering:
             show_source: true
+            show_if_no_docstring: true
       watch:
         - arus
   - minify:
@@ -99,6 +100,7 @@ nav:
       - Changelogs: "changelogs/index.md"
   - Use the package:
       - Overview: "tutorials/overview.md"
+      - Command line tool: "tutorials/commandline.md"
   - API reference:
       - Data Flow:
           - "references/stream.md"

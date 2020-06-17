@@ -193,7 +193,3 @@ def _release_package(nver, dev=False, release=False):
         developer.tag_repo(new_version)
         developer.push_repo()
         developer.push_tag(new_version)
-
-
-if __name__ == "__main__":
-    cli()
