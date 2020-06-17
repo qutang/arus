@@ -1,48 +1,50 @@
 from ..plugins import actigraph
 from .. import testing
 from .. import mhealth_format as mh
+from .. import dataset
 import numpy as np
 import pandas as pd
 import pytest
 
 
-@pytest.fixture
-def test_file():
-    sensor_file, _ = testing.load_test_data(file_type='actigraph',
-                                            file_num='single',
-                                            exception_type='consistent_sr')
-    return sensor_file
+@pytest.fixture(params=['actigraph_imu', 'actigraph_accel'])
+def test_file(request):
+    return dataset.get_sample_datapath(request.param)
 
 
 class TestActigraphReader:
-    @pytest.mark.parametrize('chunksize', [None, 1000])
-    def test_read_csv(self, test_file, chunksize):
+    @pytest.mark.parametrize('chunksize', [None, 5])
+    def test_read(self, test_file, chunksize):
         reader = actigraph.ActigraphReader(test_file)
-        reader.read_csv(chunksize=chunksize)
+        reader.read(chunksize=chunksize)
         results = []
         for data in reader.get_data():
             results.append(data)
         if chunksize is None:
             assert len(results) == 1
-            assert results[0].shape[0] > 1000
         else:
             assert len(results) > 1
-            assert results[0].shape[0] == 1000
-        assert results[0].shape[1] == 4
+        if 'imu' in test_file:
+            assert results[0].shape[1] == 11
+        else:
+            assert results[0].shape[1] == 4
         assert results[0].columns[0] == mh.constants.TIMESTAMP_COL
 
-    def test_read_meta(self, test_file):
-        reader = actigraph.ActigraphReader(test_file)
-        reader.read_meta()
         meta = reader.get_meta()
         assert type(meta) == dict
         assert len(meta['VERSION_CODE']) == 6
         assert meta['SAMPLING_RATE'] > 30
         assert meta['SENSOR_ID'].startswith('TAS')
+        if 'imu' in test_file:
+            assert meta['IMU']
+            assert meta['DYNAMIC_RANGE'] == 16
+        else:
+            assert not meta['IMU']
+            assert meta['DYNAMIC_RANGE'] == 8
 
 
 class TestActigraphSensorFileGenerator:
-    @pytest.mark.parametrize('buffer_size', [None, 1000])
+    @pytest.mark.parametrize('buffer_size', [None, 5])
     def test_generate(self, test_file, buffer_size):
         gr = actigraph.ActigraphSensorFileGenerator(
             test_file, buffer_size=buffer_size)
@@ -55,7 +57,7 @@ class TestActigraphSensorFileGenerator:
             sizes.append(data.shape[0])
         if buffer_size is None:
             assert len(sizes) == 1
-            assert sizes[0] > 18000
+            assert sizes[0] > 5
         else:
             sizes = sizes[:-1]
-            assert np.all(np.array(sizes) == 1000)
+            assert np.all(np.array(sizes) == 5)
