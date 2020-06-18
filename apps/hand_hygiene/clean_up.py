@@ -26,34 +26,56 @@ HAND_CLAPPING_TIME_OFFSETS = [
 
 
 def convert_to_mhealth(root, pid):
-    _convert_sensors(root, pid)
+    _convert_sensors(root, pid, data_type='AccelerometerCalibrated')
+    _convert_sensors(root, pid, data_type='IMUTenAxes')
     _convert_annotations(root, pid)
 
 
-def _convert_sensors(root, pid):
+def _convert_sensors(root, pid, data_type):
     logger.info(
-        "Convert sensor data to mhealth format for hand hygiene raw dataset")
-    actigraph_files = glob.glob(os.path.join(
-        root, pid, "OriginalRaw", "*RAW.csv"), recursive=True)
+        f"Convert {data_type} data to mhealth format for hand hygiene raw dataset")
 
-    master_folder = os.path.join(root, pid, arus.mh.MASTER_FOLDER)
-    logger.info('Empty existing master synced folder')
-    shutil.rmtree(master_folder)
+    if data_type == 'AccelerometerCalibrated':
+        filename_pattern = '*RAW.csv'
+    elif data_type == 'IMUTenAxes':
+        filename_pattern = '*IMU.csv'
+    else:
+        raise NotImplementedError(
+            f'The data type {data_type} is not supported')
 
-    with alive_bar(len(actigraph_files)) as bar:
-        for actigraph_file in actigraph_files:
-            bar('Convert {} to mhealth'.format(actigraph_file))
-            writer = arus.mh.MhealthFileWriter(
-                root, pid, hourly=True, date_folders=True)
+    sensor_files = glob.glob(os.path.join(
+        root, pid, "OriginalRaw", filename_pattern), recursive=True)
 
-            reader = arus.plugins.actigraph.ActigraphReader(actigraph_file)
-            reader.read_meta()
-            meta = reader.get_meta()
-            writer.set_for_sensor("ActigraphGT9X", "AccelerometerCalibrated",
-                                  meta['SENSOR_ID'], version_code=meta['VERSION_CODE'].replace('.', ''))
-            read_iterator = reader.read_csv(chunksize=None)
-            for chunk in read_iterator.get_data():
-                writer.write_csv(chunk, append=False, block=True)
+    with alive_bar(len(sensor_files)) as bar:
+        for sensor_file in sensor_files:
+            bar('Convert {} to mhealth'.format(sensor_file))
+
+            if data_type == 'IMUTenAxes':
+                _write_to_mhealth(root, pid, sensor_file,
+                                  'IMUAccelerometerCalibrated')
+                _write_to_mhealth(root, pid, sensor_file,
+                                  'IMUTemperature')
+                _write_to_mhealth(root, pid, sensor_file,
+                                  'IMUGyroscope')
+                _write_to_mhealth(root, pid, sensor_file,
+                                  'IMUMagnetometer')
+            else:
+                _write_to_mhealth(root, pid, sensor_file, data_type)
+
+
+def _write_to_mhealth(root, pid, sensor_file, data_type):
+    reader = arus.plugins.actigraph.ActigraphReader(sensor_file)
+    read_iterator = reader.read(chunksize=None)
+    meta = reader.get_meta()
+    writer = arus.mh.MhealthFileWriter(
+        root, pid, hourly=True, date_folders=True)
+    writer.set_for_sensor("ActigraphGT9X", data_type,
+                          meta['SENSOR_ID'], version_code=meta['VERSION_CODE'].replace('.', ''))
+    for chunk in read_iterator.get_data():
+        col_names = arus.mh.parse_column_names_from_data_type(data_type)
+        chunk_with_selected_cols = chunk.loc[:, [
+            arus.mh.TIMESTAMP_COL] + col_names]
+        writer.write_csv(chunk_with_selected_cols, append=False, block=True)
 
 
 def _convert_annotations(root, pid):
@@ -123,6 +145,6 @@ def _read_raw_annotation_file(filepath):
 
 
 if __name__ == "__main__":
-    convert_to_mhealth('D:/datasets/hand_hygiene', 'P1')
+    # convert_to_mhealth('D:/datasets/hand_hygiene', 'P1')
     arus.cli.convert_to_signaligner_both(
         'D:/datasets/hand_hygiene', 'P1', 80, date_range=['2020-06-09'])
