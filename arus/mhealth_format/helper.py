@@ -9,6 +9,27 @@ class ParseError(Exception):
     pass
 
 
+def parse_column_names_from_data_type(data_type):
+    if data_type in ['AccelerometerCalibrated', 'IMUAccelerometerCalibrated']:
+        return ['ACCELEROMETER_X', 'ACCELEROMETER_Y', 'ACCELEROMETER_Z']
+    elif data_type in ['IMUTenAxes']:
+        return ["ACCELEROMETER_X", "ACCELEROMETER_Y", "ACCELEROMETER_Z", "TEMPERATURE", "GYROSCOPE_X", "GYROSCOPE_Y", "GYROSCOPE_Z", "MAGNETOMETER_X", "MAGNETOMETER_Y", "MAGNETOMETER_Z"]
+    elif data_type in ['IMUGyroscope']:
+        return ["GYROSCOPE_X", "GYROSCOPE_Y", "GYROSCOPE_Z"]
+    elif data_type in ['IMUMagnetometer']:
+        return ["MAGNETOMETER_X", "MAGNETOMETER_Y", "MAGNETOMETER_Z"]
+    elif data_type in ['IMUTemperature']:
+        return ['TEMPERATURE']
+    else:
+        raise NotImplementedError(
+            f"The given data type {data_type} is not supported")
+
+
+def parse_column_names_from_filepath(filepath):
+    data_type = parse_data_type_from_filepath(filepath)
+    return parse_column_names_from_data_type(data_type)
+
+
 def parse_placement_from_str(placement_str):
     result = ''
     placement_str = placement_str.lower()
@@ -86,6 +107,10 @@ def parse_version_code_from_filepath(filepath):
 
 def parse_sensor_id_from_filepath(filepath):
     return os.path.basename(filepath).split('.')[1].split('-')[0]
+
+
+def parse_data_id_from_filepath(filepath):
+    return os.path.basename(filepath).split('.')[1]
 
 
 def parse_pid_from_filepath(filepath):
