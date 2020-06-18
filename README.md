@@ -63,3 +63,11 @@ bluez
 > # Run unit tests
 > poetry run pytest
 ```
+
+### Development conventions
+
+1. Use Google's python coding guidance: http://google.github.io/styleguide/pyguide.html.
+2. Use `arus package release VERSION --release` to bump and tag versions. `VERSION` can be manual version code following semantic versioning, `path`, `minor`, or `major`.
+3. Changelogs are automatically generated when building the documentation website, do not create it manually.
+4. Pypi release will be handled by github action `deploy.yml`, which will be triggered whenever a new tag is pushed. Therefore, developers should only tag release versions.
+5. After commits, even not bumping and releasing the package, you may run `arus package docs --release` to update the documentation website, where the developer version changelogs will be updated immediately.
