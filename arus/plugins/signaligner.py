@@ -5,6 +5,7 @@ import alive_progress as progress
 import datetime
 import numpy as np
 from . import actigraph
+from .. import mhealth_format as mh
 from ..extensions.pandas import segment_by_time
 import math
 
@@ -104,7 +105,7 @@ def signify_sensor_files(filepaths, data_id, output_path, output_annotation_path
                 logger.warning(
                     'Multiple files found: {}'.format(selected_files))
                 filepath = selected_files[0]
-            hourly_df = _regularize_samples(marker, filepath, sr)
+            hourly_df = _regularize_samples(marker, filepath, sr, data_id)
 
             if hourly_df.iloc[0, :].isna().any() and last_row is not None:
                 hourly_df.iloc[0, :] = last_row.values
@@ -123,22 +124,24 @@ def signify_sensor_files(filepaths, data_id, output_path, output_annotation_path
                                      header=False, index=False)
 
 
-def _regularize_samples(start_time, filepath=None, sr=50):
+def _regularize_samples(start_time, filepath=None, sr=50, data_id=None):
     freq = str(1000 / sr) + 'L'
     tolerance = str(500 / sr) + 'L'
     sample_ts = pd.date_range(start_time, start_time +
                               datetime.timedelta(hours=1), freq=freq)
+
+    if data_id is not None:
+        data_type = data_id.split('-')[1]
+        col_names = mh.parse_column_names_from_data_type(data_type)
     if filepath is None:
         out_df = sample_ts.to_frame(index=False)
         out_df.columns = ['HEADER_TIME_STAMP']
-        out_df['X'] = np.nan
-        out_df['Y'] = np.nan
-        out_df['Z'] = np.nan
+        for col_name in col_names:
+            out_df[col_name] = np.nan
         out_df = out_df.set_index('HEADER_TIME_STAMP')
     else:
         input_data = pd.read_csv(
             filepath, header=0, index_col=None, infer_datetime_format=True, parse_dates=[0])
-        input_data.columns = ['HEADER_TIME_STAMP', 'X', 'Y', 'Z']
         input_data = input_data.drop_duplicates(
             subset=['HEADER_TIME_STAMP'], keep='first')
         input_data = input_data.sort_values(by=['HEADER_TIME_STAMP'])
@@ -152,7 +155,7 @@ def _regularize_samples(start_time, filepath=None, sr=50):
 
 
 def _data_to_annotation(hourly_df, sr=50):
-    test = hourly_df['X'].copy(deep=True)
+    test = hourly_df.iloc[:, 0].copy(deep=True)
     test.loc[test.notna()] = 0
     test = test.fillna(1)
     edges = test.diff()

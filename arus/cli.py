@@ -101,7 +101,7 @@ def convert_to_signaligner(root, pid, file_type, sr=None, date_range=None, auto_
         assert sr is not None
         filepaths = mh.get_sensor_files(pid, root)
         logger.debug(session_span)
-        groups = set(map(mh.parse_sensor_id_from_filepath, filepaths))
+        groups = set(map(mh.parse_data_id_from_filepath, filepaths))
     logger.debug(groups)
     for group in groups:
         logger.info('Convert files of {}'.format(group))
