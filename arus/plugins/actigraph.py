@@ -13,8 +13,7 @@ Download Time {}
 Download Date {}
 Current Memory Address: 0
 Current Battery Voltage: 4.21     Mode = 12
---------------------------------------------------
-Accelerometer X,Accelerometer Y,Accelerometer Z"""
+--------------------------------------------------"""
 
 
 class ActigraphSensorFileGenerator(generator.Generator):
@@ -137,12 +136,22 @@ def save_as_actigraph(out_df, output_filepath, session_st=None, session_et=None,
         dt=session_et)
     meta_etime_str = (session_et +
                       datetime.timedelta(hours=1)).strftime('%H:%M:%S')
+    col_names = out_df.columns
+    col_names = list(map(lambda name: _format_column_name(name), col_names))
     if not os.path.exists(output_filepath):
         # create
-        with open(output_filepath, mode='w') as f:
+        with open(output_filepath, mode='w', encoding='utf-8') as f:
             f.write(ACTIGRAPH_TEMPLATE.format(
                 sr, meta_stime_str, meta_sdate_str, meta_etime_str, meta_edate_str))
+            f.write('\n')
+            f.write(','.join(col_names))
             f.write('\n')
     # append
     out_df.to_csv(output_filepath, mode='a', index=False,
                   header=False, float_format='%.6f')
+
+
+def _format_column_name(name):
+    tokens = name.split('_')
+    tokens[0] = tokens[0].lower().title()
+    return " ".join(tokens)
