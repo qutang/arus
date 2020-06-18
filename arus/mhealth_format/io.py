@@ -149,7 +149,7 @@ class MhealthFileWriter:
         header = ','.join(data.columns.values)
 
         if self._file_type == constants.SENSOR_FILE_TYPE:
-            fmt = ['%.23s'] + ['%.3f'] * (len(data.columns) - 1)
+            fmt = ['%.23s'] + ['%.6f'] * (len(data.columns) - 1)
         elif self._file_type == constants.ANNOTATION_FILE_TYPE:
             fmt = ['%.23s', '%.23s', '%.23s', '%s']
         if append == False or not os.path.exists(output_filepath):
