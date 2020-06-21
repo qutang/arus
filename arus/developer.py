@@ -14,16 +14,6 @@ import tarfile
 import os
 from loguru import logger
 import sys
-try:
-    import semver
-    import dephell_versioning as deph
-except ImportError as e:
-    msg = (
-        "Arus developer module requirements are not installed. Some functionality may not be working.\n\n"
-        "To use the full functionality, please install the metawear extra packages as follows:\n\n"
-        "  pip install arus[dev]\n\n"
-    )
-    print(str(e) + "\n\n" + msg)
 import subprocess
 import pathlib
 import shutil
@@ -32,6 +22,15 @@ import pprint
 import re
 
 from . import mhealth_format as mh
+
+
+def _print_extra_dep_warning(e):
+    msg = (
+        "Arus developer module requirements are not installed. Some functionality may not be working.\n\n"
+        "To use the full functionality, please install the metawear extra packages as follows:\n\n"
+        "  pip install arus[dev]\n\n"
+    )
+    print(str(e) + "\n\n" + msg)
 
 
 def compress_dataset(source_dir, out_dir, out_name):
@@ -97,6 +96,11 @@ def bump_package_version(root, name, nver, dev=False):
     Returns:
         str or None: New version or None
     """
+    try:
+        deph = importlib.import_module('dephell_versioning')
+    except ImportError as e:
+        _print_extra_dep_warning(e)
+        raise ImportError(e)
     cver = _find_current_version(root, name)
     if nver in ['major', 'minor', 'patch']:
         nver = deph.bump_version(
@@ -200,6 +204,11 @@ def build_website():
 
 
 def get_git_tags():
+    try:
+        semver = importlib.import_module('semver')
+    except ImportError as e:
+        _print_extra_dep_warning(e)
+        raise ImportError(e)
     tags = subprocess.check_output(
         " ".join(['git', 'tag']), shell=True, encoding='utf-8', text=True, universal_newlines=True)
     tags = tags.split('\n')

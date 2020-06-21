@@ -8,12 +8,10 @@ import pandas as pd
 
 from .. import generator
 import threading
+import importlib
 
-try:
-    from mbientlab import metawear as mw
-    from pymetawear import client as mw_client
-    from pymetawear import discover as mw_discover
-except ImportError as e:
+
+def _print_extra_dep_warning(e):
     msg = (
         "Arus plugin metawear requirements are not installed. Some functionality will not be usable.\n\n"
         "Please install the metawear extra packages as follows:\n\n"
@@ -27,6 +25,14 @@ class StartFailure(Exception):
 
 
 class MetaWearScanner():
+    def __init__(self):
+        try:
+            self._mw_discover = importlib.import_module(
+                'discover', 'pymetawear')
+        except ImportError as e:
+            _print_extra_dep_warning(e)
+            raise ImportError(e)
+
     def get_nearby_devices(self, max_devices=None):
         metawears = set()
         retries = 0
@@ -35,7 +41,7 @@ class MetaWearScanner():
             logger.info('Scanning metawear devices nearby...')
             try:
                 retries += 1
-                candidates = mw_discover.discover_devices(timeout=1)
+                candidates = self._mw_discover.discover_devices(timeout=1)
                 metawears |= set(
                     map(lambda d: d[0],
                         filter(lambda d: d[1] == 'MetaWear', candidates)))
@@ -113,6 +119,14 @@ class MetawearTimestampCorrector(object):
 class MetaWearAccelDataGenerator(generator.Generator):
     def __init__(self, addr, sr, grange, max_retries=3, **kwargs):
         super().__init__(**kwargs)
+
+        try:
+            self._mw = importlib.import_module('metawear', 'mbientlab')
+            self._mw_client = importlib.import_module('client', 'pymetawear')
+        except ImportError as e:
+            _print_extra_dep_warning(e)
+            raise ImportError(e)
+
         self._addr = addr
         self._sr = sr
         self._grange = grange
@@ -145,9 +159,9 @@ class MetaWearAccelDataGenerator(generator.Generator):
         super().stop()
 
     def get_device_name(self):
-        model_code = mw.libmetawear.mbl_mw_metawearboard_get_model(
+        model_code = self._mw.libmetawear.mbl_mw_metawearboard_get_model(
             self._device.mw.board)
-        metawear_models = mw.cbindings.Model()
+        metawear_models = self._mw.cbindings.Model()
         model_names = list(
             filter(lambda attr: '__' not in attr, dir(metawear_models)))
         for name in model_names:
@@ -209,7 +223,7 @@ class MetaWearAccelDataGenerator(generator.Generator):
         count_retry = 0
         while self._device is None:
             try:
-                self._device = mw_client.MetaWearClient(
+                self._device = self._mw_client.MetaWearClient(
                     self._addr, connect=True, debug=False)
                 self._device_name = self.get_device_name()
             except Exception as e:
@@ -223,7 +237,7 @@ class MetaWearAccelDataGenerator(generator.Generator):
                 time.sleep(1)
         logger.info("New metawear connected: {0}".format(
             self._device))
-        mw.libmetawear.mbl_mw_metawearboard_set_time_for_response(
+        self._mw.libmetawear.mbl_mw_metawearboard_set_time_for_response(
             self._device.mw.board, 4000)
         # high frequency throughput connection setup
         self._device.settings.set_connection_parameters(
