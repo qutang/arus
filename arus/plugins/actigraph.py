@@ -144,8 +144,6 @@ def save_as_actigraph(out_df, output_filepath, session_st=None, session_et=None,
             f.write(ACTIGRAPH_TEMPLATE.format(
                 sr, meta_stime_str, meta_sdate_str, meta_etime_str, meta_edate_str))
             f.write('\n')
-            f.write(','.join(col_names))
-            f.write('\n')
     # append
     out_df.to_csv(output_filepath, mode='a', index=False,
                   header=False, float_format='%.6f')
