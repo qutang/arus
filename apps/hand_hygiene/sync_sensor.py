@@ -21,17 +21,6 @@ def _get_sync_periods(annot_df):
     return sync_annotations
 
 
-def _get_sync_sensor_df(sync_annotations, sensor_df):
-    for row in sync_annotations.itertuples(index=False):
-        st = row.START_TIME
-        et = row.STOP_TIME
-        chunk = arus.ext.pandas.segment_by_time(
-            sensor_df, seg_st=st, seg_et=et)
-        if not chunk.empty:
-            return chunk
-    return None
-
-
 def _detect_claps(sync_sensor_df):
     ts = sync_sensor_df.iloc[:, 0]
     vm_values = arus.accel.vector_magnitude(sync_sensor_df.iloc[:, 1:4])[:, 0]
@@ -101,16 +90,28 @@ def _sync_sensor_to_annotations(sensor_df, average_offset):
 
 
 def _sync(sensor_df, annot_df, task_annot_df):
-    sync_annot_df = _get_sync_periods(task_annot_df)
-    sync_sensor_df = _get_sync_sensor_df(
-        sync_annot_df, sensor_df)
-    if sync_sensor_df is None:
-        logger.warning(
-            "Did not find any corresponding synchronization markers for the sensor data, skip synchronization.")
-        return sensor_df
-    sync_peak_df = _detect_claps(sync_sensor_df)
-    average_offset = _get_average_sensor_offset(
-        annot_df, sync_peak_df)
+    sync_annots = _get_sync_periods(task_annot_df)
+    average_offsets = []
+    logger.info(
+        f'Found {sync_annots.shape[0]} synchronization markers. Analyzing them...')
+    for row in sync_annots.itertuples(index=False):
+        st = row.START_TIME
+        et = row.STOP_TIME
+        sync_sensor_df = arus.ext.pandas.segment_by_time(
+            sensor_df, seg_st=st, seg_et=et)
+        sync_annot_df = arus.ext.pandas.segment_by_time(
+            annot_df, seg_st=st, seg_et=et, st_col=1, et_col=2)
+        if sync_sensor_df.empty:
+            logger.warning(
+                "Did not find corresponding sensor data for the current synchronization markers.")
+        else:
+            sync_peak_df = _detect_claps(sync_sensor_df)
+            average_offset = _get_average_sensor_offset(
+                sync_annot_df, sync_peak_df)
+            average_offsets.append(average_offset)
+    average_offset = np.mean(average_offsets)
+    logger.info(f'The sensor offsets are: {average_offsets}')
+    logger.info(f'The average sensor offset is: {average_offset}')
     sensor_df = _sync_sensor_to_annotations(
         sensor_df, average_offset)
     return sensor_df

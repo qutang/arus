@@ -193,7 +193,7 @@ def _read_raw_annotation_file(filepath):
 
 
 if __name__ == "__main__":
-    convert_to_mhealth('D:/datasets/hand_hygiene', 'P1',
+    convert_to_mhealth('D:/datasets/hand_hygiene', 'P2',
                        skip_sync=False, remove_exists=True)
     arus.cli.convert_to_signaligner_both(
-        'D:/datasets/hand_hygiene', 'P1', 80, date_range=['2020-06-09'])
+        'D:/datasets/hand_hygiene', 'P2', 80)  # , date_range=['2020-06-09'])
