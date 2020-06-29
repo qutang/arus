@@ -1,7 +1,7 @@
 """hh
 
 Usage:
-  hh clean ROOT PID [SR] [--date_range=<date_range>] [--auto_range=<auto_range>] [--skip-to-mhealth] [--debug]
+  hh clean ROOT PID [SR] [--date_range=<date_range>] [--auto_range=<auto_range>] [--skip-to-mhealth] [--skip_sync] [--remove-exists] [--debug]
   hh --help
   hh --version
 
@@ -19,7 +19,6 @@ Options:
 
 import _version
 import clean_up
-import sync
 import arus
 import sys
 
@@ -42,9 +41,10 @@ def main():
         date_range = arguments['--date_range'].split(
             ',') if arguments['--date_range'] is not None else None
         auto_range = arguments['--auto_range'] or "W-SUN"
+        skip_sync = arguments['--skip-sync']
         if not arguments['--skip-to-mhealth']:
-            clean_up.convert_to_mhealth(root, pid)
-        sync.sync(root, pid)
+            clean_up.convert_to_mhealth(
+                root, pid, skip_sync, remove_exists=arguments['--remove-exists'])
         if sr is None:
             logger.warning(
                 'Signaligner conversion is skipped because SR is None')
