@@ -86,13 +86,18 @@ def _convert_annotations(root, pid):
     with alive_bar(len(raw_annotation_files)) as bar:
         for raw_annotation_file in raw_annotation_files:
             bar('Convert {} to mhealth'.format(raw_annotation_file))
-            result_df = _read_raw_annotation_file(raw_annotation_file)
-            if result_df is None:
-                continue
-            writer = arus.mh.MhealthFileWriter(
-                root, pid, hourly=True, date_folders=True)
-            writer.set_for_annotation("HandHygiene", "App")
-            writer.write_csv(result_df, append=False, block=True)
+            annot_df, task_annot_df = _read_raw_annotation_file(
+                raw_annotation_file)
+            if annot_df is not None:
+                writer = arus.mh.MhealthFileWriter(
+                    root, pid, hourly=True, date_folders=True)
+                writer.set_for_annotation("HandHygiene", "App")
+                writer.write_csv(annot_df, append=False, block=True)
+            if task_annot_df is not None:
+                writer = arus.mh.MhealthFileWriter(
+                    root, pid, hourly=True, date_folders=True)
+                writer.set_for_annotation("HandHygieneTasks", "App")
+                writer.write_csv(task_annot_df, append=False, block=True)
 
 
 def _split_hand_clapping_annotations(start_time):
@@ -107,14 +112,7 @@ def _split_hand_clapping_annotations(start_time):
     return sts, ets
 
 
-def _read_raw_annotation_file(filepath):
-    raw_df = pd.read_csv(filepath, header=None,
-                         infer_datetime_format=True, parse_dates=[0])
-    raw_df.columns = ['HEADER_TIME_STAMP', 'LABEL_NAME', 'EVENT_TYPE']
-    filter_condition = (raw_df['LABEL_NAME'].str.contains(
-        'Collect ')) & (raw_df['LABEL_NAME'].str.contains(':'))
-    raw_annotations = raw_df.loc[filter_condition, :]
-    logger.debug(raw_annotations)
+def _assemble_annotation_df(raw_annotations):
     label_names = raw_annotations['LABEL_NAME'].unique().tolist()
     dfs = []
     for label_name in label_names:
@@ -132,7 +130,10 @@ def _read_raw_annotation_file(filepath):
                 raw_annotations['EVENT_TYPE'] == "START"), 'HEADER_TIME_STAMP'].values
             stop_times = raw_annotations.loc[(raw_annotations['LABEL_NAME'] == label_name) & (
                 raw_annotations['EVENT_TYPE'] == "STOP"), 'HEADER_TIME_STAMP'].values
-        pruned_label_name = label_name.split(':')[1]
+        if ":" in label_name:
+            pruned_label_name = label_name.split(':')[1]
+        else:
+            pruned_label_name = label_name.split(' ')[1]
         label_df = pd.DataFrame(data={'HEADER_TIME_STAMP': start_times, 'START_TIME': start_times,
                                       'STOP_TIME': stop_times, 'LABEL_NAME': [pruned_label_name]*len(start_times)})
         dfs.append(label_df)
@@ -144,7 +145,23 @@ def _read_raw_annotation_file(filepath):
     return result_df
 
 
+def _read_raw_annotation_file(filepath):
+    raw_df = pd.read_csv(filepath, header=None,
+                         infer_datetime_format=True, parse_dates=[0])
+    raw_df.columns = ['HEADER_TIME_STAMP', 'LABEL_NAME', 'EVENT_TYPE']
+    filter_condition = (raw_df['LABEL_NAME'].str.contains(
+        'Collect ')) & (raw_df['LABEL_NAME'].str.contains(':'))
+    task_filter_condition = (raw_df['LABEL_NAME'].str.contains(
+        'Collect ')) & (~raw_df['LABEL_NAME'].str.contains(':'))
+    raw_annotations = raw_df.loc[filter_condition, :]
+    raw_task_annotations = raw_df.loc[task_filter_condition, :]
+    logger.debug(raw_annotations)
+    annot_df = _assemble_annotation_df(raw_annotations)
+    task_annot_df = _assemble_annotation_df(raw_task_annotations)
+    return annot_df, task_annot_df
+
+
 if __name__ == "__main__":
-    # convert_to_mhealth('D:/datasets/hand_hygiene', 'P1')
+    convert_to_mhealth('D:/datasets/hand_hygiene', 'P2')
     arus.cli.convert_to_signaligner_both(
-        'D:/datasets/hand_hygiene', 'P1', 80, date_range=['2020-06-09'])
+        'D:/datasets/hand_hygiene', 'P2', 80)
