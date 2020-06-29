@@ -1,7 +1,7 @@
 """hh
 
 Usage:
-  hh clean ROOT PID [SR] [--date_range=<date_range>] [--auto_range=<auto_range>]
+  hh clean ROOT PID [SR] [--date_range=<date_range>] [--auto_range=<auto_range>] [--skip-to-mhealth] [--debug]
   hh --help
   hh --version
 
@@ -19,7 +19,9 @@ Options:
 
 import _version
 import clean_up
+import sync
 import arus
+import sys
 
 from docopt import docopt
 from loguru import logger
@@ -27,6 +29,11 @@ from loguru import logger
 
 def main():
     arguments = docopt(__doc__, version=f'hand hygiene {_version.__version__}')
+    logger.remove()
+    if arguments['--debug']:
+        logger.add(sys.stderr, level='DEBUG')
+    else:
+        logger.add(sys.stderr, level='INFO')
     logger.debug(arguments)
     if arguments['clean']:
         root = arguments['ROOT']
@@ -35,7 +42,9 @@ def main():
         date_range = arguments['--date_range'].split(
             ',') if arguments['--date_range'] is not None else None
         auto_range = arguments['--auto_range'] or "W-SUN"
-        clean_up.convert_to_mhealth(root, pid)
+        if not arguments['--skip-to-mhealth']:
+            clean_up.convert_to_mhealth(root, pid)
+        sync.sync(root, pid)
         if sr is None:
             logger.warning(
                 'Signaligner conversion is skipped because SR is None')
