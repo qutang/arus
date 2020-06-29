@@ -92,6 +92,10 @@ def parse_annotation_type_from_filepath(filepath):
     return os.path.basename(filepath).split('.')[0]
 
 
+def parse_annotator_from_filepath(filepath):
+    return os.path.basename(filepath).split('.')[1]
+
+
 def parse_sensor_type_from_filepath(filepath):
     result = os.path.basename(filepath).split('.')[0].split('-')[0]
     return result
