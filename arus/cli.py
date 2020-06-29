@@ -94,20 +94,23 @@ def convert_to_signaligner(root, pid, file_type, sr=None, date_range=None, auto_
     session_span = mh.get_session_span(pid, root)
     session_span = signaligner.shrink_session_span(session_span, date_range)
     logger.info('Session span: {}'.format(session_span))
+
     if file_type == 'annotation':
         filepaths = mh.get_annotation_files(pid, root)
-        groups = set(map(mh.parse_annotation_type_from_filepath, filepaths))
+        def filter_fun(f): return group == mh.parse_data_id_from_filepath(f)
     elif file_type == 'sensor':
         assert sr is not None
         filepaths = mh.get_sensor_files(pid, root)
         logger.debug(session_span)
-        groups = set(map(mh.parse_data_id_from_filepath, filepaths))
+        def filter_fun(f): return group in f
+    groups = set(map(mh.parse_data_id_from_filepath, filepaths))
     logger.debug(groups)
     for group in groups:
         logger.info('Convert files of {}'.format(group))
-        group_files = list(filter(lambda f: group in f, filepaths))
-        sensor_type = mh.parse_sensor_type_from_filepath(group_files[0])
-
+        group_files = list(filter(filter_fun, filepaths))
+        logger.debug(group_files)
+        if file_type == 'sensor':
+            sensor_type = mh.parse_sensor_type_from_filepath(group_files[0])
         sub_session_markers = signaligner.auto_split_session_span(
             session_span, auto_range)
         logger.debug(sub_session_markers)
