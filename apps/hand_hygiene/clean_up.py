@@ -8,6 +8,7 @@ from loguru import logger
 import pandas as pd
 import datetime
 import shutil
+import sync_sensor as sync
 
 HAND_CLAPPING_TIME_OFFSETS = [
     (datetime.timedelta(seconds=1, milliseconds=260),
@@ -25,13 +26,19 @@ HAND_CLAPPING_TIME_OFFSETS = [
 ]
 
 
-def convert_to_mhealth(root, pid):
-    _convert_sensors(root, pid, data_type='AccelerometerCalibrated')
-    _convert_sensors(root, pid, data_type='IMUTenAxes')
-    _convert_annotations(root, pid)
+def convert_to_mhealth(root, pid, skip_sync=False, remove_exists=True):
+    master_folder = os.path.join(root, pid, arus.mh.MASTER_FOLDER)
+    if remove_exists and os.path.exists(master_folder):
+        logger.info(f'Remove existing {master_folder}')
+        shutil.rmtree(master_folder)
+    annot_df, task_annot_df = _convert_annotations(root, pid)
+    _convert_sensors(root, pid, data_type='AccelerometerCalibrated',
+                     skip_sync=skip_sync, annot_df=annot_df, task_annot_df=task_annot_df)
+    _convert_sensors(root, pid, data_type='IMUTenAxes', skip_sync=skip_sync,
+                     annot_df=annot_df, task_annot_df=task_annot_df)
 
 
-def _convert_sensors(root, pid, data_type):
+def _convert_sensors(root, pid, data_type, skip_sync=True, annot_df=None, task_annot_df=None):
     logger.info(
         f"Convert {data_type} data to mhealth format for hand hygiene raw dataset")
 
@@ -46,36 +53,47 @@ def _convert_sensors(root, pid, data_type):
     sensor_files = glob.glob(os.path.join(
         root, pid, "OriginalRaw", filename_pattern), recursive=True)
 
-    with alive_bar(len(sensor_files)) as bar:
-        for sensor_file in sensor_files:
-            bar('Convert {} to mhealth'.format(sensor_file))
+    for sensor_file in sensor_files:
+        logger.info('Convert {} to mhealth'.format(sensor_file))
 
-            if data_type == 'IMUTenAxes':
-                _write_to_mhealth(root, pid, sensor_file,
-                                  'IMUAccelerometerCalibrated')
-                _write_to_mhealth(root, pid, sensor_file,
-                                  'IMUTemperature')
-                _write_to_mhealth(root, pid, sensor_file,
-                                  'IMUGyroscope')
-                _write_to_mhealth(root, pid, sensor_file,
-                                  'IMUMagnetometer')
-            else:
-                _write_to_mhealth(root, pid, sensor_file, data_type)
+        sensor_df, meta = _read_raw_actigraph(sensor_file)
+        if not skip_sync and annot_df is not None and task_annot_df is not None:
+            logger.info(
+                "Start synchronizing this sensor to annotations based on hand clappings")
+            sensor_df = sync._sync(sensor_df, annot_df, task_annot_df)
+        else:
+            logger.warning("Skip synchronization")
+
+        if data_type == 'IMUTenAxes':
+            _write_to_mhealth(root, pid, sensor_df, meta,
+                              'IMUAccelerometerCalibrated')
+            _write_to_mhealth(root, pid, sensor_df, meta,
+                              'IMUTemperature')
+            _write_to_mhealth(root, pid, sensor_df, meta,
+                              'IMUGyroscope')
+            _write_to_mhealth(root, pid, sensor_df, meta,
+                              'IMUMagnetometer')
+        else:
+            _write_to_mhealth(root, pid, sensor_df, meta, data_type)
 
 
-def _write_to_mhealth(root, pid, sensor_file, data_type):
+def _read_raw_actigraph(sensor_file):
     reader = arus.plugins.actigraph.ActigraphReader(sensor_file)
     read_iterator = reader.read(chunksize=None)
     meta = reader.get_meta()
+    sensor_df = next(read_iterator.get_data())
+    return sensor_df, meta
+
+
+def _write_to_mhealth(root, pid, sensor_df, meta, data_type):
     writer = arus.mh.MhealthFileWriter(
         root, pid, hourly=True, date_folders=True)
     writer.set_for_sensor("ActigraphGT9X", data_type,
                           meta['SENSOR_ID'], version_code=meta['VERSION_CODE'].replace('.', ''))
-    for chunk in read_iterator.get_data():
-        col_names = arus.mh.parse_column_names_from_data_type(data_type)
-        chunk_with_selected_cols = chunk.loc[:, [
-            arus.mh.TIMESTAMP_COL] + col_names]
-        writer.write_csv(chunk_with_selected_cols, append=False, block=True)
+    col_names = arus.mh.parse_column_names_from_data_type(data_type)
+    chunk_with_selected_cols = sensor_df.loc[:, [
+        arus.mh.TIMESTAMP_COL] + col_names]
+    writer.write_csv(chunk_with_selected_cols, append=False, block=True)
 
 
 def _convert_annotations(root, pid):
@@ -84,20 +102,31 @@ def _convert_annotations(root, pid):
     raw_annotation_files = glob.glob(os.path.join(
         root, pid, "OriginalRaw", "**", "*annotations.csv"), recursive=True)
     with alive_bar(len(raw_annotation_files)) as bar:
+        annot_dfs = []
+        task_annot_dfs = []
         for raw_annotation_file in raw_annotation_files:
             bar('Convert {} to mhealth'.format(raw_annotation_file))
             annot_df, task_annot_df = _read_raw_annotation_file(
                 raw_annotation_file)
-            if annot_df is not None:
-                writer = arus.mh.MhealthFileWriter(
-                    root, pid, hourly=True, date_folders=True)
-                writer.set_for_annotation("HandHygiene", "App")
-                writer.write_csv(annot_df, append=False, block=True)
-            if task_annot_df is not None:
-                writer = arus.mh.MhealthFileWriter(
-                    root, pid, hourly=True, date_folders=True)
-                writer.set_for_annotation("HandHygieneTasks", "App")
-                writer.write_csv(task_annot_df, append=False, block=True)
+            annot_dfs.append(annot_df)
+            task_annot_dfs.append(task_annot_df)
+    annot_df = pd.concat(annot_dfs, axis=0, ignore_index=True)
+    annot_df.sort_values(by=annot_df.columns[0], inplace=True)
+    task_annot_df = pd.concat(task_annot_dfs, axis=0, ignore_index=True)
+    task_annot_df.sort_values(by=task_annot_df.columns[0], inplace=True)
+
+    if annot_df is not None:
+        writer = arus.mh.MhealthFileWriter(
+            root, pid, hourly=True, date_folders=True)
+        writer.set_for_annotation("HandHygiene", "App")
+        writer.write_csv(annot_df, append=False, block=True)
+    if task_annot_df is not None:
+        writer = arus.mh.MhealthFileWriter(
+            root, pid, hourly=True, date_folders=True)
+        writer.set_for_annotation("HandHygieneTasks", "App")
+        writer.write_csv(task_annot_df, append=False, block=True)
+
+    return annot_df, task_annot_df
 
 
 def _split_hand_clapping_annotations(start_time):
@@ -121,6 +150,8 @@ def _assemble_annotation_df(raw_annotations):
         if '6 times' in label_name:
             old_start_times = raw_annotations.loc[(raw_annotations['LABEL_NAME'] == label_name) & (
                 raw_annotations['EVENT_TYPE'] == "START"), 'HEADER_TIME_STAMP'].values
+            # Only use the first hand clapping for syncing because the second hand clapping video has been changed between different sessions
+            old_start_times = old_start_times[::2]
             for st in old_start_times:
                 sts, ets = _split_hand_clapping_annotations(st)
                 start_times = start_times + sts
@@ -162,6 +193,7 @@ def _read_raw_annotation_file(filepath):
 
 
 if __name__ == "__main__":
-    convert_to_mhealth('D:/datasets/hand_hygiene', 'P2')
+    convert_to_mhealth('D:/datasets/hand_hygiene', 'P1',
+                       skip_sync=False, remove_exists=True)
     arus.cli.convert_to_signaligner_both(
-        'D:/datasets/hand_hygiene', 'P2', 80)
+        'D:/datasets/hand_hygiene', 'P1', 80, date_range=['2020-06-09'])
