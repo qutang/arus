@@ -70,13 +70,13 @@ def get_pids(dataset_path):
         constants.PROCESSED_FOLDER, constants.META_FOLDER], os.listdir(dataset_path)))
 
 
-def get_sensor_files(pid, dataset_path, sid=None):
-    if sid is None:
-        files = glob.glob(os.path.join(dataset_path, pid,
-                                       constants.MASTER_FOLDER, '**', '*.sensor.csv*'), recursive=True)
-    else:
-        files = glob.glob(os.path.join(dataset_path, pid,
-                                       constants.MASTER_FOLDER, '**', '*{}*.sensor.csv*'.format(sid)), recursive=True)
+def get_sensor_files(pid, dataset_path, sid="", given_date=None, data_type=""):
+    if given_date is not None:
+        date_hour_str = given_date.strftime(f'%Y-%m-%d{os.sep}%H')
+    name_pattern = f'*{data_type}*{sid}*.sensor.csv*'
+    path_pattern = '**' if given_date is None else f'{date_hour_str}'
+    files = glob.glob(os.path.join(dataset_path, pid,
+                                   constants.MASTER_FOLDER, path_pattern, name_pattern), recursive=True)
     return sorted(files)
 
 
