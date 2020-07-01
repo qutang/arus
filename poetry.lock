@@ -256,6 +256,15 @@ version = "0.10.0"
 six = "*"
 
 [[package]]
+category = "main"
+description = "A backport of the dataclasses module for Python 3.6"
+marker = "python_version >= \"3.6\" and python_version < \"3.7\""
+name = "dataclasses"
+optional = false
+python-versions = ">=3.6, <3.7"
+version = "0.7"
+
+[[package]]
 category = "dev"
 description = "Decorators for Humans"
 name = "decorator"
@@ -1808,7 +1817,7 @@ dev = ["dephell_versioning", "semver"]
 metawear = ["pymetawear"]
 
 [metadata]
-content-hash = "968179673945bce939287610afbbe58f36f60c8c39ba0d9b2a2c3fdfee41b740"
+content-hash = "582a34eba46033748a76791c5130a837ca6d73a3bf5b1b203313746cea39e617"
 python-versions = "^3.6.1"
 
 [metadata.files]
@@ -1975,6 +1984,10 @@ cryptography = [
 cycler = [
     {file = "cycler-0.10.0-py2.py3-none-any.whl", hash = "sha256:1d8a5ae1ff6c5cf9b93e8811e581232ad8920aeec647c37316ceac982b08cb2d"},
     {file = "cycler-0.10.0.tar.gz", hash = "sha256:cd7b2d1018258d7247a71425e9f26463dfb444d411c39569972f4ce586b0c9d8"},
+]
+dataclasses = [
+    {file = "dataclasses-0.7-py3-none-any.whl", hash = "sha256:3459118f7ede7c8bea0fe795bff7c6c2ce287d01dd226202f7c9ebc0610a7836"},
+    {file = "dataclasses-0.7.tar.gz", hash = "sha256:494a6dcae3b8bcf80848eea2ef64c0cc5cd307ffc263e17cdf42f3e5420808e6"},
 ]
 decorator = [
     {file = "decorator-4.4.2-py2.py3-none-any.whl", hash = "sha256:41fa54c2a0cc4ba648be4fd43cff00aedf5b9465c9bf18d64325bc225f08f760"},

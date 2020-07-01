@@ -41,6 +41,7 @@ loky = "^2.6.0"
 loguru = "^0.5.0"
 docopt = "^0.6.2"
 alive-progress = "^1.5.1"
+dataclasses = { version = "^0.7", python = "~3.6"}
 pymetawear = {version = "^0.12.0", optional = true}
 pysimplegui = {version = "^4.14.1", optional = true}
 playsound = {version = "^1.2.2", optional = true}
