@@ -4,7 +4,7 @@ Usage:
   arus signaligner FOLDER PID [SR] [-t <file_type>] [--date_range=<date_range>] [--auto_range=<auto_range>] [--debug]
   arus app APP_COMMAND FOLDER NAME [--app_version=<app_version>]
   arus dataset DATASET_COMMAND DATASET_NAME [FOLDER] [OUTPUT_FOLDER] [--debug]
-  arus package PACK_COMMAND [NEW_VERSION] [--dev] [--release]
+  arus package PACK_COMMAND [NEW_VERSION] [--dev] [--release] [--debug]
   arus --help
   arus --version
 
