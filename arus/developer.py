@@ -279,7 +279,7 @@ def write_changelog_index_to_file(tags):
 def write_changelog_to_file(parsed_changelogs, start_tag, stop_tag):
     template = "## {category}"
 
-    item_template = "* {scope}: {title} [{commit}](https://github.com/qutang/arus/commit/{commit})"
+    item_template = "* {title} [{commit}](https://github.com/qutang/arus/commit/{commit}) (**{scope}**)"
     item_template2 = "* {title} [{commit}](https://github.com/qutang/arus/commit/{commit})"
 
     category_order = ['API changes',
@@ -315,7 +315,7 @@ def parse_conventional_commit(msg):
         return "", "", ""
     category_scope = tokens[0]
     title = tokens[1].strip(' ')
-    sub_tokens = re.match(r'(\w+)', category_scope).groups()
+    sub_tokens = re.findall(r'\w+', category_scope)
     category = sub_tokens[0]
     if len(sub_tokens) > 1:
         scope = sub_tokens[1]
