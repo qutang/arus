@@ -46,16 +46,16 @@ class Synchronizer(operator.Operator):
             src {[type]} -- [description] (default: {None})
             context {dict} -- It has to provide `data_id` as an indicator of the incoming data source, `start_time` and `stop_time` as indicators of the start and stop boundary of the data. (default: {{}})
         """
-        self._context = {**self._context, **context}
-        del self._context['data_id']
-        st = self._context['start_time']
-        et = self._context['stop_time']
+        new_context = self.merge_context(context)
+        del new_context['data_id']
+        st = new_context['start_time']
+        et = new_context['stop_time']
         data_id = context['data_id']
-        result = self.sync(values, st, et, data_id)
+        result, new_context = self._sync(values, st, et, data_id, new_context)
         if result is not None:
-            self._result.put((result, self._context))
+            self._result.put((result, new_context))
 
-    def sync(self, data, st, et, data_id):
+    def _sync(self, data, st, et, data_id, new_context):
         st = moment.Moment(st)
         et = moment.Moment(et)
         if st.to_unix_timestamp() not in self._buffer:
@@ -65,18 +65,19 @@ class Synchronizer(operator.Operator):
         assembled = self._buffer[st.to_unix_timestamp()]
         if len(assembled.keys()) == self._num:
             # now the assemble is ready
-            assembled = self._format_assembled(assembled)
+            assembled, new_context = self._format_assembled(
+                assembled, new_context)
             del self._buffer[st.to_unix_timestamp()]
-            return assembled
-        return None
+            return assembled, new_context
+        return None, new_context
 
-    def _format_assembled(self, assembled):
+    def _format_assembled(self, assembled, context):
         result = []
         data_ids = []
         for data_id, values in assembled.items():
             data_ids.append(data_id)
             result.append(values)
-        self._context = {
-            **self._context, "data_ids": data_ids
+        new_context = {
+            **context, "data_ids": data_ids
         }
-        return result
+        return result, new_context

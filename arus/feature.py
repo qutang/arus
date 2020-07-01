@@ -4,9 +4,14 @@ Compute common features for activity recognition
 
 from . import extensions as ext
 from . import accelerometer as accel
+from . import stream2, generator, segmentor, synchronizer, processor, scheduler, pipeline, node
+from .error_code import ErrorCode
 import numpy as np
 import pandas as pd
 import functools
+from loguru import logger
+import enum
+import sys
 
 
 def time_freq_orient(raw_df, sr, st, et, subwin_secs=2, ori_unit='rad', activation_threshold=0.2, use_vm=True):
@@ -94,18 +99,32 @@ def time_freq_orient(raw_df, sr, st, et, subwin_secs=2, ori_unit='rad', activati
 
 
 class FeatureSet:
-    def __init__(self, raw_dfs, placements):
+    def __init__(self, raw_sources, placements):
         """
         Raw data from multiple sources
         """
-        self._raw_dfs = raw_dfs
+        self._raw_sources = raw_sources
         self._placements = placements
+        self.reset()
 
-    def compute(self, window_size, feature_func, feature_names, **kwargs):
+    def _validate_input_as_df(self):
+        if type(self._raw_sources[0]) is not pd.DataFrame:
+            logger.error(
+                '[Error code: {ErrorCode.INPUT_ARGUMENT_FORMAT_ERROR.name}] To compute features offline, the input raw data should be feature dataframe stored in mhealth format.')
+            sys.exit(ErrorCode.INPUT_ARGUMENT_FORMAT_ERROR.name)
+
+    def _validate_input_as_generator(self):
+        if type(self._raw_sources[0]) is not generator.Generator:
+            logger.error(
+                f'[Error code: {ErrorCode.INPUT_ARGUMENT_FORMAT_ERROR.name}] To compute features online, the input raw data should be arus Generator object.')
+            sys.exit(ErrorCode.INPUT_ARGUMENT_FORMAT_ERROR.name)
+
+    def compute_offline(self, window_size, feature_func, feature_names, **kwargs):
+        self._validate_input_as_df()
         joint_feature_set = None
-        for raw_df, placement in zip(self._raw_dfs, self._placements):
+        for raw_df, placement in zip(self._raw_sources, self._placements):
             grouped = raw_df.groupby(pd.Grouper(key='HEADER_TIME_STAMP',
-                                                freq="{}ms".format(window_size)))
+                                                freq=f"{window_size}ms"))
             feature_set = grouped.apply(feature_func, **kwargs)
             feature_set = FeatureSet._append_placement_suffix(
                 feature_set, placement, feature_names)
@@ -120,7 +139,8 @@ class FeatureSet:
 
     def compute_per_window(self, feature_func, feature_names, **kwargs):
         joint_feature_set = None
-        for raw_df, placement in zip(self._raw_dfs, self._placements):
+        self._validate_input_as_df()
+        for raw_df, placement in zip(self._raw_sources, self._placements):
             feature_set = feature_func(raw_df, **kwargs)
             feature_set = FeatureSet._append_placement_suffix(
                 feature_set, placement, feature_names)
@@ -133,11 +153,50 @@ class FeatureSet:
         self._feature_names = list(filter(lambda name: name.split('_')
                                           [-1] in self._placements, joint_feature_set.columns))
 
+    def compute_online(self, seg, feature_func, feature_names, start_time, **kwargs):
+        src_streams = []
+        for src_generator, placement in zip(self._raw_sources, self._placements):
+            src_stream = stream2.Stream(
+                src_generator, seg, name=f'{placement}-stream')
+            src_stream.set_essential_context(
+                start_time=start_time, stream_id=placement)
+            src_streams.append(src_stream)
+
+        sync = synchronizer.Synchronizer()
+        sync.add_sources(n=len(self._raw_sources))
+
+        proc = processor.Processor(feature_func,
+                                   mode=scheduler.Scheduler.Mode.PROCESS,
+                                   scheme=scheduler.Scheduler.Scheme.SUBMIT_ORDER,
+                                   max_workers=10)
+        proc.set_context(**kwargs)
+
+        self._pip = node.Node(op=pipeline.Pipeline(*src_streams,
+                                                   synchronizer=sync,
+                                                   processor=proc, name='online-feature-pipeline'),
+                              t=node.Node.Type.INPUT, name='online-feature-pipeline')
+        self._pip.start()
+        for pack in self._pip.produce():
+            if pack.signal == node.Node.Signal.DATA:
+                if pack.values is not None:
+                    yield pack.values
+            elif pack.signal == node.Node.Signal.STOP:
+                break
+        self._pip.stop()
+
+    def stop_online(self):
+        self._pip.stop()
+        self._pip = None
+
     def get_feature_set(self):
         return self._feature_set.copy(deep=True)
 
     def get_feature_names(self):
         return self._feature_names
+
+    def reset(self):
+        self._feature_set = None
+        self._feature_names = None
 
     @staticmethod
     def _append_placement_suffix(feature_set, placement, feature_names):

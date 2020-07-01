@@ -39,6 +39,10 @@ class Stream(operator.Operator):
         self._generator.start()
         logger.info('Stream started.')
 
+    def set_essential_context(self, start_time, stream_id):
+        self._context['ref_start_time'] = start_time
+        self._context['data_id'] = stream_id
+
     def start(self, start_time: "str, datetime, numpy.datetime64, pandas.Timestamp" = None):
         """Method to start loading data from the provided data source.
 

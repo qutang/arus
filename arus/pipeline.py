@@ -88,5 +88,5 @@ class Pipeline(operator.Operator):
                 elif data.signal == node.Node.Signal.DATA:
                     yield data.values, data.context
                 else:
-                    pass
+                    break
         yield None, {}

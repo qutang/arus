@@ -40,11 +40,11 @@ def sample_pipeline(spades_lab):
 
     dw_stream = stream2.Stream(
         generator.MhealthSensorFileGenerator(*dw_data, buffer_size=18000), segmentor.SlidingWindowSegmentor(window_size=2), name='dw-stream')
-    dw_stream.set_context(ref_start_time=start_time, data_id='DW')
+    dw_stream.set_essential_context(start_time=start_time, stream_id='DW')
 
     da_stream = stream2.Stream(
         generator.MhealthSensorFileGenerator(*da_data, buffer_size=18000), segmentor.SlidingWindowSegmentor(window_size=2), name='dw-stream')
-    da_stream.set_context(ref_start_time=start_time, data_id='DA')
+    da_stream.set_essential_context(start_time=start_time, stream_id='DA')
 
     sync = synchronizer.Synchronizer()
     sync.add_sources(n=2)

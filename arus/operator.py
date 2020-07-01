@@ -15,6 +15,10 @@ class Operator(abc.ABC):
     def set_context(self, **context):
         self._context = context
 
+    def merge_context(self, added_context):
+        new_context = {**self._context, **added_context}
+        return new_context
+
     def stop(self):
         self._stop = True
 

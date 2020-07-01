@@ -9,7 +9,8 @@ class Processor(operator.Operator):
         self._scheduler = scheduler.Scheduler(**kwargs)
 
     def run(self, values=None, src=None, context={}):
-        self._scheduler.submit(self._func, values, src=src, **context)
+        new_context = self.merge_context(context)
+        self._scheduler.submit(self._func, values, src=src, **new_context)
 
     def stop(self):
         super().stop()
