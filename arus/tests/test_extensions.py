@@ -81,6 +81,20 @@ def regularize_test_signals():
     return results
 
 
+@pytest.fixture(scope='module')
+def test_sensor_data(spades_lab):
+    dw_sensor_file = spades_lab['subjects']['SPADES_1']['sensors']['DW'][0]
+    da_sensor_file = spades_lab['subjects']['SPADES_1']['sensors']['DA'][0]
+    dw_data = pd.read_csv(dw_sensor_file, parse_dates=[0])
+    da_data = pd.read_csv(da_sensor_file, parse_dates=[0])
+    st = max([dw_data.iloc[0, 0], da_data.iloc[0, 0]])
+    dw_data = extensions.pandas.segment_by_time(
+        dw_data, st, st + pd.Timedelta(12.8 * 5, unit='seconds'))
+    da_data = extensions.pandas.segment_by_time(
+        da_data, st, st + pd.Timedelta(12.8 * 5, unit='seconds'))
+    return dw_data, da_data
+
+
 class TestPandas:
     def test_merge_all(self):
         df1 = pd.DataFrame({'key': ['foo', 'bar', 'baz', 'foo'],
@@ -121,6 +135,45 @@ class TestPandas:
             df1, col='value', values_to_filter_out=[2, 5])
         np.testing.assert_array_equal(filtered['value'].values, [1, 3])
         np.testing.assert_array_equal(filtered['key'].values, ['foo', 'baz'])
+
+    @pytest.mark.parametrize('start_time', [None, "2015-09-24 14:17:00.000"])
+    @pytest.mark.parametrize('stop_time', [None, "2015-09-24 14:17:00.000"])
+    def test_get_common_timespan(self, test_sensor_data, start_time, stop_time):
+        dw_data, da_data = test_sensor_data
+        st, et = extensions.pandas.get_common_timespan(
+            dw_data, da_data, st=start_time, et=stop_time)
+        if start_time is None:
+            assert st.timestamp() == pd.Timestamp(
+                '2015-09-24 14:17:48.013').timestamp()
+        else:
+            assert st.timestamp() == pd.Timestamp(start_time).timestamp()
+
+        if stop_time is None:
+            assert et.timestamp() == pd.Timestamp(
+                '2015-09-24 14:18:52.000').timestamp()
+        else:
+            assert et.timestamp() == pd.Timestamp(stop_time).timestamp()
+
+    @pytest.mark.parametrize('start_time', [None, "2015-09-24 14:17:48.000"])
+    @pytest.mark.parametrize('stop_time', [None, "2015-09-24 14:17:00.000"])
+    def test_split_into_windows(self, test_sensor_data, start_time, stop_time):
+        dw_data, da_data = test_sensor_data
+        window_start_markers = extensions.pandas.split_into_windows(
+            dw_data, da_data, step_size=12.8, st=start_time, et=stop_time)
+        if start_time is None and stop_time is None:
+            assert len(window_start_markers) == 5
+            assert np.all(
+                np.diff(window_start_markers)[:-1].astype('timedelta64[ms]').astype(int) == 12800)
+            assert window_start_markers[0].timestamp() == pd.Timestamp(
+                '2015-09-24 14:17:48.013').timestamp()
+        elif start_time is not None and stop_time is None:
+            assert len(window_start_markers) == 5
+            assert np.all(
+                np.diff(window_start_markers)[:-1].astype('timedelta64[ms]').astype(int) == 12800)
+            assert window_start_markers[0].timestamp() == pd.Timestamp(
+                start_time).timestamp()
+        elif stop_time is not None:
+            assert len(window_start_markers) == 0
 
 
 class TestNumpy:
