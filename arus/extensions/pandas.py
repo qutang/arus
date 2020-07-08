@@ -9,6 +9,7 @@ License: see LICENSE file
 """
 import functools
 import pandas as pd
+import numpy as np
 
 
 def merge_all(*dfs, suffix_names, suffix_cols, **kwargs):
@@ -90,3 +91,28 @@ def segment_by_time(df, seg_st=None, seg_et=None, st_col=0, et_col=None):
         subset_df.loc[subset_df.loc[:, et_col] >
                       seg_et, et_col] = seg_et
         return subset_df
+
+
+def get_common_timespan(*dfs, st=None, et=None, st_col=0, et_col=None):
+    et_col = et_col or st_col
+
+    if st is None:
+        sts = [df.iloc[0, st_col] for df in dfs]
+        st = pd.Timestamp(np.min(sts))
+    else:
+        st = pd.Timestamp(st)
+    if et is None:
+        ets = [df.iloc[-1, et_col] for df in dfs]
+        et = pd.Timestamp(np.max(ets))
+    else:
+        et = pd.Timestamp(et)
+    return st, et
+
+
+def split_into_windows(*dfs, step_size, st=None, et=None, st_col=0, et_col=None):
+    st, et = get_common_timespan(
+        *dfs, st=st, et=et, st_col=st_col, et_col=et_col)
+    step_size = step_size * 1000
+    window_start_markers = pd.date_range(
+        start=st, end=et, freq=f'{step_size}ms', closed='left')
+    return window_start_markers
