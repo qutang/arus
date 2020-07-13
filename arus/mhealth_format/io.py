@@ -19,6 +19,20 @@ class MhealthFileReader:
         self._data = None
         self._iterator = None
 
+    @staticmethod
+    def read_csvs(*filepaths, datetime_cols=[0]):
+        dfs = []
+        for filepath in filepaths:
+            reader = MhealthFileReader(filepath).read_csv(
+                datetime_cols=datetime_cols)
+            dfs.append(next(reader.get_data()))
+
+        # combine and sort timestamps
+        result = pd.concat(dfs, axis=0, ignore_index=True, sort=False)
+        result.sort_values(
+            by=result.columns[datetime_cols[0]], inplace=True, ignore_index=True)
+        return result
+
     def read_csv(self, chunksize=None, datetime_cols=[0]):
         """
         Known isuee:
