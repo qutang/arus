@@ -10,7 +10,7 @@ class ParseError(Exception):
 
 
 def parse_column_names_from_data_type(data_type):
-    if data_type in ['AccelerometerCalibrated', 'IMUAccelerometerCalibrated']:
+    if data_type in ['AccelerometerCalibrated', 'IMUAccelerometerCalibrated', 'AccelerationCalibrated']:
         return ['ACCELEROMETER_X', 'ACCELEROMETER_Y', 'ACCELEROMETER_Z']
     elif data_type in ['IMUTenAxes']:
         return ["ACCELEROMETER_X", "ACCELEROMETER_Y", "ACCELEROMETER_Z", "TEMPERATURE", "GYROSCOPE_X", "GYROSCOPE_Y", "GYROSCOPE_Z", "MAGNETOMETER_X", "MAGNETOMETER_Y", "MAGNETOMETER_Z"]
