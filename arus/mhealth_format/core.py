@@ -67,8 +67,9 @@ def get_orientation_corrections(dataset_path):
 
 
 def get_pids(dataset_path):
-    return list(filter(lambda name: name not in [
-        constants.PROCESSED_FOLDER, constants.META_FOLDER], os.listdir(dataset_path)))
+    pids = filter(lambda name: name not in [
+        constants.PROCESSED_FOLDER, constants.META_FOLDER], os.listdir(dataset_path))
+    return list(sorted(pids))
 
 
 def get_sensor_files(pid, dataset_path, sid="", given_date=None, data_type=""):
