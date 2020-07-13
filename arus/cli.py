@@ -4,6 +4,7 @@ Usage:
   arus signaligner FOLDER PID [SR] [-t <file_type>] [--date_range=<date_range>] [--auto_range=<auto_range>] [--debug]
   arus app APP_COMMAND FOLDER NAME [--app_version=<app_version>]
   arus dataset DATASET_COMMAND DATASET_NAME [FOLDER] [OUTPUT_FOLDER] [--debug]
+  arus mh MH_COMMAND [FOLDER] [OUTPUT_FOLDER] [--debug]
   arus package PACK_COMMAND [NEW_VERSION] [--dev] [--release] [--debug]
   arus --help
   arus --version
@@ -29,7 +30,7 @@ Options:
 from docopt import docopt
 from loguru import logger
 from . import developer
-from . import dataset
+from . import dataset as ds
 from . import mhealth_format as mh
 from .plugins import signaligner
 import glob
@@ -38,6 +39,8 @@ import os
 import alive_progress as progress
 import sys
 import subprocess
+import json
+import pprint
 
 
 def cli():
@@ -57,6 +60,8 @@ def cli():
         app_command(arguments)
     elif arguments['dataset']:
         dataset_command(arguments)
+    elif arguments['mh']:
+        mh_command(arguments)
     elif arguments['package']:
         package_command(arguments)
 
@@ -167,10 +172,18 @@ def dataset_command(arguments):
         name = arguments['DATASET_NAME']
         if name == 'all':
             logger.info("Available sample data names")
-            logger.info(dataset.get_available_sample_data())
+            logger.info(ds.get_available_sample_data())
         else:
             logger.info(f'Query dataset: {name} in ARUS package')
-            logger.info(dataset.get_sample_datapath(name))
+            logger.info(ds.get_sample_datapath(name))
+
+
+def mh_command(arguments):
+    if arguments['MH_COMMAND'] == 'structure':
+        folder = arguments['FOLDER']
+        output_folder = arguments['OUTPUT_FOLDER']
+        mh_ds = ds.MHDataset(path=folder, name=os.path.basename(folder))
+        logger.info(mh_ds.name)
 
 
 def package_command(arguments):
