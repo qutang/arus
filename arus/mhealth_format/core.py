@@ -4,6 +4,7 @@ from . import constants
 from . import helper
 import pandas as pd
 import datetime as dt
+from loguru import logger
 
 
 def get_processed_path(dataset_path):
