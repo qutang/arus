@@ -1,0 +1,29 @@
+ACTIVITY,ACTIVITY_VALIDATED,POSTURE_VALIDATED,ACTIVITY_GROUP,MDCAS,ACTIVE_TRAINING,MANNINI_2017_VALIDATED,INTENSITY,ACTIVITY_ABBRS
+Level treadmill walking at 1 mph with arms on desk,Level treadmill walking at 1 mph with arms on desk,Upright,Walking,Unknown,Walking at 1 mph,Ambulation,Light,Walk-1mph
+Level treadmill walking at 2 mph with arms on desk,Level treadmill walking at 2 mph with arms on desk,Upright,Walking,Unknown,Walking at 2 mph,Ambulation,Light,Walk-2mph
+Level treadmill walking at 3 mph with arms on desk,Level treadmill walking at 3-3.5 mph,Upright,Walking,Unknown,Walking at 3-3.5 mph,Ambulation,Moderate,Walk-3/3.5mph
+Level treadmill walking at 3-3.5 mph,Level treadmill walking at 3-3.5 mph,Upright,Walking,Ambulation,Walking at 3-3.5 mph,Ambulation,Moderate,Walk-3/3.5mph
+Level treadmill walking at 3-3.5 mph and carrying a bag,Level treadmill walking at 3-3.5 mph and carrying a bag,Upright,Walking,Ambulation,Walking at 3-3.5 mph,Ambulation,Moderate,Walk-bag
+Level treadmill walking at 3-3.5 mph and carrying a drink,Level treadmill walking at 3-3.5 mph and carrying a drink,Upright,Walking,Ambulation,Walking at 3-3.5 mph,Ambulation,Moderate,Walk-drink
+Level treadmill walking at 3-3.5 mph while holding a phone to the ear and talking,Level treadmill walking at 3-3.5 mph while holding a phone to the ear and talking,Upright,Walking,Ambulation,Walking at 3-3.5 mph,Ambulation,Moderate,Walk-phone
+Level treadmill walking at 3-3.5 mph while talking,Level treadmill walking at 3-3.5 mph while talking,Upright,Walking,Ambulation,Walking at 3-3.5 mph,Ambulation,Moderate,Walk-talk
+Lying on the back,Lying on the back,Lying,Lying,Lying (Sleeping),Lying,Sedentary,Light,Lie-back
+Nonwear,Unknown,Unknown,Unknown,Nonwear,Unknown,Unknown,Unknown,Unknown
+Reclining and talking,Reclining and talking,Sitting,Sitting,Sitting Movement,Sitting still,Sedentary,Light,Rec.-talk
+Reclining and using phone,Reclining and using phone,Sitting,Sitting,Sitting Movement,Sitting still,Sedentary,Light,Rec.-phone
+Self-selected free standing,Self-selected free standing,Upright,Standing,Upright Movement,Self-selected free standing,Others,Light,Free-stand
+Sitting and talking,Sitting and talking,Sitting,Sitting,Sitting Movement,Sitting still,Sedentary,Light,Sit-talk
+Sitting and typing on a keyboard,Sitting and typing on a keyboard,Sitting,Sitting,Sitting Movement,Sitting and using a computer,Others,Light,Sit-type
+Sitting and writing,Sitting and writing,Sitting,Sitting,Sitting Movement,Sitting and writing,Others,Light,Sit-write
+Sitting still,Sitting still,Sitting,Sitting,Sitting Movement,Sitting still,Sedentary,Light,Sit-still
+Standing and folding towels,Standing and folding towels,Upright,Standing,Upright Movement,Folding towels,Others,Moderate,Stand-fold
+Standing and sweeping,Standing and sweeping,Upright,Standing,Upright Movement,Sweeping,Others,Moderate,Stand-sweep
+Standing and typing on a keyboard,Standing and typing on a keyboard,Upright,Standing,Upright Movement,Standing and using a computer,Others,Light,Stand-type
+Standing and writing at a table,Standing and writing at a table,Upright,Standing,Upright Movement,Standing and writing,Others,Light,Stand-write
+Standing loading/unloading shelf,Standing loading/unloading shelf,Upright,Standing,Upright Movement,Loading/unloading shelf,Others,Moderate,Stand-shelf
+Stationary cycle ergometry,Stationary cycle ergometry,Sitting,Biking,Unknown,Biking,Cycling,Vigorous,Cycle-erg
+Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transit.
+Treadmill running at 5.5 mph & 5% grade,Treadmill running at 5.5 mph & 5% grade,Upright,Running,Ambulation,Running,Ambulation,Vigorous,Run 5.5mph/5%
+Unknown,Unknown,Unknown,Unknown,Unknown,Unknown,Unknown,Unknown,Unknown
+Walking downstairs,Unknown,Unknown,Unknown,Ambulation,Walking downstairs,Ambulation,Moderate,Unknown
+Walking upstairs,Unknown,Unknown,Unknown,Ambulation,Walking upstairs,Ambulation,Vigorous,Unknown
