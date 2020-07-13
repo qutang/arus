@@ -24,8 +24,8 @@ def test_random_data_generator_operator():
     op.stop()
 
 
-def test_mhealth_file_generator_operator(spades_lab):
-    mhealth_filepath = spades_lab['subjects']['SPADES_2']['sensors']['DW'][0]
+def test_mhealth_file_generator_operator(spades_lab_data):
+    mhealth_filepath = spades_lab_data['subjects']['SPADES_2']['sensors']['DW'][0]
     generator = gr.MhealthSensorFileGenerator(
         mhealth_filepath, buffer_size=10)
 
@@ -44,8 +44,8 @@ def test_mhealth_file_generator_operator(spades_lab):
     op.stop()
 
 
-def test_segmentor_operator(spades_lab):
-    mhealth_filepath = spades_lab['subjects']['SPADES_2']['sensors']['DW'][0]
+def test_segmentor_operator(spades_lab_data):
+    mhealth_filepath = spades_lab_data['subjects']['SPADES_2']['sensors']['DW'][0]
     generator = gr.MhealthSensorFileGenerator(
         mhealth_filepath, buffer_size=1800)
     generator.run()
@@ -69,9 +69,9 @@ def test_segmentor_operator(spades_lab):
     op.stop()
 
 
-def test_synchronizer_operator(spades_lab):
-    dw_filepath = spades_lab['subjects']['SPADES_2']['sensors']['DW'][0]
-    da_filepath = spades_lab['subjects']['SPADES_2']['sensors']['DA'][0]
+def test_synchronizer_operator(spades_lab_data):
+    dw_filepath = spades_lab_data['subjects']['SPADES_2']['sensors']['DW'][0]
+    da_filepath = spades_lab_data['subjects']['SPADES_2']['sensors']['DA'][0]
     dw_generator = gr.MhealthSensorFileGenerator(
         dw_filepath, buffer_size=1800)
     da_generator = gr.MhealthSensorFileGenerator(
@@ -113,8 +113,8 @@ def test_synchronizer_operator(spades_lab):
     op.stop()
 
 
-def test_processor_operator(spades_lab):
-    dw_filepath = spades_lab['subjects']['SPADES_2']['sensors']['DW'][0]
+def test_processor_operator(spades_lab_data):
+    dw_filepath = spades_lab_data['subjects']['SPADES_2']['sensors']['DW'][0]
     dw_generator = gr.MhealthSensorFileGenerator(
         dw_filepath, buffer_size=1800)
     dw_generator.run()

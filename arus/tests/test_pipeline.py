@@ -15,7 +15,7 @@ import numpy as np
 
 
 @pytest.fixture
-def sample_pipeline(spades_lab):
+def sample_pipeline(spades_lab_data):
     def compute_mean(values_list, src=None, **context):
         import numpy as np
         import pandas as pd
@@ -32,11 +32,11 @@ def sample_pipeline(spades_lab):
         result.insert(0, 'START_TIME', context['start_time'])
         result.insert(1, 'STOP_TIME', context['stop_time'])
         return result, context
-    dw_data = spades_lab['subjects']['SPADES_2']['sensors']['DW']
-    da_data = spades_lab['subjects']['SPADES_2']['sensors']['DA']
+    dw_data = spades_lab_data['subjects']['SPADES_2']['sensors']['DW']
+    da_data = spades_lab_data['subjects']['SPADES_2']['sensors']['DA']
 
     start_time = mh.get_session_start_time(
-        'SPADES_2', spades_lab['meta']['root'], round_to='minute')
+        'SPADES_2', spades_lab_data['meta']['root'], round_to='minute')
 
     dw_stream = stream2.Stream(
         generator.MhealthSensorFileGenerator(*dw_data, buffer_size=18000), segmentor.SlidingWindowSegmentor(window_size=2), name='dw-stream')

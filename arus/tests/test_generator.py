@@ -6,8 +6,9 @@ import pandas as pd
 import time
 
 
-def test_mHealthSensorFileGenerator(spades_lab):
-    sensor_files = [spades_lab['subjects']['SPADES_1']['sensors']['DW'][0]]
+def test_mHealthSensorFileGenerator(spades_lab_data):
+    sensor_files = [spades_lab_data['subjects']
+                    ['SPADES_1']['sensors']['DW'][0]]
     sizes = []
     gen = generator.MhealthSensorFileGenerator(
         *sensor_files, buffer_size=18000)
@@ -37,8 +38,8 @@ def test_mHealthSensorFileGenerator(spades_lab):
     assert np.all(np.array(sizes) == 18000)
 
 
-def test_mHealthAnnotationFileGenerator(spades_lab):
-    annotation_files = spades_lab['subjects']['SPADES_1']['annotations']['SPADESInLab']
+def test_mHealthAnnotationFileGenerator(spades_lab_data):
+    annotation_files = spades_lab_data['subjects']['SPADES_1']['annotations']['SPADESInLab']
     sizes = []
     gen = generator.MhealthAnnotationFileGenerator(
         *annotation_files, buffer_size=5)

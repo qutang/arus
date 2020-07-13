@@ -6,8 +6,8 @@ import pytest
 
 
 @pytest.fixture
-def sensor_data(spades_lab):
-    sensor_file = spades_lab['subjects']['SPADES_47']['sensors']['DW'][0]
+def sensor_data(spades_lab_data):
+    sensor_file = spades_lab_data['subjects']['SPADES_47']['sensors']['DW'][0]
     df = pd.read_csv(sensor_file, header=0, parse_dates=[0])
     return df.iloc[:1000, :]
 

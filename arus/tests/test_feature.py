@@ -9,8 +9,8 @@ from .. import extensions as ext
 
 
 @pytest.fixture(scope='module')
-def test_data(spades_lab):
-    sensor_file = spades_lab['subjects']['SPADES_1']['sensors']['DW'][0]
+def test_data(spades_lab_data):
+    sensor_file = spades_lab_data['subjects']['SPADES_1']['sensors']['DW'][0]
     data = pd.read_csv(sensor_file, parse_dates=[0]).iloc[:1000, :]
     st = data.iloc[0, 0]
     et = data.iloc[-1, 0]
@@ -18,9 +18,9 @@ def test_data(spades_lab):
 
 
 @pytest.fixture(scope='module')
-def test_data_multisources(spades_lab):
-    dw_sensor_file = spades_lab['subjects']['SPADES_1']['sensors']['DW'][0]
-    da_sensor_file = spades_lab['subjects']['SPADES_1']['sensors']['DA'][0]
+def test_data_multisources(spades_lab_data):
+    dw_sensor_file = spades_lab_data['subjects']['SPADES_1']['sensors']['DW'][0]
+    da_sensor_file = spades_lab_data['subjects']['SPADES_1']['sensors']['DA'][0]
     dw_data = pd.read_csv(dw_sensor_file, parse_dates=[0])
     da_data = pd.read_csv(da_sensor_file, parse_dates=[0])
     st = max([dw_data.iloc[0, 0], da_data.iloc[0, 0]])

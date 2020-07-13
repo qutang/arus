@@ -10,19 +10,19 @@ import sys
 
 
 @pytest.fixture(scope='module')
-def test_data(spades_lab):
-    sensor_files = spades_lab['subjects']['SPADES_1']['sensors']['DW']
+def test_data(spades_lab_data):
+    sensor_files = spades_lab_data['subjects']['SPADES_1']['sensors']['DW']
     data = pd.concat(
         map(lambda f: pd.read_csv(f, parse_dates=[0]), sensor_files), sort=False)
     return data
 
 
 @pytest.fixture(scope='module', params=['sensors', 'annotations'])
-def test_file(request, spades_lab):
+def test_file(request, spades_lab_data):
     if request.param == 'sensors':
-        return spades_lab['subjects']['SPADES_2']['sensors']['DW'][0]
+        return spades_lab_data['subjects']['SPADES_2']['sensors']['DW'][0]
     else:
-        return spades_lab['subjects']['SPADES_2']['annotations']['SPADESInLab'][0]
+        return spades_lab_data['subjects']['SPADES_2']['annotations']['SPADESInLab'][0]
 
 
 @pytest.fixture(scope='module')
@@ -97,23 +97,23 @@ def filepath_test_cases():
 
 
 class TestCore:
-    def test_get_session_start_time(self, spades_lab):
+    def test_get_session_start_time(self, spades_lab_data):
         start_time = mh.get_session_start_time(
-            'SPADES_12', spades_lab['meta']['root'])
+            'SPADES_12', spades_lab_data['meta']['root'])
         assert start_time.strftime(
             '%Y-%m-%d-%H-%M-%S') == '2015-12-14-11-00-00'
 
-    def test_get_session_span(self, spades_lab):
+    def test_get_session_span(self, spades_lab_data):
         session_st, session_et = mh.get_session_span(
-            'SPADES_1', spades_lab['meta']['root'])
+            'SPADES_1', spades_lab_data['meta']['root'])
         assert session_st.strftime(
             '%Y-%m-%d-%H-%M-%S') == '2015-09-24-14-00-00'
         assert session_et.strftime(
             '%Y-%m-%d-%H-%M-%S') == '2015-09-24-17-00-00'
 
-    def test_get_date_folders(self, spades_lab):
+    def test_get_date_folders(self, spades_lab_data):
         date_folders = sorted(mh.get_date_folders(
-            'SPADES_1', spades_lab['meta']['root']))
+            'SPADES_1', spades_lab_data['meta']['root']))
         test_dates = [
             '2015/09/24/14',
             '2015/09/24/15',
@@ -258,8 +258,8 @@ class TestHelper:
             ts_unix = moment.Moment(ts).to_unix_timestamp()
             assert dt.datetime.fromtimestamp(ts_unix) == ts
 
-    def test_parse_date_from_filepath(self, spades_lab):
-        test_sensor_files = spades_lab['subjects']['SPADES_1']['sensors']['DW']
+    def test_parse_date_from_filepath(self, spades_lab_data):
+        test_sensor_files = spades_lab_data['subjects']['SPADES_1']['sensors']['DW']
         test_dates = [
             '2015-09-24-14-00-00',
             '2015-09-24-15-00-00'
@@ -269,7 +269,7 @@ class TestHelper:
             date = mh.parse_date_from_filepath(test_case)
             date.strftime('%Y-%m-%d-%H-%M-%S') == test_date
 
-        test_annotation_files = spades_lab['subjects']['SPADES_1']['annotations']['SPADESInLab']
+        test_annotation_files = spades_lab_data['subjects']['SPADES_1']['annotations']['SPADESInLab']
         test_dates = [
             '2015-09-24-14-00-00',
             '2015-09-24-15-00-00'
@@ -279,17 +279,17 @@ class TestHelper:
             date = mh.parse_date_from_filepath(test_case)
             date.strftime('%Y-%m-%d-%H-%M-%S') == test_date
 
-    def test_parse_subject_path_from_filepath(self, spades_lab):
-        test_sensor_file = spades_lab['subjects']['SPADES_1']['sensors']['DW'][0]
+    def test_parse_subject_path_from_filepath(self, spades_lab_data):
+        test_sensor_file = spades_lab_data['subjects']['SPADES_1']['sensors']['DW'][0]
         subject_path = mh.parse_subject_path_from_filepath(test_sensor_file)
         assert subject_path.endswith('SPADES_1')
-        test_annotation_file = spades_lab['subjects']['SPADES_1']['annotations']['SPADESInLab'][0]
+        test_annotation_file = spades_lab_data['subjects']['SPADES_1']['annotations']['SPADESInLab'][0]
         subject_path = mh.parse_subject_path_from_filepath(
             test_annotation_file)
         assert subject_path.endswith('SPADES_1')
 
-    def test_transform_class_category(self, spades_lab):
-        class_category = spades_lab['meta']['class_category']
+    def test_transform_class_category(self, spades_lab_data):
+        class_category = spades_lab_data['meta']['class_category']
         input_category = 'FINEST_ACTIVITIES'
         output_category = 'MUSS_3_POSTURES'
         input_label = 'Lying on the back'

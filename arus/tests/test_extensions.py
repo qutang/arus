@@ -82,9 +82,9 @@ def regularize_test_signals():
 
 
 @pytest.fixture(scope='module')
-def test_sensor_data(spades_lab):
-    dw_sensor_file = spades_lab['subjects']['SPADES_1']['sensors']['DW'][0]
-    da_sensor_file = spades_lab['subjects']['SPADES_1']['sensors']['DA'][0]
+def test_sensor_data(spades_lab_data):
+    dw_sensor_file = spades_lab_data['subjects']['SPADES_1']['sensors']['DW'][0]
+    da_sensor_file = spades_lab_data['subjects']['SPADES_1']['sensors']['DA'][0]
     dw_data = pd.read_csv(dw_sensor_file, parse_dates=[0])
     da_data = pd.read_csv(da_sensor_file, parse_dates=[0])
     st = max([dw_data.iloc[0, 0], da_data.iloc[0, 0]])
