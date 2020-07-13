@@ -124,6 +124,8 @@ class FeatureSet:
         self.reset()
 
     def _validate_input_as_df(self):
+        if len(self._raw_sources) == 0:
+            return
         if type(self._raw_sources[0]) is not pd.DataFrame:
             logger.error(
                 '[Error code: {ErrorCode.INPUT_ARGUMENT_FORMAT_ERROR.name}] To compute features offline, the input raw data should be feature dataframe stored in mhealth format.')
