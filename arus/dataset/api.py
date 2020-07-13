@@ -19,8 +19,7 @@ import wget
 
 from .. import developer, env, generator, moment, segmentor, stream
 from .. import mhealth_format as mh
-from ..models import muss as arus_muss
-from . import _process_mhealth, _process_annotations
+# from . import _process_mhealth, _process_annotations
 
 
 def get_available_sample_data():
@@ -72,23 +71,23 @@ def load_dataset(dataset_name):
         return mh.traverse_dataset(dataset_path)
 
 
-def process_dataset(dataset_name, approach='muss'):
-    dataset_dict = load_dataset(dataset_name)
-    if dataset_name == 'spades_lab':
-        sr = 80
-        processed_dataset = _process_mhealth.process_mehealth_dataset(
-            dataset_dict, approach=approach, sr=sr)
-    else:
-        raise NotImplementedError('Only "spades_lab" dataset is supported.')
-    output_path = os.path.join(
-        mh.get_processed_path(dataset_dict['meta']['root']), approach + '.csv')
-    os.makedirs(os.path.dirname(output_path), exist_ok=True)
-    processed_dataset.to_csv(
-        output_path, float_format='%.6f', header=True, index=False)
-    logger.info('Processed {} dataset is saved to {}'.format(
-        dataset_name, output_path))
-    dataset_dict['processed'][approach] = output_path
-    return dataset_dict
+# def process_dataset(dataset_name, approach='muss'):
+#     dataset_dict = load_dataset(dataset_name)
+#     if dataset_name == 'spades_lab':
+#         sr = 80
+#         processed_dataset = _process_mhealth.process_mehealth_dataset(
+#             dataset_dict, approach=approach, sr=sr)
+#     else:
+#         raise NotImplementedError('Only "spades_lab" dataset is supported.')
+#     output_path = os.path.join(
+#         mh.get_processed_path(dataset_dict['meta']['root']), approach + '.csv')
+#     os.makedirs(os.path.dirname(output_path), exist_ok=True)
+#     processed_dataset.to_csv(
+#         output_path, float_format='%.6f', header=True, index=False)
+#     logger.info('Processed {} dataset is saved to {}'.format(
+#         dataset_name, output_path))
+#     dataset_dict['processed'][approach] = output_path
+#     return dataset_dict
 
 
 def download_dataset(url, name):

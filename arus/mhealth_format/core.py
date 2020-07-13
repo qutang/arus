@@ -170,6 +170,8 @@ def traverse_dataset(dataset_path):
             }
         }
     """
+    logger.warning(
+        'This method has been deprecated. And will be removed in version 1.2.0.')
 
     def _parse_placements(placements):
         return [helper.parse_placement_from_str(p) for p in placements]
