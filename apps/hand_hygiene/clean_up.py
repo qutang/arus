@@ -101,19 +101,25 @@ def _convert_annotations(root, pid):
         "Convert annotation data to mhealth format for hand hygiene raw dataset")
     raw_annotation_files = glob.glob(os.path.join(
         root, pid, "OriginalRaw", "**", "*annotations.csv"), recursive=True)
+    annot_dfs = []
+    task_annot_dfs = []
     with alive_bar(len(raw_annotation_files)) as bar:
-        annot_dfs = []
-        task_annot_dfs = []
         for raw_annotation_file in raw_annotation_files:
             bar('Convert {} to mhealth'.format(raw_annotation_file))
             annot_df, task_annot_df = _read_raw_annotation_file(
                 raw_annotation_file)
             annot_dfs.append(annot_df)
             task_annot_dfs.append(task_annot_df)
-    annot_df = pd.concat(annot_dfs, axis=0, ignore_index=True)
-    annot_df.sort_values(by=annot_df.columns[0], inplace=True)
-    task_annot_df = pd.concat(task_annot_dfs, axis=0, ignore_index=True)
-    task_annot_df.sort_values(by=task_annot_df.columns[0], inplace=True)
+    if len(annot_dfs) > 0:
+        annot_df = pd.concat(annot_dfs, axis=0, ignore_index=True)
+        annot_df.sort_values(by=annot_df.columns[0], inplace=True)
+    else:
+        annot_df = None
+    if len(task_annot_dfs) > 0:
+        task_annot_df = pd.concat(task_annot_dfs, axis=0, ignore_index=True)
+        task_annot_df.sort_values(by=task_annot_df.columns[0], inplace=True)
+    else:
+        task_annot_df = None
 
     if annot_df is not None:
         writer = arus.mh.MhealthFileWriter(
