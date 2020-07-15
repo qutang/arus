@@ -30,6 +30,14 @@ def get_location_mappings(dataset_path):
     return mappings
 
 
+def get_sensor_placement(dataset_path, pid, sid):
+    mapping = get_location_mappings(dataset_path)
+    condition = (mapping.iloc[:, 0] == pid) & (
+        mapping.iloc[:, 1] == sid)
+    placement = mapping.loc[condition, :].iloc[:, 2].values[0]
+    return placement.lower()
+
+
 def get_subjects_info(dataset_path):
     filepath = os.path.join(
         dataset_path, constants.META_FOLDER, constants.META_SUBJECTS_FILENAME)
