@@ -1,7 +1,7 @@
 """hh
 
 Usage:
-  hh clean ROOT PID [SR] [--date_range=<date_range>] [--auto_range=<auto_range>] [--skip-to-mhealth] [--skip_sync] [--remove-exists] [--debug]
+  hh clean ROOT PID [SR] [--date_range=<date_range>] [--auto_range=<auto_range>] [--skip-to-mhealth] [--skip-sync] [--remove-exists] [--debug]
   hh --help
   hh --version
 
