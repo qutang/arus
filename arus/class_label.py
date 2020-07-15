@@ -40,7 +40,7 @@ class ClassSet:
             dfs = []
             for raw_df in self._raw_sources:
                 df = ext.pandas.segment_by_time(
-                    raw_df, seg_st=window_st, seg_et=window_et)
+                    raw_df, seg_st=window_st, seg_et=window_et, st_col=1, et_col=2)
                 dfs.append(df)
             sch.submit(class_func, *dfs, st=window_st,
                        et=window_et, task_names=task_names, aids=self._aids, **kwargs)
