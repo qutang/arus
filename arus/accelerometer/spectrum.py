@@ -89,8 +89,8 @@ def _sort_fft_peaks(freq, Sxx, i, j):
         sorted_i = sorted_i[::-1]
         sorted_freq_peaks = freq_peaks[sorted_i]
         sorted_Sxx_peaks = Sxx_peaks[sorted_i]
-    logger.debug('sxx:' + str(j) + ":" + str(sorted_Sxx_peaks.shape))
-    logger.debug('freq:' + str(j) + ":" + str(sorted_freq_peaks.shape))
+    # logger.debug('sxx:' + str(j) + ":" + str(sorted_Sxx_peaks.shape))
+    # logger.debug('freq:' + str(j) + ":" + str(sorted_freq_peaks.shape))
     return (sorted_freq_peaks, sorted_Sxx_peaks)
 
 
