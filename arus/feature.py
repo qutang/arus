@@ -115,12 +115,13 @@ def time_freq_orient(raw_df, sr, st, et, subwin_secs=2, ori_unit='rad', activati
 
 
 class FeatureSet:
-    def __init__(self, raw_sources, placements):
+    def __init__(self, raw_sources, placements, srs=None):
         """
         Raw data from multiple sources
         """
         self._raw_sources = raw_sources
         self._placements = placements
+        self._srs = srs
         self.reset()
 
     def _validate_input_as_df(self):
@@ -146,7 +147,12 @@ class FeatureSet:
         window_start_markers = ext.pandas.split_into_windows(
             *self._raw_sources, step_size=step_size, st=start_time, et=stop_time)
         feature_sets = []
-        for raw_df in self._raw_sources:
+        if self._srs is None:
+            self._srs = [kwargs['sr'] for p in self._placements]
+        else:
+            self._srs = [sr or kwargs['sr'] for sr in self._srs]
+        kwargs.pop('sr', None)
+        for raw_df, placement, sr in zip(self._raw_sources, self._placements, self._srs):
             sch.reset()
             for window_st in window_start_markers:
                 window_et = window_st + pd.Timedelta(window_size, unit='s')
@@ -155,7 +161,7 @@ class FeatureSet:
                 if df.empty:
                     continue
                 sch.submit(feature_func, df, st=window_st,
-                           et=window_et, **kwargs)
+                           et=window_et, sr=sr, **kwargs)
             feature_vector_list = sch.get_all_remaining_results()
             if len(feature_vector_list) == 0:
                 continue
