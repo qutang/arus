@@ -8,7 +8,7 @@ __version__ = '1.1.9'
 from . import dataset
 from . import developer as dev
 from . import env
-from . import generator
+from .generator import *
 from . import segmentor
 from .scheduler import Scheduler
 from . import mhealth_format as mh

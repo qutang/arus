@@ -46,18 +46,12 @@ theme:
 
 extra_css:
   - assets/css/extra.css
+  - assets/css/mkapi.css
 
 plugins:
   - search
-  - mkdocstrings:
-      default_handler: python
-      handlers:
-        python:
-          rendering:
-            show_source: true
-            show_if_no_docstring: true
-      watch:
-        - arus
+  - mkapi:
+      src_dirs: [arus]
   - minify:
       minify_html: true
   - git-revision-date-localized
@@ -101,26 +95,9 @@ nav:
   - Use the package:
       - Overview: "tutorials/overview.md"
       - Command line tool: "tutorials/commandline.md"
-  - API reference:
-      - Data Flow:
-          - "references/stream.md"
-          - "references/generator.md"
-          - "references/segmentor.md"
-          - "references/scheduler.md"
-      - Data Processing:
-          - "references/accelerometer.md"
-      - Plugins:
-          - "references/metawear.md"
-          - "references/actigraph.md"
-      - Extensions:
-          - "references/filesys.md"
-          - "references/numpy.md"
-          - "references/pandas.md"
-          - "references/plotting.md"
-      - "references/mhealth_format.md"
-      - "references/dataset.md"
-      - "references/developer.md"
-      - "references/moment.md"
+  - API:
+      - Dataflow:
+          - Generator: "api/generator.md"
   # - Examples:
   #     - Streams:
   #         - "examples/streams/run_actigraph_sensor_stream.md"

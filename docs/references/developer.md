@@ -1,3 +1,0 @@
-`arus.dev`
-
-::: arus.developer

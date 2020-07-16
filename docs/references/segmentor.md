@@ -1,3 +1,0 @@
-`arus.segmentor`
-
-::: arus.segmentor

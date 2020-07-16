@@ -1,3 +1,0 @@
-`arus.generator`
-
-::: arus.generator

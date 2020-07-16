@@ -1,3 +1,0 @@
-`arus.stream`
-
-<!-- ::: arus.stream -->
