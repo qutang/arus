@@ -5,22 +5,16 @@ __arus__ python package provides a computation framework to manage and process u
 
 __version__ = '1.1.9'
 
-from . import dataset
+from . import accelerometer as accel
+from . import cli, dataset
 from . import developer as dev
 from . import env
-from .generator import *
-from . import segmentor
-from .scheduler import Scheduler
-from . import mhealth_format as mh
-from .moment import Moment
 from . import extensions as ext
-from .stream import Stream
-from . import stream2
-from . import plugins
-from . import accelerometer as accel
-from . import testing
+from . import mhealth_format as mh
+from . import (operator, plugins, processor, segmentor, stream2, synchronizer,
+               testing)
+from .generator import *
+from .moment import Moment
 from .node import Node
-from . import operator
-from . import synchronizer
-from . import processor
-from . import cli
+from .scheduler import Scheduler
+from .stream import Stream
