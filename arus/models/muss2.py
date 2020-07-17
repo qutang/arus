@@ -45,7 +45,7 @@ class MUSSHARModel(HARModel):
     def compute_features(self):
         fss = []
         for subj in self.data_set.subjects:
-
+            logger.info(f'Computing features for {subj.pid}')
             start_time, stop_time = self.data_set.get_session_span(subj.pid)
 
             sensor_dfs, placements, srs = self._import_data_per_subj(
@@ -56,7 +56,9 @@ class MUSSHARModel(HARModel):
             if subj_fs is not None and subj_fs_names is not None:
                 subj.processed = {**subj.processed,
                                   'fs': subj_fs, 'fs_names': subj_fs_names}
-                fss.append(subj_fs)
+                fs = subj_fs.copy()
+                fs['PID'] = subj.pid
+                fss.append(fs)
                 fs_names = subj_fs_names
             else:
                 logger.warning(
@@ -71,7 +73,7 @@ class MUSSHARModel(HARModel):
     def compute_class_set(self, task_names):
         css = []
         for subj in self.data_set.subjects:
-
+            logger.info(f'Compute class set for {subj.pid}')
             start_time, stop_time = self.data_set.get_session_span(subj.pid)
 
             subj_class_set = self.data_set.get_class_set(
@@ -80,7 +82,9 @@ class MUSSHARModel(HARModel):
             if subj_class_set is not None:
                 subj.processed = {**subj.processed,
                                   'cs': subj_class_set, 'cs_names': task_names}
-                css.append(subj_class_set)
+                cs = subj_class_set.copy()
+                cs['PID'] = subj.pid
+                css.append(cs)
             else:
                 logger.warning(
                     f'Subject {subj.pid} failed to compute class set, this may due to the annotation data is out of range, incorrect annotation data, or invalid annotation data values. Ignore it from the class set.')
@@ -106,7 +110,15 @@ class MUSSHARModel(HARModel):
         os.makedirs(output_path, exist_ok=True)
         return output_path
 
+    def get_training_acc(self):
+        return self.train_perf['acc']
+
     def train(self, task_name, ignore_classes=["Unknown", "Transition"], pids=[], verbose=False, **kwargs):
+        if len(pids) == 0:
+            pid_info = 'all participants'
+        else:
+            pid_info = ','.join(pids)
+        logger.info(f'Train MUSS model of {task_name} for {pid_info}')
         fcs, fs_names, cs_names = self._preprocess_feature_class_set(pids)
         if task_name not in cs_names:
             logger.error(
@@ -122,6 +134,7 @@ class MUSSHARModel(HARModel):
         self.model, train_acc = self._train_classifier(
             X, y, verbose=verbose, **kwargs)
         self.train_perf = {**self.train_perf, 'acc': train_acc}
+        logger.info(f'Training accuracy: {train_acc}')
 
     def save_fcs(self, pids=[]):
         fcs, fs_names, cs_names = self._preprocess_feature_class_set(pids)
@@ -133,14 +146,34 @@ class MUSSHARModel(HARModel):
         else:
             logger.warning('No available feature and class set to save!')
 
-    def save_model(self):
-        joblib.dump(self, filename=os.path.join(
-            self.get_processed_path(), self.name + '.har'))
+    def save_model(self, save_fcs=True):
+        output_filepath = os.path.join(
+            self.get_processed_path(), self.name + '.har')
+        logger.info(f'Save trained MUSS model to {output_filepath}')
+        bundle = {
+            'mid': self.mid,
+            'placements': self.used_placements,
+            'model': self.model,
+            'dataset_name': self.data_set.name,
+            'fs': None if not save_fcs else self.data_set.processed['fs'],
+            'cs': None if not save_fcs else self.data_set.processed['cs'],
+            'fs_names': None if not save_fcs else self.data_set.processed['fs_names'],
+            'cs_names': None if not save_fcs else self.data_set.processed['cs_names']
+        }
+        joblib.dump(bundle, filename=output_filepath)
 
     @staticmethod
     def load_model(path):
-        muss_har = joblib.load(path)
-        return muss_har
+        bundle = joblib.load(path)
+        model = MUSSHARModel(
+            mid=bundle['mid'], used_placements=bundle['placements'])
+        model.model = bundle['model']
+        model.data_set = ds.MHDataset(name=bundle['dataset_name'])
+        model.data_set.processed['fs'] = bundle['fs']
+        model.data_set.processed['cs'] = bundle['cs']
+        model.data_set.processed['fs_names'] = bundle['fs_names']
+        model.data_set.processed['cs_names'] = bundle['cs_names']
+        return model
 
     def predict_ds(self, data_set: ds.MHDataset):
         pass
@@ -151,8 +184,11 @@ class MUSSHARModel(HARModel):
     def _preprocess_feature_class_set(self, pids):
         if 'fs' in self.data_set.processed:
             if len(pids) > 0:
-                fss = [self.data_set.get_subject_obj(
-                    pid).processed['fs'] for pid in pids]
+                fss = []
+                for pid in pids:
+                    fs = self.data_set.get_subject_obj(pid).processed['fs']
+                    fs['PID'] = pid
+                    fss.append(fs)
                 fs = pd.concat(fss, axis=0, sort=False, ignore_index=True)
                 fs_names = self.data_set.get_subject_obj(
                     pids[0]).processed['fs_names']
@@ -165,8 +201,11 @@ class MUSSHARModel(HARModel):
             return
         if 'cs' in self.data_set.processed:
             if len(pids) > 0:
-                css = [self.data_set.get_subject_obj(
-                    pid).processed['cs'] for pid in pids]
+                css = []
+                for pid in pids:
+                    cs = self.data_set.get_subject_obj(pid).processed['cs']
+                    cs['PID'] = pid
+                    css.append(cs)
                 cs = pd.concat(css, axis=0, sort=False, ignore_index=True)
                 cs_names = self.data_set.get_subject_obj(
                     pids[0]).processed['cs_names']
@@ -178,8 +217,12 @@ class MUSSHARModel(HARModel):
                 'No class set available, please run compute_class_set at first.')
             return
 
+        if 'PID' in fs:
+            on = mh.FEATURE_SET_TIMESTAMP_COLS + ['PID']
+        else:
+            on = mh.FEATURE_SET_TIMESTAMP_COLS
         fcs = pd.merge(fs, cs, how='inner',
-                       on=mh.FEATURE_SET_TIMESTAMP_COLS, sort=False)
+                       on=on, sort=False)
         return fcs, fs_names, cs_names
 
     def _train_classifier(self, X, y, C=16, kernel='rbf', gamma=0.25, tol=0.0001, output_probability=True, class_weight='balanced', verbose=False):
