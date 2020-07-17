@@ -5,7 +5,7 @@ import datetime
 import os
 
 ACTIGRAPH_TEMPLATE = """------------ Data File Created By ActiGraph GT3X+ ActiLife v6.13.3 Firmware v2.5.0 date format M/d/yyyy at {} Hz  Filter Normal -----------
-Serial Number: CLE2B2013XXXX
+Serial Number: {}
 Start Time {}
 Start Date {}
 Epoch Period (hh:mm:ss) 00:00:00
@@ -17,14 +17,17 @@ Current Battery Voltage: 4.21     Mode = 12
 
 
 class ActigraphSensorFileGenerator(generator.Generator):
-    def __init__(self, *filepaths, **kwargs):
+    def __init__(self, *filepaths, has_ts=True, has_header=True, **kwargs):
         super().__init__(**kwargs)
         self._filepaths = filepaths
         self._reader = None
+        self._has_ts = has_ts
+        self._has_header = has_header
 
     def run(self, values=None, src=None, context={}):
         for filepath in self._filepaths:
-            self._reader = ActigraphReader(filepath)
+            self._reader = ActigraphReader(
+                filepath, self._has_ts, self._has_header)
             self._reader.read(chunksize=self._buffer_size)
             for data in self._reader.get_data():
                 if self._stop:
@@ -38,11 +41,13 @@ class ActigraphSensorFileGenerator(generator.Generator):
 
 
 class ActigraphReader:
-    def __init__(self, filepath):
+    def __init__(self, filepath, has_ts=True, has_header=True):
         self._filepath = filepath
         self._data = None
         self._iterator = None
         self._meta = None
+        self._has_ts = has_ts
+        self._has_header = has_header
 
     def get_data(self):
         assert self._meta is not None
@@ -50,13 +55,24 @@ class ActigraphReader:
             'IMU'] else convert_actigraph_timestamp
         if self._data is not None:
             data = self._data.copy()
-            data.iloc[:, 0] = ts_func(data.iloc[:, 0])
+            if self._has_ts:
+                data.iloc[:, 0] = ts_func(data.iloc[:, 0])
+            else:
+                data.insert(0, 'ts', generate_timestamps(
+                    self._meta['START_TIME'], self._meta['SAMPLING_RATE'], data.shape[0]))
             data = mh.helper.format_columns(
                 data, filetype=mh.constants.SENSOR_FILE_TYPE)
             yield data
         else:
+            st = self._meta['START_TIME']
             for data in self._iterator:
-                data.iloc[:, 0] = ts_func(data.iloc[:, 0])
+                if self._has_ts:
+                    data.iloc[:, 0] = ts_func(data.iloc[:, 0])
+                else:
+                    ts = generate_timestamps(
+                        st, self._meta['SAMPLING_RATE'], data.shape[0])
+                    data.insert(0, 'ts', ts[:-1])
+                    st = ts[-1]
                 data = mh.helper.format_columns(
                     data, filetype=mh.constants.SENSOR_FILE_TYPE)
                 yield data
@@ -70,8 +86,12 @@ class ActigraphReader:
         return self
 
     def read_csv(self, chunksize=None):
+        if self._has_header:
+            skiprows = 10
+        else:
+            skiprows = 9
         reader = pd.read_csv(
-            self._filepath, skiprows=10, chunksize=chunksize, engine='c')
+            self._filepath, skiprows=skiprows, chunksize=chunksize)
         if type(reader) == pd.DataFrame:
             self._data = reader
         else:
@@ -82,6 +102,8 @@ class ActigraphReader:
         with open(self._filepath, 'r') as f:
             first_line = f.readline()
             second_line = f.readline()
+            third_line = f.readline()
+            fourth_line = f.readline()
             is_imu = 'IMU' in first_line
             firmware = list(
                 filter(lambda token: token.startswith('v'), first_line.split(" ")))[1]
@@ -94,7 +116,12 @@ class ActigraphReader:
             g_range = 8
         else:
             g_range = None
+
+        st_str = fourth_line.split(' ')[2] + ' ' + third_line.split(' ')[2]
+        st = pd.Timestamp(st_str)
+
         self._meta = {
+            'START_TIME': st,
             'VERSION_CODE': firmware,
             'SAMPLING_RATE': sr,
             'SENSOR_ID': sid,
@@ -102,6 +129,10 @@ class ActigraphReader:
             'DYNAMIC_RANGE': g_range
         }
         return self
+
+
+def generate_timestamps(start_time, sr, n):
+    return pd.date_range(start=start_time, periods=n + 1, freq=str(1000.0/sr) + 'L')
 
 
 def convert_actigraph_timestamp(timestamps):
@@ -126,7 +157,8 @@ def convert_actigraph_imu_timestamp(timestamps):
     return result
 
 
-def save_as_actigraph(out_df, output_filepath, session_st=None, session_et=None, sr=50):
+def save_as_actigraph(out_df, output_filepath, sid=None, session_st=None, session_et=None, sr=50):
+    sid = sid or 'CLE2B2013XXXX'
     session_st = session_st or out_df.iloc[0, 0].to_datetime()
     session_et = session_et or out_df.iloc[-1, 0].to_datetime()
     meta_sdate_str = '{dt.month}/{dt.day}/{dt.year}'.format(
@@ -142,7 +174,7 @@ def save_as_actigraph(out_df, output_filepath, session_st=None, session_et=None,
         # create
         with open(output_filepath, mode='w', encoding='utf-8') as f:
             f.write(ACTIGRAPH_TEMPLATE.format(
-                sr, meta_stime_str, meta_sdate_str, meta_etime_str, meta_edate_str))
+                sr, sid, meta_stime_str, meta_sdate_str, meta_etime_str, meta_edate_str))
             f.write('\n')
     # append
     out_df.to_csv(output_filepath, mode='a', index=False,
