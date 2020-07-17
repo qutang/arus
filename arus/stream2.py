@@ -30,6 +30,7 @@ class Stream(operator.Operator):
                                     name=self._name + '-generator')
         self._segmentor = node.Node(op=segmentor, t=node.Node.Type.PIPE,
                                     name=self._name + '-segmentor')
+        self.set_essential_context(stream_id=name)
 
     def run(self, *, values=None, src=None, context={}):
         logger.info('Stream is starting.')
@@ -39,7 +40,7 @@ class Stream(operator.Operator):
         self._generator.start()
         logger.info('Stream started.')
 
-    def set_essential_context(self, start_time, stream_id):
+    def set_essential_context(self, start_time=None, stream_id=None):
         self._context['ref_start_time'] = start_time
         self._context['data_id'] = stream_id
 
