@@ -59,7 +59,7 @@ class Node:
             logger.warning('Please turn on the operator at first')
             return
         self._status = Node.Status.START
-        logger.info('Operator is starting.')
+        logger.info(f'{self._name} Operator is starting.')
         self._produce_thread = threading.Thread(
             target=self._produce, name=self._name + '-produce')
         self._produce_thread.daemon = True
@@ -71,21 +71,21 @@ class Node:
         self._result_thread.start()
         while not self._produce_thread.is_alive() or not self._result_thread.is_alive():
             time.sleep(0.1)
-        logger.info('Operator started.')
+        logger.info(f'{self._name} Operator started.')
 
     def stop(self):
-        logger.info('Operator is stopping.')
+        logger.info(f'{self._name} Operator is stopping.')
         self._operator.stop()
         self._status = Node.Status.STOP
         self._produce_thread.join()
         self._result_thread.join()
-        logger.info('Operator thread stopped.')
+        logger.info(f'{self._name} Operator thread stopped.')
         with self._input_buffer.mutex:
             self._input_buffer.queue.clear()
         with self._output_buffer.mutex:
             self._output_buffer.queue.clear()
         self._status = Node.Status.ON
-        logger.info('Stream stopped.')
+        logger.info(f'{self._name} Operator stopped.')
 
     def consume(self, pack):
         if self._type != Node.Type.INPUT:
@@ -170,7 +170,7 @@ class Node:
                 Node.Pack(values=None, signal=Node.Signal.STOP, context={}, src=self._name))
 
     def _produce(self):
-        logger.info('Operator thread started.')
+        logger.info(f'{self._name} Operator thread started.')
         if self._type == Node.Type.INPUT:
             self._produce_from_input()
         elif self._type == Node.Type.OUTPUT:
@@ -178,5 +178,5 @@ class Node:
         elif self._type == Node.Type.PIPE:
             self._produce_from_pipe()
         else:
-            logger.error('Unknown type for the operator')
-        logger.info('Operator thread is stopping.')
+            logger.error(f'Unknown type for the operator {self._name}')
+        logger.info(f'{self._name} Operator thread is stopping.')
