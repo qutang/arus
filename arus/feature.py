@@ -143,7 +143,7 @@ class FeatureSet:
         step_size = step_size or window_size
         joint_feature_set = None
         sch = scheduler.Scheduler(mode=scheduler.Scheduler.Mode.PROCESS,
-                                  scheme=scheduler.Scheduler.Scheme.SUBMIT_ORDER, max_workers=4)
+                                  scheme=scheduler.Scheduler.Scheme.SUBMIT_ORDER, max_workers=8)
         window_start_markers = ext.pandas.split_into_windows(
             *self._raw_sources, step_size=step_size, st=start_time, et=stop_time)
         feature_sets = []
@@ -185,8 +185,13 @@ class FeatureSet:
     def compute_per_window(self, feature_func, feature_names, **kwargs):
         joint_feature_set = None
         self._validate_input_as_df()
-        for raw_df, placement in zip(self._raw_sources, self._placements):
-            feature_set = feature_func(raw_df, **kwargs)
+        if self._srs is None:
+            self._srs = [kwargs['sr'] for p in self._placements]
+        else:
+            self._srs = [sr or kwargs['sr'] for sr in self._srs]
+        kwargs.pop('sr', None)
+        for raw_df, placement, sr in zip(self._raw_sources, self._placements, self._srs):
+            feature_set = feature_func(raw_df, sr=sr, **kwargs)
             feature_set = FeatureSet._append_placement_suffix(
                 feature_set, placement, feature_names)
             if joint_feature_set is None:
