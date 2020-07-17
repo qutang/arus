@@ -44,7 +44,7 @@ class Generator(operator.Operator):
         ```
     """
 
-    def __init__(self, buffer_size: int = 1800):
+    def __init__(self, buffer_size: int = 1000000):
         super().__init__()
         self._buffer_size = buffer_size
         self._buffer = None
