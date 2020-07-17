@@ -30,7 +30,7 @@ class ClassSet:
         self._task_names = task_names
         step_size = step_size or window_size
         sch = scheduler.Scheduler(mode=scheduler.Scheduler.Mode.PROCESS,
-                                  scheme=scheduler.Scheduler.Scheme.SUBMIT_ORDER, max_workers=4)
+                                  scheme=scheduler.Scheduler.Scheme.SUBMIT_ORDER, max_workers=8)
         window_start_markers = ext.pandas.split_into_windows(
             *self._raw_sources, step_size=step_size, st=start_time, et=stop_time)
         class_vectors = []
