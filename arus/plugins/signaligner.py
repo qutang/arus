@@ -115,7 +115,7 @@ def signify_sensor_files(filepaths, data_id, output_path, output_annotation_path
             hourly_df = hourly_df.iloc[:-1, :]
             annotation_df = _data_to_annotation(hourly_df, sr=sr)
             actigraph.save_as_actigraph(
-                hourly_df, output_path, session_span[0], session_span[1], sr=sr)
+                hourly_df, output_path, sid=data_id.split('-')[0], session_st=session_span[0], session_et=session_span[1], sr=sr)
             if not os.path.exists(output_annotation_path):
                 annotation_df.to_csv(output_annotation_path, mode='a',
                                      header=True, index=False)
