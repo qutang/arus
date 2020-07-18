@@ -4,7 +4,7 @@ Usage:
   arus signaligner FOLDER PID [SR] [-t <file_type>] [--date_range=<date_range>] [--auto_range=<auto_range>] [--debug]
   arus app APP_COMMAND FOLDER NAME [--app_version=<app_version>]
   arus dataset DATASET_COMMAND DATASET_NAME [FOLDER] [OUTPUT_FOLDER] [--debug]
-  arus mh MH_COMMAND [FOLDER] [OUTPUT_FOLDER] [--debug]
+  arus preset PRESET_COMMAND MODEL_NAME [TEST_FILE] [--file-format=<format>] [--placements=<placements>] [--target=<target>] [--debug]
   arus package PACK_COMMAND [NEW_VERSION] [--dev] [--release] [--debug]
   arus --help
   arus --version
@@ -32,6 +32,10 @@ from loguru import logger
 from . import developer
 from . import dataset as ds
 from . import mhealth_format as mh
+from . import plugins
+from . import feature as feat
+from . import models
+from . import spades_lab as slab
 from .plugins import signaligner
 import glob
 from datetime import datetime, timedelta
@@ -41,6 +45,8 @@ import sys
 import subprocess
 import json
 import pprint
+import pandas as pd
+import math
 
 
 def cli():
@@ -60,8 +66,8 @@ def cli():
         app_command(arguments)
     elif arguments['dataset']:
         dataset_command(arguments)
-    elif arguments['mh']:
-        mh_command(arguments)
+    elif arguments['preset']:
+        preset_command(arguments)
     elif arguments['package']:
         package_command(arguments)
 
@@ -178,12 +184,52 @@ def dataset_command(arguments):
             logger.info(ds.get_sample_datapath(name))
 
 
-def mh_command(arguments):
-    if arguments['MH_COMMAND'] == 'structure':
-        folder = arguments['FOLDER']
-        output_folder = arguments['OUTPUT_FOLDER']
-        mh_ds = ds.MHDataset(path=folder, name=os.path.basename(folder))
-        logger.info(mh_ds.name)
+def preset_command(arguments):
+    if arguments['PRESET_COMMAND'] == 'train':
+        model_name = arguments['MODEL_NAME']
+        if model_name == 'muss':
+            target_name = arguments['--target']
+            placements = arguments['--placements'].split(',')
+            _train_muss(placements, target_name)
+    elif arguments['PRESET_COMMAND'] == 'predict':
+        model_path = arguments['MODEL_NAME']
+        test_file = arguments['TEST_FILE']
+        file_format = arguments['--file-format']
+        _predict_model(model_path, test_file, file_format)
+
+
+def format_time(ts):
+    s = ts.strftime('%Y-%m-%d %H:%M:%S')
+    ms = '{:03.0f}'.format(math.floor(ts.microsecond / 1000.0))
+    result = "{}.{}".format(s, ms)
+    return result
+
+
+def _train_muss(placements, target_name):
+    spades_lab = ds.MHDataset(name='spades_lab',
+                              path=ds.get_dataset_path('spades_lab'))
+    spades_lab.set_placement_parser(slab.get_sensor_placement)
+    spades_lab.set_class_set_parser(slab.class_set)
+    mid = '-'.join(placements) + '-' + target_name + '-muss'
+    model = models.MUSSHARModel(mid=mid, used_placements=placements)
+    model.load_dataset(spades_lab)
+    model.compute_features()
+    model.compute_class_set(task_names=[target_name])
+    model.train(target_name)
+    model.get_training_acc()
+    model.save_model()
+
+
+def _predict_model(model_path, test_file, file_format):
+    model = models.MUSSHARModel.load_model(model_path)
+    if file_format == 'signaligner':
+        predict_df = model.predict(test_file,
+                                   placements=model.used_placements,
+                                   file_format=ds.InputType.SIGNALIGNER)
+        output_path = os.path.join(os.path.dirname(
+            test_file), model.mid + '.prediction.csv')
+        plugins.signaligner.save_as_signaligner(
+            predict_df, output_path, plugins.signaligner.FileType.ANNOTATION, labelset=model.name, mode='w', index=False, header=True)
 
 
 def package_command(arguments):
