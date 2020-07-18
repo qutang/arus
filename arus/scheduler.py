@@ -15,6 +15,7 @@ import threading
 from loguru import logger
 from dataclasses import dataclass, field
 from typing import Any
+from alive_progress import alive_bar
 
 
 class Scheduler:
@@ -146,17 +147,20 @@ class Scheduler:
         self._close = True
         self._module.wait(self._tasks.queue)
         results = []
-        if self._scheme == Scheduler.Scheme.AFTER_PREVIOUS_DONE:
-            while not self._results.empty():
-                t = self._results.get()
-                results.append(t.item.result())
-            t = self._tasks.get()
-            results.append(t.result())
-        else:
-            while not self._results.empty():
-                t = self._results.get()
-                self._tasks.get()
-                results.append(t.item.result())
+        with alive_bar(self._tasks.qsize(), bar='blocks') as bar:
+            if self._scheme == Scheduler.Scheme.AFTER_PREVIOUS_DONE:
+                while not self._results.empty():
+                    bar.text(f'Finished tasks: {len(results)}')
+                    t = self._results.get()
+                    results.append(t.item.result())
+                t = self._tasks.get()
+                results.append(t.result())
+            else:
+                while not self._results.empty():
+                    bar.text(f'Finished tasks: {len(results)}')
+                    t = self._results.get()
+                    self._tasks.get()
+                    results.append(t.item.result())
         return results
 
     def get_result(self, timeout: float = None) -> tuple:

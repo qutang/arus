@@ -105,7 +105,7 @@ def _convert_annotations(root, pid):
     task_annot_dfs = []
     with alive_bar(len(raw_annotation_files)) as bar:
         for raw_annotation_file in raw_annotation_files:
-            bar('Convert {} to mhealth'.format(raw_annotation_file))
+            bar.text('Convert {} to mhealth'.format(raw_annotation_file))
             annot_df, task_annot_df = _read_raw_annotation_file(
                 raw_annotation_file)
             annot_dfs.append(annot_df)

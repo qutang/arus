@@ -166,7 +166,7 @@ class FeatureSet:
                     fv = feature_func(df, st=window_st,
                                       et=window_et, sr=sr, **kwargs)
                     feature_vector_list.append(fv)
-                    bar(text=f'Computed features for window: {window_st}')
+                    bar.text(f'Computed features for window: {window_st}')
             if len(feature_vector_list) == 0:
                 continue
             feature_set = pd.concat(
