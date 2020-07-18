@@ -129,10 +129,10 @@ def signify_sensor_files(filepaths, data_id, output_path, output_annotation_path
             annotation_df = _data_to_annotation(hourly_df, sr=sr)
             if not os.path.exists(output_annotation_path):
                 save_as_signaligner(annotation_df, output_annotation_path,
-                                    FileType.ANNOTATION, mode='w', header=True, index=False)
+                                    FileType.ANNOTATION, labelset=data_id, mode='w', header=True, index=False)
             else:
                 save_as_signaligner(annotation_df, output_annotation_path,
-                                    FileType.ANNOTATION, mode='a', header=False, index=False)
+                                    FileType.ANNOTATION, labelset=data_id, mode='a', header=False, index=False)
 
 
 def _regularize_samples(start_time, filepath=None, sr=50, data_id=None):
