@@ -58,8 +58,9 @@ class ActigraphReader:
             if self._has_ts:
                 data.iloc[:, 0] = ts_func(data.iloc[:, 0])
             else:
-                data.insert(0, 'ts', generate_timestamps(
-                    self._meta['START_TIME'], self._meta['SAMPLING_RATE'], data.shape[0]))
+                ts = generate_timestamps(
+                    self._meta['START_TIME'], self._meta['SAMPLING_RATE'], data.shape[0])[:-1]
+                data.insert(0, 'ts', ts)
             data = mh.helper.format_columns(
                 data, filetype=mh.constants.SENSOR_FILE_TYPE)
             yield data
@@ -86,12 +87,17 @@ class ActigraphReader:
         return self
 
     def read_csv(self, chunksize=None):
-        if self._has_header:
-            skiprows = 10
+        if self._has_ts:
+            columns = ['HEADER_TIME_STAMP', 'X', 'Y', 'Z']
         else:
-            skiprows = 9
+            columns = ['X', 'Y', 'Z']
+        if self._has_header:
+            header = 0
+            columns = None
+        else:
+            header = None
         reader = pd.read_csv(
-            self._filepath, skiprows=skiprows, chunksize=chunksize)
+            self._filepath, skiprows=10, chunksize=chunksize, header=header, names=columns)
         if type(reader) == pd.DataFrame:
             self._data = reader
         else:
@@ -157,7 +163,7 @@ def convert_actigraph_imu_timestamp(timestamps):
     return result
 
 
-def save_as_actigraph(out_df, output_filepath, sid=None, session_st=None, session_et=None, sr=50):
+def save_as_actigraph(out_df, output_filepath, sid=None, session_st=None, session_et=None, sr=50, **kwargs):
     sid = sid or 'CLE2B2013XXXX'
     session_st = session_st or out_df.iloc[0, 0].to_datetime()
     session_et = session_et or out_df.iloc[-1, 0].to_datetime()
@@ -177,8 +183,7 @@ def save_as_actigraph(out_df, output_filepath, sid=None, session_st=None, sessio
                 sr, sid, meta_stime_str, meta_sdate_str, meta_etime_str, meta_edate_str))
             f.write('\n')
     # append
-    out_df.to_csv(output_filepath, mode='a', index=False,
-                  header=False, float_format='%.6f')
+    out_df.to_csv(output_filepath, **kwargs)
 
 
 def _format_column_name(name):
