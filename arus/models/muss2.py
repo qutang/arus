@@ -13,6 +13,7 @@ import pandas as pd
 from loguru import logger
 import os
 import joblib
+import typing
 
 
 @dataclass
@@ -175,11 +176,81 @@ class MUSSHARModel(HARModel):
         model.data_set.processed['cs_names'] = bundle['cs_names']
         return model
 
-    def predict_ds(self, data_set: ds.MHDataset):
-        pass
+    def predict(self, *input_objs, **kwargs):
+        result = None
+        if type(input_objs[0]) is ds.SensorObj:
+            if 'sr' in kwargs:
+                result = self._predict_sensor(*input_objs, sr=kwargs['sr'])
+            else:
+                result = self._predict_sensor(*input_objs)
+        elif type(input_objs[0]) is ds.SubjectObj:
+            result = self._predict_subj(*input_objs)
+        elif type(input_objs[0]) is pd.DataFrame and len(input_objs) == 1 and 'fs_names' in kwargs:
+            result = self._predict_fs(input_objs[0], kwargs['fs_names'])
+        elif type(input_objs[0]) is pd.DataFrame and 'placements' in kwargs and ('sr' in kwargs or 'srs' in kwargs):
+            result = self._predict_raw_df(input_objs, **kwargs)
+        elif type(input_objs[0]) is str and 'placements' in kwargs:
+            result = self._predict_raw_files(input_objs, **kwargs)
+        else:
+            raise ValueError(
+                f'Unrecognized input type {type(input_objs[0])} for predict function.')
+        return result
 
-    def predict_fs(self, feature_set: pd.DataFrame):
-        pass
+    def _predict_subj(self, *subj_objs: typing.List[ds.SubjectObj]):
+        results = []
+        for subj in subj_objs:
+            if 'fs' in subj.processed:
+                result = self._predict_fs(
+                    subj.processed['fs'], subj.processed['fs_names'])
+            else:
+                sensors = []
+                for p in self.used_placements:
+                    sensor = subj.get_sensor('placement', p)
+                    sensors.append(sensor)
+                result = self._predict_sensor(*sensors)
+            results.append(result)
+        return results
+
+    def _predict_sensor(self, *sensor_objs, sr=None):
+        raw_dfs = [sensor.get_data() for sensor in sensor_objs]
+        placements = [sensor.placement for sensor in sensor_objs]
+        srs = [sensor.sr for sensor in sensor_objs]
+        return self._predict_raw_df(raw_dfs, placements, srs=srs, sr=sr)
+
+    def _predict_raw_files(self, raw_files, placements, file_format, srs=None, sr=None, **kwargs):
+        if srs is None:
+            srs = [None] * len(raw_files)
+        sensors = []
+        for p in self.used_placements:
+            i = placements.index(p)
+            sensors.append(ds.SensorObj(paths=[raw_files[i]], sr=srs[i]
+                                        or sr, placement=p, input_type=file_format))
+        return self._predict_sensor(*sensors, sr=sr)
+
+    def _predict_raw_df(self, raw_dfs, placements, srs=None, **kwargs):
+        start_time = min([raw_df.iloc[0, 0] for raw_df in raw_dfs])
+        logger.info(f'The start time of test data is: {start_time}')
+        if 'sr' in kwargs and srs is None:
+            srs = [kwargs['sr']] * len(raw_dfs)
+        elif 'sr' in kwargs and srs is not None:
+            srs = [sr or kwargs['sr'] for sr in srs]
+        logger.info('Compute features for test data')
+        fs, fs_names = self._compute_features_per_subj(
+            raw_dfs, placements=placements, srs=srs, start_time=start_time, stop_time=None, window_size=self.window_size, **kwargs)
+        logger.info('Make predictions for test data')
+        predicts = self._predict_fs(fs, fs_names)
+        return predicts
+
+    def _predict_fs(self, fs, fs_names):
+        fs = fs.dropna()
+        predicts = self.model.predict(fs.loc[:, fs_names].values)
+        predict_df = pd.DataFrame.from_dict({
+            'HEADER_TIME_STAMP': fs['HEADER_TIME_STAMP'],
+            'START_TIME': fs['START_TIME'],
+            'STOP_TIME': fs['STOP_TIME'],
+            'PREDICTION': predicts
+        })
+        return predict_df
 
     def _preprocess_feature_class_set(self, pids):
         if 'fs' in self.data_set.processed:

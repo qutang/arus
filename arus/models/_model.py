@@ -31,6 +31,10 @@ class HARModel:
         raise NotImplementedError(
             'This method must be implemented by sub classes!')
 
+    def predict(self, *input_objs, **kwargs):
+        raise NotImplementedError(
+            'This method must be implemented by sub classes!')
+
     @staticmethod
     def ignore_classes(fcs, task_name, remove_classes=['Unknown', 'Transition']):
         is_valid_label = ~fcs[task_name].isin(remove_classes).values
