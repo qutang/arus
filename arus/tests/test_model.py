@@ -18,8 +18,8 @@ class TestMUSSHARModel:
         spades_1_ds = spades_lab.subset(
             name='spades_lab_spades_1', pids=['SPADES_1'])
 
-        spades_1_ds.set_class_func(slab.class_set)
-        spades_1_ds.set_placement_func(slab.get_sensor_placement)
+        spades_1_ds.set_class_set_parser(slab.class_set)
+        spades_1_ds.set_placement_parser(slab.get_sensor_placement)
 
         model = models.MUSSHARModel(
             mid=str(uuid.uuid4()), used_placements=placements, window_size=12.8, sr=80)
