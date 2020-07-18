@@ -8,32 +8,12 @@ from . import actigraph
 from .. import mhealth_format as mh
 from ..extensions.pandas import segment_by_time
 import math
+import enum
 
 
-def signify_annotation_files(filepaths, data_id, output_path, session_span):
-    dfs = []
-    with progress.alive_bar(len(filepaths), bar='blocks') as bar:
-        for filepath in filepaths:
-            bar(text="Convert file to signaligner: {}".format(filepath))
-            df = pd.read_csv(
-                filepath, header=0, sep=',', compression="infer", quotechar='"', parse_dates=[0, 1, 2], infer_datetime_format=True)
-            df = df[['START_TIME', 'STOP_TIME', 'LABEL_NAME']]
-            df.rename(columns={'LABEL_NAME': 'PREDICTION'}, inplace=True)
-            df['SOURCE'] = "Algo"
-            df['LABELSET'] = data_id
-            dfs.append(df)
-    # merge and sort
-    merged = pd.concat(dfs, axis=0)
-    merged = merged.sort_values(by=['START_TIME'])
-    # segment by session span
-    segmented = segment_by_time(
-        merged, seg_st=session_span[0], seg_et=session_span[1], st_col=0, et_col=1)
-
-    segmented['START_TIME'] = segmented['START_TIME'].apply(format_time)
-    segmented['STOP_TIME'] = segmented['STOP_TIME'].apply(format_time)
-    segmented = segmented.loc[segmented['START_TIME']
-                              != segmented['STOP_TIME'], :]
-    segmented.to_csv(output_path, index=False)
+class FileType(enum.Enum):
+    SENSOR = enum.auto(),
+    ANNOTATION = enum.auto()
 
 
 def format_time(ts):
@@ -41,6 +21,28 @@ def format_time(ts):
     ms = '{:03.0f}'.format(math.floor(ts.microsecond / 1000.0))
     result = "{}.{}".format(s, ms)
     return result
+
+
+def signify_annotation_files(filepaths, data_id, output_path, session_span):
+    dfs = []
+    with progress.alive_bar(len(filepaths), bar='blocks') as bar:
+        for filepath in filepaths:
+            bar.text("Convert file to signaligner: {}".format(filepath))
+            df = pd.read_csv(
+                filepath, header=0, sep=',', compression="infer", quotechar='"', parse_dates=[0, 1, 2], infer_datetime_format=True)
+            dfs.append(df)
+    # merge and sort
+    merged = pd.concat(dfs, axis=0)
+    merged = merged.sort_values(by=['START_TIME'])
+    merged = merged.loc[merged['START_TIME']
+                        != merged['STOP_TIME'], :]
+    # segment by session span
+    segmented = segment_by_time(
+        merged, seg_st=session_span[0], seg_et=session_span[1], st_col=0, et_col=1)
+
+    # save as signaligner label file
+    save_as_signaligner(segmented, output_path,
+                        FileType.ANNOTATION, labelset=data_id, mode='w', index=False, header=True)
 
 
 def auto_split_session_span(session_span, auto_range='W-SUN'):
@@ -93,7 +95,7 @@ def signify_sensor_files(filepaths, data_id, output_path, output_annotation_path
     last_row = None
     with progress.alive_bar(n, bar='blocks') as bar:
         for marker in hourly_markers:
-            bar(text="Convert sensor data to signaligner format: {}".format(marker))
+            bar.text("Convert sensor data to signaligner format: {}".format(marker))
             date_str = "{}-{:02d}-{:02d}-{:02d}".format(marker.year,
                                                         marker.month, marker.day, marker.hour)
             selected_files = list(filter(lambda f: date_str in f, filepaths))
@@ -113,15 +115,24 @@ def signify_sensor_files(filepaths, data_id, output_path, output_annotation_path
             if hourly_df.iloc[-1, :].notna().all():
                 last_row = hourly_df.iloc[-1, :]
             hourly_df = hourly_df.iloc[:-1, :]
+            save_as_signaligner(hourly_df,
+                                output_path,
+                                file_type=FileType.SENSOR,
+                                sid=data_id.split('-')[0],
+                                session_st=session_span[0], session_et=session_span[1],
+                                sr=sr,
+                                mode='a',
+                                index=False,
+                                header=False,
+                                float_format='%.6f')
+
             annotation_df = _data_to_annotation(hourly_df, sr=sr)
-            actigraph.save_as_actigraph(
-                hourly_df, output_path, sid=data_id.split('-')[0], session_st=session_span[0], session_et=session_span[1], sr=sr)
             if not os.path.exists(output_annotation_path):
-                annotation_df.to_csv(output_annotation_path, mode='a',
-                                     header=True, index=False)
+                save_as_signaligner(annotation_df, output_annotation_path,
+                                    FileType.ANNOTATION, mode='w', header=True, index=False)
             else:
-                annotation_df.to_csv(output_annotation_path, mode='a',
-                                     header=False, index=False)
+                save_as_signaligner(annotation_df, output_annotation_path,
+                                    FileType.ANNOTATION, mode='a', header=False, index=False)
 
 
 def _regularize_samples(start_time, filepath=None, sr=50, data_id=None):
@@ -168,13 +179,33 @@ def _data_to_annotation(hourly_df, sr=50):
     if len(sts) > len(ets):
         ets += [hourly_df.index[-1]]
 
-    out_df = pd.DataFrame(data={
+    out_df = pd.DataFrame.from_dict({
         'START_TIME': sts,
         'STOP_TIME': ets,
-        'PREDICTION': "Missing",
-        'SOURCE': "Algo",
-        'LABELSET': "Missing"
-    }, index=range(len(sts)))
-    out_df['START_TIME'] = out_df['START_TIME'].apply(format_time)
-    out_df['STOP_TIME'] = out_df['STOP_TIME'].apply(format_time)
+        'PREDICTION': ["Missing"]*len(sts)
+    })
     return out_df
+
+
+def save_as_signaligner(df, output_path, file_type: FileType, **kwargs):
+    if file_type == FileType.SENSOR:
+        actigraph.save_as_actigraph(df, output_path, **kwargs)
+    elif file_type == FileType.ANNOTATION:
+        _save_annotation(df, output_path, **kwargs)
+
+
+def _save_annotation(df, output_path, labelset, **kwargs):
+    if 'START_TIME' not in df or 'STOP_TIME' not in df or ('LABEL_NAME' not in df and 'PREDICTION' not in df):
+        raise ValueError('Input dataframe does not have proper columns.')
+    if 'LABEL_NAME' in df:
+        predictions = df['LABEL_NAME']
+    elif 'PREDICTION' in df:
+        predictions = df['PREDICTION']
+    converted = {
+        'START_TIME': df['START_TIME'].apply(format_time),
+        'STOP_TIME': df['STOP_TIME'].apply(format_time),
+        'PREDICTION': predictions,
+        'SOURCE': ['Algo'] * df.shape[0],
+        'LABELSET': [labelset] * df.shape[0]}
+    converted = pd.DataFrame.from_dict(converted)
+    converted.to_csv(output_path, **kwargs)
