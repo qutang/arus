@@ -15,7 +15,8 @@ def test_file(request):
 class TestActigraphReader:
     @pytest.mark.parametrize('chunksize', [None, 5])
     def test_read(self, test_file, chunksize):
-        reader = actigraph.ActigraphReader(test_file)
+        reader = actigraph.ActigraphReader(
+            test_file, has_ts=True, has_header=True)
         reader.read(chunksize=chunksize)
         results = []
         for data in reader.get_data():
