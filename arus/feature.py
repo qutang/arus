@@ -156,17 +156,15 @@ class FeatureSet:
                     df = ext.pandas.segment_by_time(
                         raw_df, seg_st=window_st, seg_et=window_et)
                     if df.dropna().empty:
-                        bar(
-                            text=f'Skipped features for nan window: {window_st}')
+                        bar(f'Skipped features for nan window: {window_st}')
                         continue
                     if df.empty:
-                        bar(
-                            text=f'Skipped features for empty window: {window_st}')
+                        bar(f'Skipped features for empty window: {window_st}')
                         continue
                     fv = feature_func(df, st=window_st,
                                       et=window_et, sr=sr, **kwargs)
                     feature_vector_list.append(fv)
-                    bar.text(f'Computed features for window: {window_st}')
+                    bar(f'Computed features for window: {window_st}')
             if len(feature_vector_list) == 0:
                 continue
             feature_set = pd.concat(
