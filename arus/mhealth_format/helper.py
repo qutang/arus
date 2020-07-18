@@ -1,5 +1,6 @@
 from . import constants
 import datetime as dt
+import pandas as pd
 import os
 import re
 from .. import moment
@@ -68,6 +69,12 @@ def parse_date_from_filepath(filepath, ignore_tz=True):
     file_date = dt.datetime(year=int(year), month=int(month), day=int(
         day), hour=int(hour), minute=0, second=0, microsecond=0)
     return file_date
+
+
+def parse_timestamp_from_filepath_content(filepath, ts_col=0, ignore_tz=True):
+    first_row = pd.read_csv(filepath, nrows=1, header=0, parse_dates=[
+        ts_col], infer_datetime_format=True)
+    return first_row.iloc[0, ts_col]
 
 
 def parse_timestamp_from_filepath(filepath, ignore_tz=True):
