@@ -3,6 +3,7 @@ from ._model import HARModel
 from .. import feature as feat
 from .. import mhealth_format as mh
 from .. import dataset as ds
+from .. import scheduler
 from dataclasses import dataclass, field
 import typing
 import sklearn.svm as svm
@@ -14,6 +15,7 @@ from loguru import logger
 import os
 import joblib
 import typing
+import gc
 
 
 @dataclass
@@ -45,6 +47,9 @@ class MUSSHARModel(HARModel):
 
     def compute_features(self):
         fss = []
+        sch = scheduler.Scheduler(
+            scheme=scheduler.Scheduler.Scheme.SUBMIT_ORDER, max_workers=4)
+        sch.reset()
         for subj in self.data_set.subjects:
             logger.info(f'Computing features for {subj.pid}')
             start_time, stop_time = self.data_set.get_session_span(subj.pid)
@@ -52,8 +57,17 @@ class MUSSHARModel(HARModel):
             sensor_dfs, placements, srs = self._import_data_per_subj(
                 subj, self.data_set.input_type)
 
-            subj_fs, subj_fs_names = self._compute_features_per_subj(
-                sensor_dfs, placements, srs, start_time=start_time, stop_time=stop_time, window_size=self.window_size, sr=self.sr)
+            sch.submit(
+                self._compute_features_per_subj, sensor_dfs, placements, srs,
+                start_time=start_time, stop_time=stop_time, window_size=self.window_size, sr=self.sr)
+            gc.collect()
+
+            # subj_fs, subj_fs_names = self._compute_features_per_subj(
+            #     sensor_dfs, placements, srs, start_time=start_time, stop_time=stop_time, window_size=self.window_size, sr=self.sr)
+
+        result = sch.get_all_remaining_results()
+        for subj_fv_result, subj in zip(result, self.data_set.subjects):
+            subj_fs, subj_fs_names = subj_fv_result
             if subj_fs is not None and subj_fs_names is not None:
                 subj.processed = {**subj.processed,
                                   'fs': subj_fs, 'fs_names': subj_fs_names}
@@ -340,4 +354,6 @@ class MUSSHARModel(HARModel):
                                     start_time=kwargs['start_time'],
                                     stop_time=kwargs['stop_time'],
                                     featureset_name=feat.PresetFeatureSet.MUSS)
+        del sensor_dfs
+        gc.collect()
         return feature_set.get_feature_set(), feature_set.get_feature_names()
