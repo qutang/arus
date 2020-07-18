@@ -3,6 +3,7 @@ from .. import env
 from .. import segmentor
 from .. import spades_lab as slab
 from .. import feature as feat
+from .. import cli
 import os
 import shutil
 import pandas as pd
@@ -100,8 +101,11 @@ class TestMHDataset:
 
 class TestSGDataset:
     def test_sg_dataset(self):
-        dataset_path = os.path.join(dataset.get_dataset_path(
-            'spades_lab'), 'SPADES_1', 'Derived', 'signaligner')
+        spades_lab_path = dataset.get_dataset_path('spades_lab')
+        dataset_path = os.path.join(
+            spades_lab_path, 'SPADES_1', 'Derived', 'signaligner')
+        if not os.path.exists(dataset_path):
+            cli.convert_to_signaligner_both(spades_lab_path, 'SPADES_1', 80)
         sg_ds = dataset.SGDataset(
             path=dataset_path, name='spades_1_sg', sensor_folder='SPADES_1_2015092414_2015092417_sensors', label_folder='SPADES_1_2015092414_2015092417_labelsets')
         assert sg_ds.name == 'spades_1_sg'
