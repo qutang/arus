@@ -13,7 +13,7 @@ This package is licensed under [GPL version 3](https://qutang.github.io/arus/LIC
 ## Prerequists
 
 ```bash
-python >= 3.6.1
+python >= 3.7.0
 ```
 
 ```bash
