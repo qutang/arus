@@ -2,17 +2,19 @@
 Compute common features for activity recognition
 """
 
-from . import extensions as ext
-from . import accelerometer as accel
-from . import stream2, generator, segmentor, synchronizer, processor, scheduler, pipeline, node
-from . import mhealth_format as mh
-from .error_code import ErrorCode
+import enum
+import functools
+import sys
+
 import numpy as np
 import pandas as pd
-import functools
+from alive_progress import alive_bar
 from loguru import logger
-import enum
-import sys
+
+from . import accelerometer as accel
+from . import extensions as ext
+from . import mhealth_format as mh
+from .error_code import ErrorCode
 
 VM_TIME_FREQ_FEATURE_NAMES = ['MEAN_0',
                               'STD_0',
@@ -62,6 +64,8 @@ def time_freq_orient(raw_df, sr, st, et, subwin_secs=2, ori_unit='rad', activati
 
     # Unify input matrix
     X = ext.numpy.atleast_float_2d(raw_df.values[:, 1:4])
+    # fill nan at first, nan will be filled by spline interpolation
+    X = ext.numpy.mutate_nan(X)
 
     # Smoothing input raw data
     if use_vm:
@@ -74,9 +78,9 @@ def time_freq_orient(raw_df, sr, st, et, subwin_secs=2, ori_unit='rad', activati
     X_filtered = ext.numpy.butterworth(X, sr=sr, cut_offs=20,
                                        order=4, filter_type='low')
 
-    if raw_df.shape[0] < sr:
+    if raw_df.dropna().shape[0] < raw_df.shape[0] * 0.9:
         # TO BE IMPROVED
-        # Now input raw data should include no less than 1s data
+        # Now input raw data should include no less than 90% of the whole window
         for name in feature_names:
             result[name] = [np.nan]
     else:
@@ -132,18 +136,10 @@ class FeatureSet:
                 '[Error code: {ErrorCode.INPUT_ARGUMENT_FORMAT_ERROR.name}] To compute features offline, the input raw data should be feature dataframe stored in mhealth format.')
             sys.exit(ErrorCode.INPUT_ARGUMENT_FORMAT_ERROR.name)
 
-    def _validate_input_as_generator(self):
-        if type(self._raw_sources[0]) is not generator.Generator:
-            logger.error(
-                f'[Error code: {ErrorCode.INPUT_ARGUMENT_FORMAT_ERROR.name}] To compute features online, the input raw data should be arus Generator object.')
-            sys.exit(ErrorCode.INPUT_ARGUMENT_FORMAT_ERROR.name)
-
     def compute_offline(self, window_size, feature_func, feature_names, start_time=None, stop_time=None, step_size=None, **kwargs):
         self._validate_input_as_df()
         step_size = step_size or window_size
         joint_feature_set = None
-        sch = scheduler.Scheduler(mode=scheduler.Scheduler.Mode.PROCESS,
-                                  scheme=scheduler.Scheduler.Scheme.SUBMIT_ORDER, max_workers=8)
         window_start_markers = ext.pandas.split_into_windows(
             *self._raw_sources, step_size=step_size, st=start_time, et=stop_time)
         feature_sets = []
@@ -153,16 +149,24 @@ class FeatureSet:
             self._srs = [sr or kwargs['sr'] for sr in self._srs]
         kwargs.pop('sr', None)
         for raw_df, placement, sr in zip(self._raw_sources, self._placements, self._srs):
-            sch.reset()
-            for window_st in window_start_markers:
-                window_et = window_st + pd.Timedelta(window_size, unit='s')
-                df = ext.pandas.segment_by_time(
-                    raw_df, seg_st=window_st, seg_et=window_et)
-                if df.empty:
-                    continue
-                sch.submit(feature_func, df, st=window_st,
-                           et=window_et, sr=sr, **kwargs)
-            feature_vector_list = sch.get_all_remaining_results()
+            feature_vector_list = []
+            with alive_bar(len(window_start_markers), bar='blocks') as bar:
+                for window_st in window_start_markers:
+                    window_et = window_st + pd.Timedelta(window_size, unit='s')
+                    df = ext.pandas.segment_by_time(
+                        raw_df, seg_st=window_st, seg_et=window_et)
+                    if df.dropna().empty:
+                        bar(
+                            text=f'Skipped features for nan window: {window_st}')
+                        continue
+                    if df.empty:
+                        bar(
+                            text=f'Skipped features for empty window: {window_st}')
+                        continue
+                    fv = feature_func(df, st=window_st,
+                                      et=window_et, sr=sr, **kwargs)
+                    feature_vector_list.append(fv)
+                    bar(text=f'Computed features for window: {window_st}')
             if len(feature_vector_list) == 0:
                 continue
             feature_set = pd.concat(
@@ -202,41 +206,6 @@ class FeatureSet:
         self._feature_set = joint_feature_set
         self._feature_names = list(filter(lambda name: name.split('_')
                                           [-1] in self._placements, joint_feature_set.columns))
-
-    def compute_online(self, seg, feature_func, feature_names, start_time, **kwargs):
-        src_streams = []
-        for src_generator, placement in zip(self._raw_sources, self._placements):
-            src_stream = stream2.Stream(
-                src_generator, seg, name=f'{placement}-stream')
-            src_stream.set_essential_context(
-                start_time=start_time, stream_id=placement)
-            src_streams.append(src_stream)
-
-        sync = synchronizer.Synchronizer()
-        sync.add_sources(n=len(self._raw_sources))
-
-        proc = processor.Processor(feature_func,
-                                   mode=scheduler.Scheduler.Mode.PROCESS,
-                                   scheme=scheduler.Scheduler.Scheme.SUBMIT_ORDER,
-                                   max_workers=10)
-        proc.set_context(**kwargs)
-
-        self._pip = node.Node(op=pipeline.Pipeline(*src_streams,
-                                                   synchronizer=sync,
-                                                   processor=proc, name='online-feature-pipeline'),
-                              t=node.Node.Type.INPUT, name='online-feature-pipeline')
-        self._pip.start()
-        for pack in self._pip.produce():
-            if pack.signal == node.Node.Signal.DATA:
-                if pack.values is not None:
-                    yield pack.values
-            elif pack.signal == node.Node.Signal.STOP:
-                break
-        self._pip.stop()
-
-    def stop_online(self):
-        self._pip.stop()
-        self._pip = None
 
     def get_feature_set(self):
         if self._feature_set is not None:
