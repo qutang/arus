@@ -36,6 +36,7 @@ from . import plugins
 from . import feature as feat
 from . import models
 from . import spades_lab as slab
+from . import env
 from .plugins import signaligner
 import glob
 from datetime import datetime, timedelta
@@ -47,6 +48,8 @@ import json
 import pprint
 import pandas as pd
 import math
+import shutil
+import pkg_resources
 
 
 def cli():
@@ -195,7 +198,10 @@ def preset_command(arguments):
         model_path = arguments['MODEL_NAME']
         test_file = arguments['TEST_FILE']
         file_format = arguments['--file-format']
-        _predict_model(model_path, test_file, file_format)
+        predict_df, output_path = predict_model(
+            model_path, test_file, file_format)
+        plugins.signaligner.save_as_signaligner(
+            predict_df, output_path, plugins.signaligner.FileType.ANNOTATION, labelset=model.name, mode='w', index=False, header=True)
 
 
 def format_time(ts):
@@ -220,7 +226,7 @@ def _train_muss(placements, target_name):
     model.save_model()
 
 
-def _predict_model(model_path, test_file, file_format):
+def predict_model(model_path, test_file, file_format):
     model = models.MUSSHARModel.load_model(model_path)
     if file_format == 'signaligner':
         predict_df = model.predict(test_file,
@@ -228,8 +234,7 @@ def _predict_model(model_path, test_file, file_format):
                                    file_format=ds.InputType.SIGNALIGNER)
         output_path = os.path.join(os.path.dirname(
             test_file), model.mid + '.prediction.csv')
-        plugins.signaligner.save_as_signaligner(
-            predict_df, output_path, plugins.signaligner.FileType.ANNOTATION, labelset=model.name, mode='w', index=False, header=True)
+        return predict_df, output_path
 
 
 def package_command(arguments):
@@ -246,6 +251,23 @@ def package_command(arguments):
             developer.dev_website()
         elif release:
             developer.build_website()
+    elif arguments['PACK_COMMAND'] == 'update-prebuilt':
+        _update_prebuilt_models()
+
+
+def _update_prebuilt_models():
+    logger.info('Update prebuilt models...')
+    _train_muss(['NDW'], 'INTENSITY')
+    # copy model to prebuilt folder
+    src = os.path.join(env.get_data_home(), 'spades_lab',
+                       mh.PROCESSED_FOLDER, 'NDW-INTENSITY-muss', 'MUSS_HAR.har')
+    dest = os.path.join(pkg_resources.resource_filename(
+        'arus', 'models/prebuilt'), 'intensity.har')
+    if os.path.exists(dest):
+        logger.info('Remove previous models...')
+        os.remove(dest)
+    shutil.copyfile(src, dest)
+    logger.info('Updated prebuilt models...')
 
 
 def _release_package(nver, dev=False, release=False):
