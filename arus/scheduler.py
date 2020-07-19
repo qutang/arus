@@ -150,14 +150,14 @@ class Scheduler:
         with alive_bar(self._tasks.qsize(), bar='blocks') as bar:
             if self._scheme == Scheduler.Scheme.AFTER_PREVIOUS_DONE:
                 while not self._results.empty():
-                    bar.text(f'Finished tasks: {len(results)}')
+                    bar(f'Finished tasks: {len(results)}')
                     t = self._results.get()
                     results.append(t.item.result())
                 t = self._tasks.get()
                 results.append(t.result())
             else:
                 while not self._results.empty():
-                    bar.text(f'Finished tasks: {len(results)}')
+                    bar(f'Finished tasks: {len(results)}')
                     t = self._results.get()
                     self._tasks.get()
                     results.append(t.item.result())

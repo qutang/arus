@@ -27,7 +27,7 @@ def signify_annotation_files(filepaths, data_id, output_path, session_span):
     dfs = []
     with progress.alive_bar(len(filepaths), bar='blocks') as bar:
         for filepath in filepaths:
-            bar.text("Convert file to signaligner: {}".format(filepath))
+            bar("Convert file to signaligner: {}".format(filepath))
             df = pd.read_csv(
                 filepath, header=0, sep=',', compression="infer", quotechar='"', parse_dates=[0, 1, 2], infer_datetime_format=True)
             dfs.append(df)
@@ -95,7 +95,7 @@ def signify_sensor_files(filepaths, data_id, output_path, output_annotation_path
     last_row = None
     with progress.alive_bar(n, bar='blocks') as bar:
         for marker in hourly_markers:
-            bar.text("Convert sensor data to signaligner format: {}".format(marker))
+            bar("Convert sensor data to signaligner format: {}".format(marker))
             date_str = "{}-{:02d}-{:02d}-{:02d}".format(marker.year,
                                                         marker.month, marker.day, marker.hour)
             selected_files = list(filter(lambda f: date_str in f, filepaths))
