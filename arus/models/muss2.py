@@ -24,8 +24,6 @@ class MUSSHARModel(HARModel):
     window_size: float = 12.8
     sr: int = 80
     used_placements: typing.List[str] = field(default_factory=lambda: ['DW'])
-    model: typing.Any = None
-    train_perf: typing.Dict[str, typing.Any] = field(default_factory=dict)
 
     def reset_model(self):
         self.model = None

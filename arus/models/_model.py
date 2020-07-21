@@ -11,6 +11,7 @@ class HARModel:
     mid: str
     name: str = "HAR"
     model: typing.Any = None
+    train_perf: typing.Dict[str, typing.Any] = field(default_factory=dict)
     data_set: ds.MHDataset = field(init=False)
 
     def reset_model(self):
