@@ -1,12 +1,4 @@
 [[package]]
-category = "main"
-description = "A new kind of Progress Bar, with real-time throughput, eta and very cool animations!"
-name = "alive-progress"
-optional = false
-python-versions = ">=2.7, <4"
-version = "1.6.1"
-
-[[package]]
 category = "dev"
 description = "Python graph (network) package"
 name = "altgraph"
@@ -17,7 +9,7 @@ version = "0.17"
 [[package]]
 category = "dev"
 description = "Disable App Nap on OS X 10.9"
-marker = "python_version >= \"3.3\" and sys_platform == \"darwin\" or platform_system == \"Darwin\""
+marker = "sys_platform == \"darwin\" or platform_system == \"Darwin\" or python_version >= \"3.3\" and sys_platform == \"darwin\""
 name = "appnope"
 optional = false
 python-versions = "*"
@@ -89,7 +81,6 @@ pytz = ">=2015.7"
 [[package]]
 category = "dev"
 description = "Specifications for callback functions passed in to an API"
-marker = "python_version >= \"3.3\""
 name = "backcall"
 optional = false
 python-versions = "*"
@@ -442,7 +433,6 @@ xdg_home = ["appdirs (>=1.4.0)"]
 [[package]]
 category = "dev"
 description = "An autocompletion tool for Python that can be used for text editors."
-marker = "python_version >= \"3.3\""
 name = "jedi"
 optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*"
@@ -1020,7 +1010,7 @@ ppft = ">=1.6.6.2"
 [[package]]
 category = "dev"
 description = "Pexpect allows easy control of interactive console applications."
-marker = "python_version >= \"3.3\" and sys_platform != \"win32\""
+marker = "python_version >= \"3.3\" and sys_platform != \"win32\" or sys_platform != \"win32\""
 name = "pexpect"
 optional = false
 python-versions = "*"
@@ -1032,7 +1022,6 @@ ptyprocess = ">=0.5"
 [[package]]
 category = "dev"
 description = "Tiny 'shelve'-like database with concurrency support"
-marker = "python_version >= \"3.3\""
 name = "pickleshare"
 optional = false
 python-versions = "*"
@@ -1745,14 +1734,10 @@ dev = ["dephell_versioning", "semver"]
 metawear = ["pymetawear"]
 
 [metadata]
-content-hash = "40564eed1179ab5c7e773e9a4c3436d9f7770653591b918e389b9ada1ca8510c"
+content-hash = "90ce5cb0838248cae78cc0e6eea77d7e5d0963d8b79f6d0114e201e954150df8"
 python-versions = "^3.7.0"
 
 [metadata.files]
-alive-progress = [
-    {file = "alive-progress-1.6.1.tar.gz", hash = "sha256:2a0d7516ec0f596d5ce53755c0913a909eb1c91854e1d782e511ef5e1dd53218"},
-    {file = "alive_progress-1.6.1-py3-none-any.whl", hash = "sha256:9a0fae6b94fb4e4bcd9fb51760506d29a33358ebbfef2c6516dce3e359a661b5"},
-]
 altgraph = [
     {file = "altgraph-0.17-py2.py3-none-any.whl", hash = "sha256:c623e5f3408ca61d4016f23a681b9adb100802ca3e3da5e718915a9e4052cebe"},
     {file = "altgraph-0.17.tar.gz", hash = "sha256:1f05a47122542f97028caf78775a095fbe6a2699b5089de8477eb583167d69aa"},

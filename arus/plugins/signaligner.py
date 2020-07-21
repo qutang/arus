@@ -1,7 +1,7 @@
 import pandas as pd
 import os
 from loguru import logger
-import alive_progress as progress
+import tqdm
 import datetime
 import numpy as np
 from . import actigraph
@@ -25,12 +25,14 @@ def format_time(ts):
 
 def signify_annotation_files(filepaths, data_id, output_path, session_span):
     dfs = []
-    with progress.alive_bar(len(filepaths), bar='blocks') as bar:
+    with tqdm.tqdm(total=len(filepaths)) as bar:
         for filepath in filepaths:
-            bar("Convert file to signaligner: {}".format(filepath))
+            bar.set_description(
+                "Convert file to signaligner: {}".format(filepath))
             df = pd.read_csv(
                 filepath, header=0, sep=',', compression="infer", quotechar='"', parse_dates=[0, 1, 2], infer_datetime_format=True)
             dfs.append(df)
+            bar.update()
     # merge and sort
     merged = pd.concat(dfs, axis=0)
     merged = merged.sort_values(by=['START_TIME'])
@@ -93,9 +95,10 @@ def signify_sensor_files(filepaths, data_id, output_path, output_annotation_path
             'Remove the existing missing data annotation file')
         os.remove(output_annotation_path)
     last_row = None
-    with progress.alive_bar(n, bar='blocks') as bar:
+    with tqdm.tqdm(total=n) as bar:
         for marker in hourly_markers:
-            bar("Convert sensor data to signaligner format: {}".format(marker))
+            bar.set_description(
+                "Convert sensor data to signaligner format: {}".format(marker))
             date_str = "{}-{:02d}-{:02d}-{:02d}".format(marker.year,
                                                         marker.month, marker.day, marker.hour)
             selected_files = list(filter(lambda f: date_str in f, filepaths))
@@ -133,6 +136,7 @@ def signify_sensor_files(filepaths, data_id, output_path, output_annotation_path
             else:
                 save_as_signaligner(annotation_df, output_annotation_path,
                                     FileType.ANNOTATION, labelset=data_id, mode='a', header=False, index=False)
+            bar.update()
 
 
 def _regularize_samples(start_time, filepath=None, sr=50, data_id=None):

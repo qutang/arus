@@ -41,7 +41,7 @@ from .plugins import signaligner
 import glob
 from datetime import datetime, timedelta
 import os
-import alive_progress as progress
+import tqdm
 import sys
 import subprocess
 import json

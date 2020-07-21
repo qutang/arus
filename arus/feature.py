@@ -8,7 +8,7 @@ import sys
 
 import numpy as np
 import pandas as pd
-from alive_progress import alive_bar
+import tqdm
 from loguru import logger
 
 from . import accelerometer as accel
@@ -150,21 +150,33 @@ class FeatureSet:
         kwargs.pop('sr', None)
         for raw_df, placement, sr in zip(self._raw_sources, self._placements, self._srs):
             feature_vector_list = []
-            with alive_bar(len(window_start_markers), bar='blocks') as bar:
-                for window_st in window_start_markers:
-                    window_et = window_st + pd.Timedelta(window_size, unit='s')
-                    df = ext.pandas.segment_by_time(
-                        raw_df, seg_st=window_st, seg_et=window_et)
-                    if df.dropna().empty:
-                        bar(f'Skipped features for nan window: {window_st}')
-                        continue
-                    if df.empty:
-                        bar(f'Skipped features for empty window: {window_st}')
-                        continue
-                    fv = feature_func(df, st=window_st,
-                                      et=window_et, sr=sr, **kwargs)
-                    feature_vector_list.append(fv)
-                    bar(f'Computed features for window: {window_st}')
+            if 'hide_progress' not in kwargs:
+                bar = tqdm.tqdm(total=len(window_start_markers))
+            for window_st in window_start_markers:
+                window_et = window_st + pd.Timedelta(window_size, unit='s')
+                df = ext.pandas.segment_by_time(
+                    raw_df, seg_st=window_st, seg_et=window_et)
+                if df.dropna().empty:
+                    if 'hide_progress' not in kwargs:
+                        bar.set_description(
+                            f'Skipped features for nan window: {window_st}')
+                        bar.update()
+                    continue
+                if df.empty:
+                    if 'hide_progress' not in kwargs:
+                        bar.set_description(
+                            f'Skipped features for empty window: {window_st}')
+                        bar.update()
+                    continue
+                fv = feature_func(df, st=window_st,
+                                  et=window_et, sr=sr, **kwargs)
+                feature_vector_list.append(fv)
+                if 'hide_progress' not in kwargs:
+                    bar.set_description(
+                        f'Computed features for window: {window_st}')
+                    bar.update()
+            if 'hide_progress' not in kwargs:
+                bar.close()
             if len(feature_vector_list) == 0:
                 continue
             feature_set = pd.concat(

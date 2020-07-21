@@ -5,7 +5,7 @@ from loguru import logger
 import sys
 from . import extensions as ext
 from . import mhealth_format as mh
-from alive_progress import alive_bar
+import tqdm
 
 
 class ClassSet:
@@ -34,7 +34,7 @@ class ClassSet:
         window_start_markers = ext.pandas.split_into_windows(
             *self._raw_sources, step_size=step_size, st=start_time, et=stop_time)
         class_vectors = []
-        with alive_bar(len(window_start_markers), bar='blocks') as bar:
+        with tqdm.tqdm(total=len(window_start_markers)) as bar:
             for window_st in window_start_markers:
                 window_et = window_st + pd.Timedelta(window_size, unit='s')
                 dfs = []
@@ -45,7 +45,9 @@ class ClassSet:
                 class_vector = class_func(*dfs, st=window_st, et=window_et,
                                           task_names=task_names, aids=self._aids, **kwargs)
                 class_vectors.append(class_vector)
-                bar(f'Computed class set for window: {window_st}')
+                bar.update()
+                bar.set_description(
+                    f'Computed class set for window: {window_st}')
 
         if len(class_vectors) == 0:
             self._class_set = None

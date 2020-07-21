@@ -102,6 +102,7 @@ class MhealthFileWriter:
             return writing_tasks
 
     def _split_data(self, data):
+        # TODO: Annotations should be cropped nicely at the edge of hourly files.
         if self._hourly:
             if self._file_type == constants.SENSOR_FILE_TYPE:
                 group_key = constants.TIMESTAMP_COL
