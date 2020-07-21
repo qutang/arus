@@ -19,3 +19,5 @@ from .node import Node
 from .scheduler import Scheduler
 from .stream import Stream
 from . import models
+from .class_label import ClassSet
+from .feature import FeatureSet
