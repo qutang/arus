@@ -7,6 +7,7 @@ import pandas as pd
 import typing
 import os
 import enum
+import re
 
 
 class InputType(enum.Enum):
@@ -123,6 +124,13 @@ class SubjectObj:
                 return sensor
         return None
 
+    def subset_sensors(self, field_name, field_value):
+        sensors = []
+        for sensor in self.sensors:
+            if re.fullmatch(field_value, sensor.__getattribute__(field_name)) is not None:
+                sensors.append(sensor)
+        return sensors
+
 
 @dataclass
 class MHDataset:
@@ -174,7 +182,8 @@ class MHDataset:
         data_ids = sorted(list(set(
             map(lambda f: mh.parse_data_id_from_filepath(f), annotation_files))))
         for data_id in data_ids:
-            paths = list(filter(lambda f: data_id in f, annotation_files))
+            paths = list(filter(lambda f: data_id ==
+                                mh.parse_data_id_from_filepath(f), annotation_files))
             annot = AnnotationObj(
                 paths=paths, aid=data_id)
             annotations.append(annot)
@@ -233,17 +242,21 @@ class MHDataset:
             logger.error(f'{pid} does not exist.')
             return []
 
-    def get_annotations(self, pid, annotation_type="", annotator="", aid="", return_field=None):
+    def get_annotations(self, pid, annotation_type=None, annotator=None, aid=None):
         subj = self.get_subject_obj(pid)
+
+        def filter_func(s):
+            if annotation_type is not None and s.annotation_type is not None and annotation_type != s.annotation_type:
+                return False
+            if annotator is not None and s.annotator is not None and annotator != s.annotator:
+                return False
+            if aid is not None and s.aid is not None and aid != s.aid:
+                return False
+            return True
         if subj is not None:
             annots = subj.annotations
-            annot_objs = list(filter(
-                lambda a: annotation_type in a.annotation_type
-                and annotator in a.annotator and aid in a.aid, annots))
-            if return_field is None:
-                return annot_objs
-            else:
-                return list(map(lambda a: a.__getattribute__(return_field), annot_objs))
+            annot_objs = list(filter(filter_func, annots))
+            return annot_objs
         else:
             logger.error(f'{pid} does not exist.')
             return []
@@ -274,16 +287,17 @@ class MHDataset:
         step_size = step_size or window_size
         annotation_types = self.get_annotation_field(pid, 'annotation_type')
         raw_resources = [mh.MhealthFileReader.read_csvs(
-            *self.get_annotations(
-                pid, annotation_type=annotation_type, return_field='paths')[0], datetime_cols=[0, 1, 2]) for annotation_type in annotation_types]
+            *self.get_annotations(pid, annotation_type=annotation_type)[0].paths, datetime_cols=[0, 1, 2]) for annotation_type in annotation_types]
         class_set = class_label.ClassSet(raw_resources, annotation_types)
         class_set.compute_offline(window_size, self.class_set_parser,
                                   task_names, start_time, stop_time, step_size=step_size, pid=pid)
         return class_set.get_class_set()
 
-    def subset(self, name, pids=[]):
+    def subset(self, name, pids=None):
         new_ds = MHDataset(path=self.path, name=name,
                            input_type=self.input_type, load=False)
+        if pids is None:
+            pids = self.get_pids()
         for pid in pids:
             new_ds.subjects.append(self.get_subject_obj(pid))
         new_ds.set_class_set_parser(self.class_set_parser)
