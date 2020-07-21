@@ -2,6 +2,8 @@
 
 Usage:
   hh clean ROOT PID [SR] [--date_range=<date_range>] [--auto_range=<auto_range>] [--skip-to-mhealth] [--skip-sync] [--remove-exists] [--debug]
+  hh post-clean ROOT PID [--debug]
+  hh train ROOT [--pids=<pids>] --model-type=<model_type> [--placements=<placements>]
   hh --help
   hh --version
 
@@ -13,12 +15,17 @@ Arguments:
 Options:
   --date_range=<date_range>                     Date range. E.g., "--date_range 2020-06-01,2020-06-10", or "--date_range 2020-06-01," or "--date_range ,2020-06-10".
   --auto_range=<auto_range>                     Auto date freq. Default is "W-SUN", or weekly starting from Sunday.
+  -p <pids>, --pid <pids>                       A list of participant IDs involved to train the model. IDs should be separated by ','.
+  -l <placements>, --placements <placements>    A list of used placements. Default is LW,RW. The placements should be separated by ','.
+  -m <model_type>, --model-type <model_type>    The type of the hand hygiene model. Currently it only supports "classic".
   -h, --help                                    Show help message.
   -v, --version                                 Program/app version.
 """
 
 import _version
 import clean_up
+import post_clean_up
+import har_models
 import arus
 import sys
 
@@ -51,6 +58,19 @@ def main():
         else:
             arus.cli.convert_to_signaligner_both(
                 root, pid, sr, date_range, auto_range)
+    elif arguments['post-clean']:
+        root = arguments['ROOT']
+        pid = arguments['PID']
+        post_clean_up.convert_to_mhealth(root, pid)
+    elif arguments['train']:
+        root = arguments['ROOT']
+        pids = arguments['--pids'].split(',')
+        model_type = arguments['--model-type']
+        placements = arguments['--placements'].split(
+            ',') if arguments['--placements'] is not None else ['LW', 'RW']
+
+        if model_type == 'classic':
+            har_models.train_hh_classic(root, pids, placements)
 
 
 if __name__ == "__main__":
