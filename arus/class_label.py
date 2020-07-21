@@ -4,6 +4,8 @@ from . import stream2, generator, segmentor, synchronizer, processor, scheduler,
 from loguru import logger
 import sys
 from . import extensions as ext
+from . import mhealth_format as mh
+from alive_progress import alive_bar
 
 
 class ClassSet:
@@ -29,23 +31,22 @@ class ClassSet:
         self._validate_input_as_df()
         self._task_names = task_names
         step_size = step_size or window_size
-        sch = scheduler.Scheduler(mode=scheduler.Scheduler.Mode.PROCESS,
-                                  scheme=scheduler.Scheduler.Scheme.SUBMIT_ORDER, max_workers=8)
         window_start_markers = ext.pandas.split_into_windows(
             *self._raw_sources, step_size=step_size, st=start_time, et=stop_time)
         class_vectors = []
-        sch.reset()
-        for window_st in window_start_markers:
-            window_et = window_st + pd.Timedelta(window_size, unit='s')
-            dfs = []
-            for raw_df in self._raw_sources:
-                df = ext.pandas.segment_by_time(
-                    raw_df, seg_st=window_st, seg_et=window_et, st_col=1, et_col=2)
-                dfs.append(df)
-            sch.submit(class_func, *dfs, st=window_st,
-                       et=window_et, task_names=task_names, aids=self._aids, **kwargs)
-        class_vectors = sch.get_all_remaining_results()
-        sch.reset()
+        with alive_bar(len(window_start_markers), bar='blocks') as bar:
+            for window_st in window_start_markers:
+                window_et = window_st + pd.Timedelta(window_size, unit='s')
+                dfs = []
+                for raw_df in self._raw_sources:
+                    df = ext.pandas.segment_by_time(
+                        raw_df, seg_st=window_st, seg_et=window_et, st_col=1, et_col=2)
+                    dfs.append(df)
+                class_vector = class_func(*dfs, st=window_st, et=window_et,
+                                          task_names=task_names, aids=self._aids, **kwargs)
+                class_vectors.append(class_vector)
+                bar(f'Computed class set for window: {window_st}')
+
         if len(class_vectors) == 0:
             self._class_set = None
         else:
@@ -102,3 +103,9 @@ class ClassSet:
 
     def get_task_names(self):
         return self._task_names
+
+    @staticmethod
+    def get_annotation_durations(annot_df, label_col):
+        durations = annot_df.groupby(label_col).apply(
+            lambda rows: np.sum(rows.loc[:, mh.STOP_TIME_COL] - rows.loc[:, mh.START_TIME_COL]))
+        return durations
