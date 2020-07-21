@@ -2,7 +2,6 @@
 
 import arus
 import glob
-from alive_progress import alive_bar
 from loguru import logger
 import pandas as pd
 from scipy import signal

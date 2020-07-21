@@ -3,7 +3,7 @@
 import arus
 import glob
 import os
-from alive_progress import alive_bar
+import tqdm
 from loguru import logger
 import pandas as pd
 import datetime
@@ -101,11 +101,16 @@ def _convert_annotations(root, pid):
         "Convert annotation data to mhealth format for hand hygiene raw dataset")
     raw_annotation_files = glob.glob(os.path.join(
         root, pid, "OriginalRaw", "**", "*annotations.csv"), recursive=True)
+    app_annotation_files = filter(
+        lambda f: 'Side' not in f, raw_annotation_files)
+
     annot_dfs = []
     task_annot_dfs = []
-    with alive_bar(len(raw_annotation_files)) as bar:
-        for raw_annotation_file in raw_annotation_files:
-            bar('Convert {} to mhealth'.format(raw_annotation_file))
+    with tqdm.tqdm(total=len(app_annotation_files)) as bar:
+        for raw_annotation_file in app_annotation_files:
+            bar.update()
+            bar.set_description(
+                'Convert {} to mhealth'.format(raw_annotation_file))
             annot_df, task_annot_df = _read_raw_annotation_file(
                 raw_annotation_file)
             annot_dfs.append(annot_df)
