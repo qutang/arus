@@ -1,5 +1,6 @@
 from ._model import *
 from .muss2 import *
+from .splitter import *
 import pkg_resources
 
 
