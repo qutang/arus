@@ -67,23 +67,24 @@ def time_freq_orient(raw_df, sr, st, et, subwin_secs=2, ori_unit='rad', activati
     # fill nan at first, nan will be filled by spline interpolation
     X = ext.numpy.mutate_nan(X)
 
-    # Smoothing input raw data
-    if use_vm:
-        feature_names = VM_TIME_FREQ_FEATURE_NAMES + ORIENT_FEATURE_NAMES
-        X_vm = accel.vector_magnitude(X)
-        X_vm_filtered = ext.numpy.butterworth(
-            X_vm, sr=sr, cut_offs=20, order=4, filter_type='low')
-    else:
-        feature_names = AXIAL_TIME_FREQ_FEATURE_NAMES + ORIENT_FEATURE_NAMES
-    X_filtered = ext.numpy.butterworth(X, sr=sr, cut_offs=20,
-                                       order=4, filter_type='low')
-
     if raw_df.dropna().shape[0] < raw_df.shape[0] * 0.9:
         # TO BE IMPROVED
         # Now input raw data should include no less than 90% of the whole window
         for name in feature_names:
             result[name] = [np.nan]
     else:
+        # Smoothing input raw data
+        if use_vm:
+            feature_names = VM_TIME_FREQ_FEATURE_NAMES + ORIENT_FEATURE_NAMES
+            X_vm = accel.vector_magnitude(X)
+            X_vm_filtered = ext.numpy.butterworth(
+                X_vm, sr=sr, cut_offs=20, order=4, filter_type='low')
+
+        else:
+            feature_names = AXIAL_TIME_FREQ_FEATURE_NAMES + ORIENT_FEATURE_NAMES
+        X_filtered = ext.numpy.butterworth(X, sr=sr, cut_offs=20,
+                                           order=4, filter_type='low')
+
         time_freq_feature_funcs = [
             accel.mean,
             accel.std,
@@ -166,6 +167,12 @@ class FeatureSet:
                     if 'hide_progress' not in kwargs:
                         bar.set_description(
                             f'Skipped features for empty window: {window_st}')
+                        bar.update()
+                    continue
+                if df.shape[0] < window_size * sr * 0.6:
+                    if 'hide_progress' not in kwargs:
+                        bar.set_description(
+                            f'Skipped features for insufficient window: {window_st}')
                         bar.update()
                     continue
                 fv = feature_func(df, st=window_st,
