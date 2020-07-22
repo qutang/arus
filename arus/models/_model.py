@@ -12,6 +12,7 @@ class HARModel:
     name: str = "HAR"
     model: typing.Any = None
     train_perf: typing.Dict[str, typing.Any] = field(default_factory=dict)
+    train_pids: typing.List[str] = field(default_factory=list)
     data_set: ds.MHDataset = field(init=False)
 
     def reset_model(self):
@@ -33,6 +34,10 @@ class HARModel:
             'This method must be implemented by sub classes!')
 
     def predict(self, *input_objs, **kwargs):
+        raise NotImplementedError(
+            'This method must be implemented by sub classes!')
+
+    def cross_validation(self, pids=None, n_fold=10, **kwargs):
         raise NotImplementedError(
             'This method must be implemented by sub classes!')
 
