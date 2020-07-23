@@ -4,6 +4,7 @@ Usage:
   hh clean ROOT PID [SR] [--date_range=<date_range>] [--auto_range=<auto_range>] [--skip-to-mhealth] [--skip-sync] [--remove-exists] [--debug]
   hh post-clean ROOT PID [--debug]
   hh train ROOT [--pids=<pids>] --model-type=<model_type> [--placements=<placements>]
+  hh cv ROOT [--pids=<pids>] --model-type=<model_type> [--placements=<placements>]
   hh --help
   hh --version
 
@@ -62,15 +63,17 @@ def main():
         root = arguments['ROOT']
         pid = arguments['PID']
         post_clean_up.convert_to_mhealth(root, pid)
-    elif arguments['train']:
+    elif arguments['train'] or arguments['cv']:
         root = arguments['ROOT']
         pids = arguments['--pids'].split(',')
         model_type = arguments['--model-type']
         placements = arguments['--placements'].split(
             ',') if arguments['--placements'] is not None else ['LW', 'RW']
 
-        if model_type == 'classic':
+        if model_type == 'classic' and arguments['train']:
             har_models.train_hh_classic(root, pids, placements)
+        elif model_type == 'classic' and arguments['cv']:
+            har_models.cv_hh_classic(root, pids, placements)
 
 
 if __name__ == "__main__":
