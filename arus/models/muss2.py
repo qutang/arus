@@ -1,23 +1,27 @@
 
 import gc
-import joblib
 import os
-from loguru import logger
-import pandas as pd
-from sklearn.utils import shuffle
-from sklearn import preprocessing as preprocess
-from sklearn.pipeline import make_pipeline
-import sklearn.svm as svm
 import typing
 from dataclasses import dataclass, field
-from sklearn.model_selection import TimeSeriesSplit
-from ._model import HARModel
+
+import joblib
+import pandas as pd
+import sklearn.svm as svm
+from loguru import logger
+from sklearn import preprocessing as preprocess
+from sklearn.model_selection import (TimeSeriesSplit,
+                                     cross_validate)
+from sklearn.pipeline import make_pipeline
+from sklearn.utils import shuffle
+from sklearn.metrics import make_scorer
+
+from .. import dataset as ds
 from .. import feature as feat
 from .. import mhealth_format as mh
-from .. import dataset as ds
+from .. import extensions as ext
 from .. import scheduler
+from ._model import HARModel
 from .splitter import TimeSeriesEpisodeSplit
-from sklearn.model_selection import cross_validate
 
 
 @dataclass
@@ -230,15 +234,26 @@ class MUSSHARModel(HARModel):
         splitter = TimeSeriesEpisodeSplit(
             fcs, fs_names, task_name, n_split=n_fold)
         clf = self.get_estimator(**kwargs)
+        label_names = fcs.loc[:, task_name].unique().tolist()
+
+        logger.info(f"Run {n_fold} cross validation")
         scores = cross_validate(clf, fcs.loc[:, fs_names].values,
                                 y=fcs.loc[:, task_name].values, cv=splitter.split(), scoring=['precision_macro', 'recall_macro', 'f1_macro', 'accuracy'], n_jobs=4, return_train_score=True)
+
+        splitter = TimeSeriesEpisodeSplit(
+            fcs, fs_names, task_name, n_split=n_fold)
+        clf = self.get_estimator(**kwargs)
+        tests, preds = ext.sklearn.cross_val_predict(clf,
+                                                     fcs.loc[:,
+                                                             fs_names].values,
+                                                     y=fcs.loc[:, task_name].values, cv=splitter.split(), n_jobs=4)
+        cm_df = self.confusion_matrix(tests, preds, label_names=label_names)
         cv_df = pd.DataFrame.from_dict(scores)
         self.data_set.processed = {
             **self.data_set.processed,
-            'cv': cv_df
+            'cv': cv_df,
+            'cv_cm': cm_df
         }
-        logger.info(cv_df)
-        logger.info(cv_df.describe())
 
     def _predict_subj(self, *subj_objs: typing.List[ds.SubjectObj]):
         results = []
