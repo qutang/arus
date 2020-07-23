@@ -1,31 +1,31 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><url>
      <loc>https://qutang.github.io/arus/</loc>
-     <lastmod>2020-07-21</lastmod>
+     <lastmod>2020-07-23</lastmod>
      <changefreq>daily</changefreq>
     </url><url>
      <loc>https://qutang.github.io/arus/LICENSE/</loc>
-     <lastmod>2020-07-21</lastmod>
+     <lastmod>2020-07-23</lastmod>
      <changefreq>daily</changefreq>
     </url><url>
      <loc>https://qutang.github.io/arus/CODE_OF_CONDUCT/</loc>
-     <lastmod>2020-07-21</lastmod>
+     <lastmod>2020-07-23</lastmod>
      <changefreq>daily</changefreq>
     </url><url>
      <loc>https://qutang.github.io/arus/changelogs/</loc>
-     <lastmod>2020-07-21</lastmod>
+     <lastmod>2020-07-23</lastmod>
      <changefreq>daily</changefreq>
     </url><url>
      <loc>https://qutang.github.io/arus/tutorials/overview/</loc>
-     <lastmod>2020-07-21</lastmod>
+     <lastmod>2020-07-23</lastmod>
      <changefreq>daily</changefreq>
     </url><url>
      <loc>https://qutang.github.io/arus/tutorials/commandline/</loc>
-     <lastmod>2020-07-21</lastmod>
+     <lastmod>2020-07-23</lastmod>
      <changefreq>daily</changefreq>
     </url><url>
      <loc>https://qutang.github.io/arus/api/generator/</loc>
-     <lastmod>2020-07-21</lastmod>
+     <lastmod>2020-07-23</lastmod>
      <changefreq>daily</changefreq>
     </url>
 </urlset>
