@@ -5,6 +5,9 @@ import typing
 from loguru import logger
 from .. import error_code
 
+from sklearn.metrics import confusion_matrix
+import pandas as pd
+
 
 @dataclass
 class HARModel:
@@ -40,6 +43,12 @@ class HARModel:
     def cross_validation(self, pids=None, n_fold=10, **kwargs):
         raise NotImplementedError(
             'This method must be implemented by sub classes!')
+
+    @staticmethod
+    def confusion_matrix(true_labels, pred_labels, label_names):
+        cm = confusion_matrix(true_labels, pred_labels, labels=label_names)
+        cm_df = pd.DataFrame(data=cm, index=label_names, columns=label_names)
+        return cm_df
 
     @staticmethod
     def ignore_classes(fcs, task_name, remove_classes=['Unknown', 'Transition']):
