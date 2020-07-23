@@ -36,6 +36,7 @@ bluez
 > pip install arus[metawear]
 > pip install arus[demo]
 > pip install arus[dev]
+> pip install arus[nn]
 ```
 
 ## Optional components
@@ -45,6 +46,8 @@ bluez
 `arus[demo]`: This optional component installs dependency supports for running the demo app that demonstrates a real-time interactive activity recognition training and testing program.
 
 `arus[dev]`: These optional component installs dependency supports for running some package and version management functions in the `arus.dev` module.
+
+`arus[nn]`: The optional component installs dependency supports for PyTorch and Tensorboard, which are required by `arus.models.report` module.
 
 ## Get started for development
 
@@ -59,7 +62,7 @@ bluez
 > # Install package dependencies
 > poetry install
 > # Install optional component dependencies
-> poetry install --extras "metawear demo dev"
+> poetry install --extras "metawear demo dev nn"
 > # Run unit tests
 > poetry run pytest
 ```
