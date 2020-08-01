@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-from .. import extensions
+from .. import extensions as ext
 import pytest
 import itertools
 
@@ -88,9 +88,9 @@ def test_sensor_data(spades_lab_data):
     dw_data = pd.read_csv(dw_sensor_file, parse_dates=[0])
     da_data = pd.read_csv(da_sensor_file, parse_dates=[0])
     st = max([dw_data.iloc[0, 0], da_data.iloc[0, 0]])
-    dw_data = extensions.pandas.segment_by_time(
+    dw_data = ext.pandas.segment_by_time(
         dw_data, st, st + pd.Timedelta(12.8 * 5, unit='seconds'))
-    da_data = extensions.pandas.segment_by_time(
+    da_data = ext.pandas.segment_by_time(
         da_data, st, st + pd.Timedelta(12.8 * 5, unit='seconds'))
     return dw_data, da_data
 
@@ -106,7 +106,7 @@ class TestPandas:
         df3 = pd.DataFrame({'key': ['foo', 'bar', 'baz', 'foo'],
                             'value': [9, 10, 11, 12], 'group': [1, 1, 2, 2]})
         dfs = [df1, df2, df3]
-        merged, cols_with_suffixes = extensions.pandas.merge_all(*dfs, suffix_names=['DW', 'DA', 'DT'], suffix_cols=[
+        merged, cols_with_suffixes = ext.pandas.merge_all(*dfs, suffix_names=['DW', 'DA', 'DT'], suffix_cols=[
             'value'], on=['key', 'group'], how='inner', sort=False)
 
         np.testing.assert_array_equal(
@@ -117,7 +117,7 @@ class TestPandas:
         np.testing.assert_array_equal(
             set(merged.columns), set(['key', 'value_DW', 'value_DA', 'value_DT', 'group']))
 
-        merged, cols_with_suffixes = extensions.pandas.merge_all(df1, suffix_names=['DW'], suffix_cols=[
+        merged, cols_with_suffixes = ext.pandas.merge_all(df1, suffix_names=['DW'], suffix_cols=[
             'value'], on=['key', 'group'], how='inner', sort=False)
         np.testing.assert_array_equal(merged.values, df1.values)
         np.testing.assert_array_equal(
@@ -126,12 +126,12 @@ class TestPandas:
     def test_filter_column(self):
         df1 = pd.DataFrame({'key': ['foo', 'bar', 'baz', 'foo'],
                             'value': [1, 2, 3, 5], 'group': [1, 1, 2, 2]})
-        filtered = extensions.pandas.filter_column(
+        filtered = ext.pandas.filter_column(
             df1, col='key', values_to_filter_out=['foo'])
         np.testing.assert_array_equal(filtered['value'].values, [2, 3])
         np.testing.assert_array_equal(filtered['key'].values, ['bar', 'baz'])
 
-        filtered = extensions.pandas.filter_column(
+        filtered = ext.pandas.filter_column(
             df1, col='value', values_to_filter_out=[2, 5])
         np.testing.assert_array_equal(filtered['value'].values, [1, 3])
         np.testing.assert_array_equal(filtered['key'].values, ['foo', 'baz'])
@@ -140,7 +140,7 @@ class TestPandas:
     @pytest.mark.parametrize('stop_time', [None, "2015-09-24 14:17:00.000"])
     def test_get_common_timespan(self, test_sensor_data, start_time, stop_time):
         dw_data, da_data = test_sensor_data
-        st, et = extensions.pandas.get_common_timespan(
+        st, et = ext.pandas.get_common_timespan(
             dw_data, da_data, st=start_time, et=stop_time)
         if start_time is None:
             assert st.timestamp() == pd.Timestamp(
@@ -158,7 +158,7 @@ class TestPandas:
     @pytest.mark.parametrize('stop_time', [None, "2015-09-24 14:17:00.000"])
     def test_split_into_windows(self, test_sensor_data, start_time, stop_time):
         dw_data, da_data = test_sensor_data
-        window_start_markers = extensions.pandas.split_into_windows(
+        window_start_markers = ext.pandas.split_into_windows(
             dw_data, da_data, step_size=12.8, st=start_time, et=stop_time)
         if start_time is None and stop_time is None:
             assert len(window_start_markers) == 5
@@ -180,39 +180,39 @@ class TestNumpy:
     def test_mutate_nan(self):
         # test signal without nan
         X = np.random.rand(10, 3)
-        X_new = extensions.numpy.mutate_nan(X)
+        X_new = ext.numpy.mutate_nan(X)
         np.testing.assert_array_almost_equal(X, X_new)
 
         X = np.random.rand(10, 1)
-        X_new = extensions.numpy.mutate_nan(X)
+        X_new = ext.numpy.mutate_nan(X)
         np.testing.assert_array_almost_equal(X, X_new)
 
         # test signal with single sample without nan
         X = np.array([[0.]])
-        X_new = extensions.numpy.mutate_nan(X)
+        X_new = ext.numpy.mutate_nan(X)
         np.testing.assert_array_almost_equal(X, X_new)
 
         X = np.array([[0., 0, 0, ]])
-        X_new = extensions.numpy.mutate_nan(X)
+        X_new = ext.numpy.mutate_nan(X)
         np.testing.assert_array_almost_equal(X, X_new)
 
         # test signal with nan
         X = np.atleast_2d(np.sin(2*np.pi * 1 * np.arange(0, 1, 1.0 / 100))).T
         X_nan = np.copy(X)
         X_nan[5:10, 0] = np.nan
-        X_new = extensions.numpy.mutate_nan(X_nan)
+        X_new = ext.numpy.mutate_nan(X_nan)
         np.testing.assert_array_almost_equal(X, X_new, decimal=4)
 
         X = np.tile(np.sin(2*np.pi * 1 *
                            np.arange(0, 1, 1.0 / 100.)), (3, 1)).T
         X_nan = np.copy(X)
         X_nan[5:10, 0:3] = np.nan
-        X_new = extensions.numpy.mutate_nan(X_nan)
+        X_new = ext.numpy.mutate_nan(X_nan)
         np.testing.assert_array_almost_equal(X, X_new, decimal=4)
 
     def test_butterworth(self, butterworth_test_signals):
         for args, expected in butterworth_test_signals:
-            result = extensions.numpy.butterworth(**args)
+            result = ext.numpy.butterworth(**args)
             diff = expected[10:90, ] - result[10:90, ]
             assert expected.shape == result.shape
             assert np.all(diff < 0.1)
@@ -223,7 +223,7 @@ class TestNumpy:
             signal1 = test_signal_pair_1[1]
             sr2 = test_signal_pair_2[0]
             signal2 = test_signal_pair_2[1]
-            result12 = extensions.numpy.resample(signal1, sr1, sr2)
+            result12 = ext.numpy.resample(signal1, sr1, sr2)
             expected12 = signal2
             st = int(sr2/10)
             et = int(sr2 - sr2/10)
@@ -233,7 +233,7 @@ class TestNumpy:
             assert expected12.shape == result12.shape
             assert np.all(diff12 < 0.1)
 
-            result21 = extensions.numpy.resample(signal2, sr2, sr1)
+            result21 = ext.numpy.resample(signal2, sr2, sr1)
             expected21 = signal1
             st = int(sr1/10)
             et = int(sr1 - sr1/10)
@@ -246,83 +246,121 @@ class TestNumpy:
     def test_apply_over_subwins(self):
         func = np.mean
         # test on single row array with subwins and subwin_samples not set
-        X = extensions.numpy.atleast_float_2d(np.array([1., 1., 1.]))
-        result = extensions.numpy.apply_over_subwins(
+        X = ext.numpy.atleast_float_2d(np.array([1., 1., 1.]))
+        result = ext.numpy.apply_over_subwins(
             X, func, subwin_samples=None, subwins=None, axis=0)
         assert np.array_equal(result, X)
 
         # test on single row array with subwin_samples not set
-        X = extensions.numpy.atleast_float_2d(np.array([1., 1., 1.]))
-        result = extensions.numpy.apply_over_subwins(
+        X = ext.numpy.atleast_float_2d(np.array([1., 1., 1.]))
+        result = ext.numpy.apply_over_subwins(
             X, func, subwin_samples=None, subwins=1, axis=0)
         assert np.array_equal(result, X)
 
         # test on single row array with subwins not set
-        X = extensions.numpy.atleast_float_2d(np.array([1., 1., 1.]))
-        result = extensions.numpy.apply_over_subwins(
+        X = ext.numpy.atleast_float_2d(np.array([1., 1., 1.]))
+        result = ext.numpy.apply_over_subwins(
             X, func, subwin_samples=1, subwins=None, axis=0)
         assert np.array_equal(result, X)
 
         # test on single row array with subwins to be zero
-        X = extensions.numpy.atleast_float_2d(np.array([1., 1., 1.]))
-        result = extensions.numpy.apply_over_subwins(
+        X = ext.numpy.atleast_float_2d(np.array([1., 1., 1.]))
+        result = ext.numpy.apply_over_subwins(
             X, func, subwin_samples=2, subwins=None, axis=0)
         assert np.array_equal(result, X)
-        result = extensions.numpy.apply_over_subwins(
+        result = ext.numpy.apply_over_subwins(
             X, func, subwin_samples=None, subwins=0, axis=0)
         assert np.array_equal(result, X)
 
         # test on single row array with subwin_samples to be zero
-        X = extensions.numpy.atleast_float_2d(np.array([1., 1., 1.]))
-        result = extensions.numpy.apply_over_subwins(
+        X = ext.numpy.atleast_float_2d(np.array([1., 1., 1.]))
+        result = ext.numpy.apply_over_subwins(
             X, func, subwin_samples=0, subwins=None, axis=0)
         assert np.array_equal(result, X)
-        result = extensions.numpy.apply_over_subwins(
+        result = ext.numpy.apply_over_subwins(
             X, func, subwin_samples=None, subwins=2, axis=0)
         assert np.array_equal(result, X)
 
         # test on 2d array
-        X = extensions.numpy.atleast_float_2d(np.ones((10, 3)))
-        result = extensions.numpy.apply_over_subwins(
+        X = ext.numpy.atleast_float_2d(np.ones((10, 3)))
+        result = ext.numpy.apply_over_subwins(
             X, func, subwin_samples=2, subwins=None, axis=0)
         assert np.array_equal(result, np.ones((5, 3)))
-        result = extensions.numpy.apply_over_subwins(
+        result = ext.numpy.apply_over_subwins(
             X, func, subwin_samples=None, subwins=2, axis=0)
         assert np.array_equal(result, np.ones((2, 3)))
 
         # test on 2d array use subwins at first
-        X = extensions.numpy.atleast_float_2d(np.ones((10, 3)))
-        result = extensions.numpy.apply_over_subwins(
+        X = ext.numpy.atleast_float_2d(np.ones((10, 3)))
+        result = ext.numpy.apply_over_subwins(
             X, func, subwin_samples=2, subwins=2, axis=0)
         assert np.array_equal(result, np.ones((2, 3)))
 
         # test on 2d array use window parameters that are not fully dividable
-        X = extensions.numpy.atleast_float_2d(
+        X = ext.numpy.atleast_float_2d(
             np.concatenate((
                 np.ones((1, 3)) * 2,
                 np.ones((8, 3)),
                 np.ones((1, 3)) * 2),
                 axis=0)
         )
-        result = extensions.numpy.apply_over_subwins(
+        result = ext.numpy.apply_over_subwins(
             X, func, subwin_samples=4, subwins=None, axis=0)
         assert np.array_equal(result, np.ones((2, 3)))
 
         # test on 2d array use window parameters that are not fully dividable
-        X = extensions.numpy.atleast_float_2d(
+        X = ext.numpy.atleast_float_2d(
             np.concatenate((
                 np.ones((1, 3)) * 2,
                 np.ones((3, 3)),
                 np.ones((6, 3)) * 2),
                 axis=0)
         )
-        result = extensions.numpy.apply_over_subwins(
+        result = ext.numpy.apply_over_subwins(
             X, func, subwin_samples=3, subwins=None, axis=0)
         assert np.array_equal(result, np.array(
             [[1, 1, 1], [2, 2, 2], [2, 2, 2]]))
 
     def test_regularize_sr(self, regularize_test_signals):
         for t, X, sr, expected in regularize_test_signals:
-            new_t, new_X = extensions.numpy.regularize_sr(t, X, sr)
+            new_t, new_X = ext.numpy.regularize_sr(t, X, sr)
             assert len(new_t) == expected
             np.testing.assert_array_equal(new_X.shape, [expected, 3])
+
+    def test_vector_magnitude(self):
+        # test with a single row of data
+        X = np.array([[1., 1., 1.]])
+        result = ext.numpy.vector_magnitude(X)
+        assert np.allclose(result, np.sqrt(3), atol=0.001)
+        # test with an array
+        X = np.array([[1., 1., 1.], [1., 1., 1.]])
+        result = ext.numpy.vector_magnitude(X)
+        assert np.allclose(result, np.array(
+            [[np.sqrt(3)], [np.sqrt(3)]]), atol=0.001)
+        # test with NaN data
+        X = np.array([[1., np.nan, 1.]])
+        result = ext.numpy.vector_magnitude(X)
+        assert np.isnan(result)
+
+    def test_flip_and_swap(self):
+        # test on 1d data
+        # test with flip
+        X = np.array([[1., 1., 1.]])
+        result = ext.numpy.flip_and_swap(
+            X, x_flip='x', y_flip='y', z_flip='-z')
+        assert np.allclose(result, np.array([[1., 1., -1.]]), atol=0.001)
+        # test with swap
+        X = np.array([[1., 2., 3.]])
+        result = ext.numpy.flip_and_swap(X, x_flip='y', y_flip='x', z_flip='z')
+        assert np.allclose(result, np.array([[2., 1., 3.]]), atol=0.001)
+        # test with flip and swap
+        X = np.array([[1., 2., 3.]])
+        result = ext.numpy.flip_and_swap(
+            X, x_flip='y', y_flip='-x', z_flip='z')
+        assert np.allclose(result, np.array([[2., -1., 3.]]), atol=0.001)
+        # test on 2d data
+        X = np.array([[1., 1., 1.], [1, 2, 3]])
+        result = ext.numpy.flip_and_swap(
+            X, x_flip='y', y_flip='-x', z_flip='z')
+        assert np.allclose(result, np.array(
+            [[1., -1., 1.], [2., -1., 3.]]), atol=0.001)

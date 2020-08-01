@@ -2,96 +2,59 @@ import numpy as np
 from .. import accelerometer as accel
 
 
-class TestTransformation:
-    def test_vector_magnitude(self):
-        # test with a single row of data
-        X = np.array([[1., 1., 1.]])
-        result = accel.vector_magnitude(X)
-        assert np.allclose(result, np.sqrt(3), atol=0.001)
-        # test with an array
-        X = np.array([[1., 1., 1.], [1., 1., 1.]])
-        result = accel.vector_magnitude(X)
-        assert np.allclose(result, np.array(
-            [[np.sqrt(3)], [np.sqrt(3)]]), atol=0.001)
-        # test with NaN data
-        X = np.array([[1., np.nan, 1.]])
-        result = accel.vector_magnitude(X)
-        assert np.isnan(result)
-
-    def test_flip_and_swap(self):
-        # test on 1d data
-        # test with flip
-        X = np.array([[1., 1., 1.]])
-        result = accel.flip_and_swap(X, x_flip='x', y_flip='y', z_flip='-z')
-        assert np.allclose(result, np.array([[1., 1., -1.]]), atol=0.001)
-        # test with swap
-        X = np.array([[1., 2., 3.]])
-        result = accel.flip_and_swap(X, x_flip='y', y_flip='x', z_flip='z')
-        assert np.allclose(result, np.array([[2., 1., 3.]]), atol=0.001)
-        # test with flip and swap
-        X = np.array([[1., 2., 3.]])
-        result = accel.flip_and_swap(X, x_flip='y', y_flip='-x', z_flip='z')
-        assert np.allclose(result, np.array([[2., -1., 3.]]), atol=0.001)
-        # test on 2d data
-        X = np.array([[1., 1., 1.], [1, 2, 3]])
-        result = accel.flip_and_swap(X, x_flip='y', y_flip='-x', z_flip='z')
-        assert np.allclose(result, np.array(
-            [[1., -1., 1.], [2., -1., 3.]]), atol=0.001)
-
-
 class TestActivationFeatures:
     def test_activation(self):
         # test on single sample multi-channel signal
         X = np.array([[0, 1, 0]])
-        result = accel.stats_active_samples(X)
+        result = accel.activation_features(X)
         np.testing.assert_array_equal(result[0], np.array(
             [[0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0]]))
 
         # test on single sample single-channel signal
         X = np.array([[0, ]])
-        result = accel.stats_active_samples(X)
+        result = accel.activation_features(X)
         np.testing.assert_array_equal(result[0], np.array(
             [[0, 0, 0, 0]]))
         X = np.array([[1, ]])
-        result = accel.stats_active_samples(X)
+        result = accel.activation_features(X)
         np.testing.assert_array_equal(result[0], np.array(
             [[1, 1, 1, 0]]))
 
         # test on multi sample multi-channel signal edge case
         X = np.concatenate(
             (np.zeros((5, 3)), np.ones((5, 3)), np.zeros((5, 3))), axis=0)
-        result = accel.stats_active_samples(X)
+        result = accel.activation_features(X)
         np.testing.assert_array_equal(result[0], np.array(
             [[5/15, 5/15, 5/15, 1/5, 1/5, 1/5, 5/15, 5/15, 5/15, 0, 0, 0]]))
 
         X = np.concatenate(
             (np.zeros((5, 3)), np.ones((5, 3))), axis=0)
-        result = accel.stats_active_samples(X)
+        result = accel.activation_features(X)
         np.testing.assert_array_equal(result[0], np.array(
             [[5/10, 5/10, 5/10, 1/5, 1/5, 1/5, 5/10, 5/10, 5/10, 0, 0, 0]]))
 
         # test on multi sample multi-channel signal edge case
         X = np.concatenate(
             (np.ones((5, 3)), np.zeros((5, 3))), axis=0)
-        result = accel.stats_active_samples(X)
+        result = accel.activation_features(X)
         np.testing.assert_array_equal(result[0], np.array(
             [[5/10, 5/10, 5/10, 1/5, 1/5, 1/5, 5/10, 5/10, 5/10, 0, 0, 0]]))
 
         # test on multi sample multi-channel signal edge case
         X = np.ones((10, 3))
-        result = accel.stats_active_samples(X)
+        result = accel.activation_features(X)
         np.testing.assert_array_equal(result[0], np.array(
             [[10/10, 10/10, 10/10, 1/10, 1/10, 1/10, 10/10, 10/10, 10/10, 0, 0, 0]]))
 
         X = np.zeros((10, 3))
-        result = accel.stats_active_samples(X)
+        result = accel.activation_features(X)
         np.testing.assert_array_equal(result[0], np.array(
             [[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]]))
 
         # test multiple activations
         X = np.concatenate(
             (np.zeros((5, 3)), np.ones((5, 3)), np.zeros((5, 3)), np.ones((10, 3))), axis=0)
-        result = accel.stats_active_samples(X)
+        result = accel.activation_features(X)
         np.testing.assert_array_almost_equal(result[0], np.array(
             [[15/25, 15/25, 15/25, 2/15, 2/15, 2/15, 7.5/25, 7.5/25, 7.5/25, 3.53553/25, 3.53553/25, 3.53553/25]]))
 
@@ -102,26 +65,26 @@ class TestCounts:
         X = np.array([[1., 1., 1., ]])
         result = accel.enmo(X)
         assert np.allclose(result[0], np.sqrt(3) - 1, atol=0.001)
-        assert result[1] == 'ENMO'
+        assert result[1] == 'ENMO_0'
 
         # test on a single row with nan
         X = np.array([[1., np.nan, 1., ]])
         result = accel.enmo(X)
         assert np.allclose(result[0], np.nan, atol=0.001, equal_nan=True)
-        assert result[1] == 'ENMO'
+        assert result[1] == 'ENMO_0'
 
         # test on an array
         X = np.array([[1., 1., 1., ], [1., 1., 1.]])
         result = accel.enmo(X)
         np.testing.assert_array_equal(result[0], np.array(
             [[np.sqrt(3) - 1]]))
-        assert result[1] == 'ENMO'
+        assert result[1] == 'ENMO_0'
 
         # test on an array with nan
         X = np.array([[1., 1., 1., ], [2., np.nan, 2.]])
         result = accel.enmo(X)
         np.testing.assert_array_equal(result[0], np.array([[np.sqrt(3) - 1]]))
-        assert result[1] == 'ENMO'
+        assert result[1] == 'ENMO_0'
 
 
 class TestOrientation:
@@ -186,31 +149,34 @@ class TestOrientation:
         np.testing.assert_array_equal(result[1], ["G_ANGLE_X_0", "G_ANGLE_Y_0", "G_ANGLE_Z_0", "G_ANGLE_X_1",
                                                   "G_ANGLE_Y_1", "G_ANGLE_Z_1", "G_ANGLE_X_2", "G_ANGLE_Y_2", "G_ANGLE_Z_2"])
 
-    def test_gravity_angle_stats(self):
+    def test_orientation_features(self):
         # test on a single row
         X = np.array([[1., 0., 0., ]])
-        result = accel.gravity_angle_stats(X, unit='deg')
+        result = accel.orientation_features(X, unit='deg')
         np.testing.assert_array_equal(result[0], np.array(
             [[0, 90, 90, 0, 0, 0, np.nan, np.nan, np.nan]]))
-        np.testing.assert_array_equal(result[1], ["MEDIAN_G_ANGLE_X", "MEDIAN_G_ANGLE_Y", "MEDIAN_G_ANGLE_Z", "RANGE_G_ANGLE_X",
-                                                  "RANGE_G_ANGLE_Y", "RANGE_G_ANGLE_Z", "STD_G_ANGLE_X", "STD_G_ANGLE_Y", "STD_G_ANGLE_Z"])
+        np.testing.assert_array_equal(result[1], ["MEDIAN_G_ANGLE_0",
+                                                  "MEDIAN_G_ANGLE_1", "MEDIAN_G_ANGLE_2", "RANGE_G_ANGLE_0",
+                                                  "RANGE_G_ANGLE_1", "RANGE_G_ANGLE_2", "STD_G_ANGLE_0", "STD_G_ANGLE_1", "STD_G_ANGLE_2"])
 
         # test on a single row with nan
         X = np.array([[1., np.nan, 0., ]])
-        result = accel.gravity_angle_stats(X, unit='deg')
+        result = accel.orientation_features(X, unit='deg')
         np.testing.assert_array_equal(result[0], np.full((1, 9), np.nan))
-        np.testing.assert_array_equal(result[1], ["MEDIAN_G_ANGLE_X", "MEDIAN_G_ANGLE_Y", "MEDIAN_G_ANGLE_Z", "RANGE_G_ANGLE_X",
-                                                  "RANGE_G_ANGLE_Y", "RANGE_G_ANGLE_Z", "STD_G_ANGLE_X", "STD_G_ANGLE_Y", "STD_G_ANGLE_Z"])
+        np.testing.assert_array_equal(result[1], ["MEDIAN_G_ANGLE_0",
+                                                  "MEDIAN_G_ANGLE_1", "MEDIAN_G_ANGLE_2", "RANGE_G_ANGLE_0",
+                                                  "RANGE_G_ANGLE_1", "RANGE_G_ANGLE_2", "STD_G_ANGLE_0", "STD_G_ANGLE_1", "STD_G_ANGLE_2"])
 
         # test on a 2d array with subwins
         X = np.concatenate([np.tile([[0., -1., 0., ]], (5, 1)),
                             np.tile([[1., 0., 0., ]], (5, 1)),
                             np.tile([[0., 0., 1., ]], (5, 1))], axis=0)
-        result = accel.gravity_angle_stats(X, subwins=3, unit='deg')
+        result = accel.orientation_features(X, subwins=3, unit='deg')
         np.testing.assert_array_almost_equal(result[0], np.array(
             [[90, 90, 90, 90, 90, 90, 51.961524, 51.961524, 51.961524]]))
-        np.testing.assert_array_equal(result[1], ["MEDIAN_G_ANGLE_X", "MEDIAN_G_ANGLE_Y", "MEDIAN_G_ANGLE_Z", "RANGE_G_ANGLE_X",
-                                                  "RANGE_G_ANGLE_Y", "RANGE_G_ANGLE_Z", "STD_G_ANGLE_X", "STD_G_ANGLE_Y", "STD_G_ANGLE_Z"])
+        np.testing.assert_array_equal(result[1], ["MEDIAN_G_ANGLE_0",
+                                                  "MEDIAN_G_ANGLE_1", "MEDIAN_G_ANGLE_2", "RANGE_G_ANGLE_0",
+                                                  "RANGE_G_ANGLE_1", "RANGE_G_ANGLE_2", "STD_G_ANGLE_0", "STD_G_ANGLE_1", "STD_G_ANGLE_2"])
 
 
 class TestSpectrum:
@@ -220,7 +186,7 @@ class TestSpectrum:
         # test on single sample single channel signal
         X = np.array([[0, ]])
         result = accel.spectrum_features(
-            X, sr=80, freq_range=None, prev_spectrum_features=None, preset="")
+            X, sr=80, freq_range=None, prev_spectrum_features=None)
         np.testing.assert_array_equal(
             result[0], np.array(
                 [[0, 0, 0, 0, 0, 0, np.nan, np.nan, np.nan, np.nan]]))
@@ -232,7 +198,7 @@ class TestSpectrum:
         X = np.atleast_2d(np.sin(2*np.pi * dom_freq *
                                  np.arange(0, 1, 1.0 / sr))).T
         result = accel.spectrum_features(
-            X, sr=100, freq_range=None, prev_spectrum_features=None, preset="")
+            X, sr=100, freq_range=None, prev_spectrum_features=None)
         np.testing.assert_array_almost_equal(
             result[0], np.array(
                 [[1, 4.283017e-01, 6.107265e-01, 0, 0, 4.283017e-01 / 6.107265e-01, 1, 4.283017e-01, np.nan, 0.15508315]]))
@@ -245,7 +211,7 @@ class TestSpectrum:
                                  np.arange(0, 1, 1.0 / sr))).T
         X[5:10, 0] = np.nan
         result = accel.spectrum_features(
-            X, sr=100, freq_range=None, prev_spectrum_features=None, preset="")
+            X, sr=100, freq_range=None, prev_spectrum_features=None)
         np.testing.assert_array_almost_equal(
             result[0], np.array(
                 [[1, 4.283017e-01, 6.107265e-01, 0, 0, 4.283017e-01 / 6.107265e-01, 1, 4.283017e-01, np.nan, 0.15508315]]), decimal=4)
@@ -265,7 +231,7 @@ class TestSpectrum:
         sr = 100
         X = np.array([[0, 0, 0]])
         result = accel.spectrum_features(
-            X, sr=100, freq_range=None, prev_spectrum_features=None, preset="")
+            X, sr=100, freq_range=None, prev_spectrum_features=None)
         np.testing.assert_array_almost_equal(
             result[0], np.array(
                 [[0] * 3 +
@@ -286,7 +252,7 @@ class TestSpectrum:
         X = np.tile(np.sin(2*np.pi * dom_freq *
                            np.arange(0, 1, 1.0 / sr)), (3, 1)).T
         result = accel.spectrum_features(
-            X, sr=100, freq_range=None, prev_spectrum_features=None, preset="")
+            X, sr=100, freq_range=None, prev_spectrum_features=None)
         np.testing.assert_array_almost_equal(
             result[0],
             [[1] * 3 +
