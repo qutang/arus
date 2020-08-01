@@ -4,15 +4,20 @@ Computing features about accelerometer orientations
 
 import numpy as np
 
-from .. import extensions
+from .. import extensions as ext
 from . import stats
-from . import transformation
+
+ORIENTATION_FEATURE_NAME_PREFIX = [
+    'MEDIAN_G_ANGLE',
+    'RANGE_G_ANGLE',
+    'STD_G_ANGLE'
+]
 
 
 def _gravity_angles(X, unit='rad'):
-    X = extensions.numpy.atleast_float_2d(X)
+    X = ext.numpy.atleast_float_2d(X)
     gravity = stats.mean(X)[0]
-    gravity_vm = transformation.vector_magnitude(gravity)
+    gravity_vm = ext.numpy.vector_magnitude(gravity)
     gravity_angles = np.arccos(
         gravity / gravity_vm) if gravity_vm != 0 else np.zeros_like(gravity)
     if unit == 'deg':
@@ -21,7 +26,7 @@ def _gravity_angles(X, unit='rad'):
 
 
 def gravity_angles(X, subwins=None, subwin_samples=None, unit='rad'):
-    result = extensions.numpy.apply_over_subwins(
+    result = ext.numpy.apply_over_subwins(
         X, _gravity_angles, subwins=subwins, subwin_samples=subwin_samples, unit=unit)
     final_result = np.atleast_2d(result.flatten())
     names = []
@@ -31,13 +36,25 @@ def gravity_angles(X, subwins=None, subwin_samples=None, unit='rad'):
     return final_result, names
 
 
-def gravity_angle_stats(X, subwins=None, subwin_samples=None, unit='rad'):
-    result = extensions.numpy.apply_over_subwins(
+def orientation_features(X, subwins=None, subwin_samples=None, unit='rad', selected=ORIENTATION_FEATURE_NAME_PREFIX):
+    result = ext.numpy.apply_over_subwins(
         X, _gravity_angles, subwins=subwins, subwin_samples=subwin_samples, unit=unit)
-    median_angles = np.nanmedian(result, axis=0, keepdims=True)
-    range_angles = np.nanmax(
-        result, axis=0, keepdims=True) - np.nanmin(result, axis=0, keepdims=True)
-    std_angles = np.nanstd(result, axis=0, keepdims=True, ddof=1)
-    final_result = np.concatenate(
-        (median_angles, range_angles, std_angles), axis=1)
-    return final_result, ["MEDIAN_G_ANGLE_X", "MEDIAN_G_ANGLE_Y", "MEDIAN_G_ANGLE_Z", "RANGE_G_ANGLE_X", "RANGE_G_ANGLE_Y", "RANGE_G_ANGLE_Z", "STD_G_ANGLE_X", "STD_G_ANGLE_Y", "STD_G_ANGLE_Z"]
+
+    fv = []
+    fv_names = []
+
+    if ORIENTATION_FEATURE_NAME_PREFIX[0] in selected:
+        fv.append(np.nanmedian(result, axis=0, keepdims=True))
+        fv_names += [f'{ORIENTATION_FEATURE_NAME_PREFIX[0]}_{i}' for i in [0, 1, 2]]
+
+    if ORIENTATION_FEATURE_NAME_PREFIX[1] in selected:
+        fv.append(np.nanmax(
+            result, axis=0, keepdims=True) - np.nanmin(result, axis=0, keepdims=True))
+        fv_names += [f'{ORIENTATION_FEATURE_NAME_PREFIX[1]}_{i}' for i in [0, 1, 2]]
+
+    if ORIENTATION_FEATURE_NAME_PREFIX[2] in selected:
+        fv.append(np.nanstd(result, axis=0, keepdims=True, ddof=1))
+        fv_names += [f'{ORIENTATION_FEATURE_NAME_PREFIX[2]}_{i}' for i in [0, 1, 2]]
+
+    result = np.concatenate(fv, axis=1)
+    return result, fv_names

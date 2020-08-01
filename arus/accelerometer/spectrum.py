@@ -1,58 +1,102 @@
 """
 Frequency domain features for numerical time series data
 """
-from scipy import signal
 import numpy as np
 from loguru import logger
-from .. import extensions
+from scipy import signal
+
+from .. import extensions as ext
+
+SPECTRUM_FEATURE_NAME_PREFIX = [
+    'DOM_FREQ', 'DOM_FREQ_POWER', 'TOTAL_FREQ_POWER', 'FREQ_POWER_ABOVE_3DOT5', 'FREQ_POWER_RATIO_ABOVE_3DOT5', 'DOM_FREQ_POWER_RATIO', 'DOM_FREQ_BETWEEN_DOT6_2DOT6', 'DOM_FREQ_POWER_BETWEEN_DOT6_2DOT6',
+    'DOM_FREQ_RATIO_PREV_BOUT', 'SPECTRAL_ENTROPY'
+]
 
 
-def spectrum_features(X, sr, n=1, freq_range=None, prev_spectrum_features=None, preset='muss'):
-    X = extensions.numpy.atleast_float_2d(X)
+def spectrum_features(X, sr, n=1, freq_range=None, prev_spectrum_features=None, selected=SPECTRUM_FEATURE_NAME_PREFIX):
+    X = ext.numpy.atleast_float_2d(X)
     # fill nan at first, nan will be filled by spline interpolation
-    X = extensions.numpy.mutate_nan(X)
+    X = ext.numpy.mutate_nan(X)
     freq, Sxx = _fft(X, sr, freq_range=freq_range)
     freq_peaks, Sxx_peaks = _fft_peaks(freq, Sxx)
 
-    f1 = _dom_freq(freq_peaks, Sxx_peaks, n=n)
-    f1_names = ['DOM_FREQ_' + str(i) for i in range(X.shape[1])]
-    f2 = _dom_freq_power(freq_peaks, Sxx_peaks, n=n)
-    f2_names = ['DOM_FREQ_POWER_' + str(i) for i in range(X.shape[1])]
-    f3 = _total_freq_power(Sxx)
-    f3_names = ['TOTAL_FREQ_POWER_' + str(i) for i in range(X.shape[1])]
-    f4 = _freq_power_above_3_point_5(freq, Sxx)
-    f4_names = ['FREQ_POWER_ABOVE_3DOT5_' + str(i) for i in range(X.shape[1])]
-    f5 = _freq_power_ratio_above_3_point_5(freq, Sxx)
-    f5_names = ['FREQ_POWER_RATIO_ABOVE_3DOT5_' +
-                str(i) for i in range(X.shape[1])]
-    f6 = _dom_freq_power_ratio(freq, Sxx, freq_peaks, Sxx_peaks, n=n)
-    f6_names = ['DOM_FREQ_POWER_RATIO_' + str(i) for i in range(X.shape[1])]
-    f7 = _dom_freq_between_point_6_and_2_point_6(freq_peaks, Sxx_peaks)
-    f7_names = ['DOM_FREQ_BETWEEN_DOT6_2DOT6_' +
-                str(i) for i in range(X.shape[1])]
-    f8 = _dom_freq_power_between_point_6_and_2_point_6(freq_peaks, Sxx_peaks)
-    f8_names = ['DOM_FREQ_POWER_BETWEEN_DOT6_2DOT6_' +
-                str(i) for i in range(X.shape[1])]
-    if prev_spectrum_features is not None:
-        f9 = _dom_freq_ratio_previous_bout(
-            freq_peaks, Sxx_peaks, prev_dom_freq=prev_spectrum_features[0, :], n=1)
-    else:
-        f9 = _dom_freq_ratio_previous_bout(
-            freq_peaks, Sxx_peaks, prev_dom_freq=None, n=1)
-    f9_names = ['DOM_FREQ_RATIO_PREV_BOUT_' +
-                str(i) for i in range(X.shape[1])]
-    f10 = _spectral_entropy(freq, Sxx)
-    f10_names = ['SPECTRAL_ENTROPY_' +
-                 str(i) for i in range(X.shape[1])]
-    if preset == 'muss':
-        result = np.concatenate([f1, f5, f6], axis=1)
-        names = f1_names + f5_names + f6_names
-    else:
-        result = np.concatenate(
-            [f1, f2, f3, f4, f5, f6, f7, f8, f9, f10], axis=1)
-        names = f1_names + f2_names + f3_names + f4_names + \
-            f5_names + f6_names + f7_names + f8_names + f9_names + f10_names
-    return result, names
+    fv = []
+    fv_names = []
+
+    if SPECTRUM_FEATURE_NAME_PREFIX[0] in selected:
+        fv.append(_dom_freq(
+            freq_peaks, Sxx_peaks, n=n))
+        fv_names += [
+            f'{SPECTRUM_FEATURE_NAME_PREFIX[0]}_{i}' for i in range(X.shape[1])
+        ]
+
+    if SPECTRUM_FEATURE_NAME_PREFIX[1] in selected:
+        fv.append(_dom_freq_power(
+            freq_peaks, Sxx_peaks, n=n))
+        fv_names += [
+            f'{SPECTRUM_FEATURE_NAME_PREFIX[1]}_{i}' for i in range(X.shape[1])
+        ]
+
+    if SPECTRUM_FEATURE_NAME_PREFIX[2] in selected:
+        fv.append(_total_freq_power(Sxx))
+        fv_names += [
+            f'{SPECTRUM_FEATURE_NAME_PREFIX[2]}_{i}' for i in range(X.shape[1])
+        ]
+
+    if SPECTRUM_FEATURE_NAME_PREFIX[3] in selected:
+        fv.append(_freq_power_above_3_point_5(freq, Sxx))
+        fv_names += [
+            f'{SPECTRUM_FEATURE_NAME_PREFIX[3]}_{i}' for i in range(X.shape[1])
+        ]
+
+    if SPECTRUM_FEATURE_NAME_PREFIX[4] in selected:
+        fv.append(_freq_power_ratio_above_3_point_5(freq, Sxx))
+        fv_names += [
+            f'{SPECTRUM_FEATURE_NAME_PREFIX[4]}_{i}' for i in range(X.shape[1])
+        ]
+
+    if SPECTRUM_FEATURE_NAME_PREFIX[5] in selected:
+        fv.append(_dom_freq_power_ratio(
+            freq, Sxx, freq_peaks, Sxx_peaks, n=n))
+        fv_names += [
+            f'{SPECTRUM_FEATURE_NAME_PREFIX[5]}_{i}' for i in range(X.shape[1])
+        ]
+
+    if SPECTRUM_FEATURE_NAME_PREFIX[6] in selected:
+        fv.append(_dom_freq_between_point_6_and_2_point_6(
+            freq_peaks, Sxx_peaks
+        ))
+        fv_names += [
+            f'{SPECTRUM_FEATURE_NAME_PREFIX[6]}_{i}' for i in range(X.shape[1])
+        ]
+
+    if SPECTRUM_FEATURE_NAME_PREFIX[7] in selected:
+        fv.append(_dom_freq_power_between_point_6_and_2_point_6(
+            freq_peaks,
+            Sxx_peaks
+        ))
+        fv_names += [
+            f'{SPECTRUM_FEATURE_NAME_PREFIX[7]}_{i}' for i in range(X.shape[1])]
+
+    if SPECTRUM_FEATURE_NAME_PREFIX[8] in selected:
+        if prev_spectrum_features is not None:
+            fv.append(_dom_freq_ratio_previous_bout(
+                freq_peaks, Sxx_peaks, prev_dom_freq=prev_spectrum_features[0, :], n=1))
+        else:
+            fv.append(_dom_freq_ratio_previous_bout(
+                freq_peaks, Sxx_peaks, prev_dom_freq=None, n=1))
+        fv_names += [
+            f'{SPECTRUM_FEATURE_NAME_PREFIX[8]}_{i}' for i in range(X.shape[1])
+        ]
+
+    if SPECTRUM_FEATURE_NAME_PREFIX[9] in selected:
+        fv.append(_spectral_entropy(freq, Sxx))
+        fv_names += [
+            f'{SPECTRUM_FEATURE_NAME_PREFIX[9]}_{i}' for i in range(X.shape[1])
+        ]
+
+    result = np.concatenate(fv, axis=1)
+    return result, fv_names
 
 
 def _fft(X, sr, freq_range=None):
@@ -86,7 +130,7 @@ def _sort_fft_peaks(freq, Sxx, i, j):
         freq_peaks = freq[i]
         Sxx_peaks = Sxx[i, j]
         sorted_i = np.argsort(Sxx_peaks)
-        sorted_i = sorted_i[::-1]
+        sorted_i = sorted_i[:: -1]
         sorted_freq_peaks = freq_peaks[sorted_i]
         sorted_Sxx_peaks = Sxx_peaks[sorted_i]
     # logger.debug('sxx:' + str(j) + ":" + str(sorted_Sxx_peaks.shape))
@@ -105,7 +149,7 @@ def _fft_peaks(freq, Sxx):
         mpd = int(np.ceil(1.0 / (freq[1] - freq[0]) * 0.1))
         # print(self._Sxx.shape)
         # mph should not be set, because signal can be weak but there may still be some dominant frequency, 06/03/2019
-        freq_peak_indices = list(map(lambda x: extensions.numpy.detect_peaks(
+        freq_peak_indices = list(map(lambda x: ext.numpy.detect_peaks(
             x, mph=None, mpd=mpd), list(Sxx.T)))
         # i = list(map(lambda x: detect_peaks(
         #     x, mph=1e-3, mpd=mpd), list(self._Sxx.T)))
@@ -220,7 +264,8 @@ def _dom_freq_power_ratio(freq, Sxx, freq_peaks, Sxx_peaks, n=1):
 
 
 def _dom_freq_between_point_6_and_2_point_6(freq_peaks, Sxx_peaks):
-    result = _dom_freq_in_band(freq_peaks, Sxx_peaks, low=0.6, high=2.6, n=1)
+    result = _dom_freq_in_band(freq_peaks, Sxx_peaks,
+                               low=0.6, high=2.6, n=1)
     return result
 
 
