@@ -1,6 +1,7 @@
 import functools
 
 import pandas as pd
+import numpy as np
 
 from .. import accelerometer as accel
 from .. import extensions as ext
@@ -33,20 +34,22 @@ def single_triaxial(raw_df, sr, st, et, subwin_secs=2, ori_unit='rad', activatio
         mh.STOP_TIME_COL: [et]
     }
 
-    # Prepare parameters
-    subwin_samples = subwin_secs * sr
-
-    # Unify input matrix
-    X = ext.numpy.atleast_float_2d(raw_df.values[:, 1:4])
-    # fill nan at first, nan will be filled by spline interpolation
-    X = ext.numpy.mutate_nan(X)
-
-    if raw_df.dropna().shape[0] < raw_df.shape[0] * 0.9:
+    if raw_df.shape[0] == 0 or raw_df.dropna().shape[0] < raw_df.shape[0] * 0.9:
         # TO BE IMPROVED
         # Now input raw data should include no less than 90% of the whole window
-        for name in feature_names:
+        fv_names = assemble_fv_names(selected=selected, use_vm=use_vm)
+        for name in fv_names:
             result[name] = [np.nan]
+        feature_names = fv_names
     else:
+        # Prepare parameters
+        subwin_samples = subwin_secs * sr
+
+        # Unify input matrix
+        X = ext.numpy.atleast_float_2d(raw_df.values[:, 1:4])
+        # fill nan at first, nan will be filled by spline interpolation
+        X = ext.numpy.mutate_nan(X)
+
         # Smoothing input raw data
         if use_vm:
             X_vm = ext.numpy.vector_magnitude(X)
