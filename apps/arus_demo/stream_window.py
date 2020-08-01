@@ -571,7 +571,7 @@ class StreamWindow(base.BaseWindow):
                 new_color = 'blue'
                 text_color = 'white'
             else:
-                new_color = arus.extensions.plotting.adjust_lightness(
+                new_color = arus.ext.plotting.adjust_lightness(
                     base_color, amount=num / 100.0, return_format='hex')
                 text_color = "white" if num > 20 else "gray"
             new_b_colors.append(new_color)

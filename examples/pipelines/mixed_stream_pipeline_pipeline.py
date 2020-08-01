@@ -41,7 +41,7 @@ def _feature_pipeline_processor(chunk_list, **kwargs):
         result['HEADER_TIME_STAMP'].append(st)
         result['START_TIME'].append(st)
         result['STOP_TIME'].append(et)
-        vm_values = arus.accel.vector_magnitude(data.iloc[:, 1:].values)
+        vm_values = arus.ext.numpy.vector_magnitude(data.iloc[:, 1:].values)
         values, name = arus.accel.mean(vm_values)
         result['VALUE'].append(values[0, 0])
     result = pd.DataFrame.from_dict(result)

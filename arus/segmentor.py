@@ -9,7 +9,7 @@ License: GNU v3
 """
 import queue
 import pandas as pd
-from . import extensions
+from . import extensions as ext
 from . import moment
 from loguru import logger
 from . import operator
@@ -159,7 +159,7 @@ class SlidingWindowSegmentor(Segmentor):
         for seg_st in window_ts_marks:
             seg_et = seg_st + \
                 pd.Timedelta(self._ws * 1000, unit='ms')
-            segment = extensions.pandas.segment_by_time(
+            segment = ext.pandas.segment_by_time(
                 data,
                 seg_st=seg_st,
                 seg_et=seg_et,

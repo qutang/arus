@@ -22,7 +22,8 @@ def _get_sync_periods(annot_df):
 
 def _detect_claps(sync_sensor_df):
     ts = sync_sensor_df.iloc[:, 0]
-    vm_values = arus.accel.vector_magnitude(sync_sensor_df.iloc[:, 1:4])[:, 0]
+    vm_values = arus.ext.numpy.vector_magnitude(
+        sync_sensor_df.iloc[:, 1:4])[:, 0]
     height = 3
     distance = 40
     height_threshold = None
