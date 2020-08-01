@@ -2,7 +2,7 @@ from .. import dataset
 from .. import env
 from .. import segmentor
 from .. import spades_lab as slab
-from .. import feature as feat
+from .. import feature_vector as fv
 from .. import cli
 import os
 import shutil
@@ -68,17 +68,14 @@ class TestSensorObj:
         for data, context in stream.get_result():
             logger.debug(count)
             count += 1
-            fs = feat.FeatureSet([data], [context['data_id']], srs=[80])
-            fs.compute_per_window(
-                feat.preset, feature_names=feat.preset_names(), st=context['start_time'], et=context['stop_time'])
-            fv = fs.get_feature_set()
-            fv_names = fs.get_feature_names()
-            assert fv.iloc[0, 1].timestamp(
+            fv_df, fv_names = fv.inertial.single_triaxial(
+                data, sr=80, st=context['start_time'], et=context['stop_time'], selected=['MEAN'])
+            assert fv_df.iloc[0, 1].timestamp(
             ) == context['start_time'].timestamp()
-            assert fv.iloc[0, 2].timestamp(
+            assert fv_df.iloc[0, 2].timestamp(
             ) == context['stop_time'].timestamp()
-            assert len(fv_names) == len(feat.preset_names())
-            assert fv.shape[0] == 1
+            assert len(fv_names) == 1
+            assert fv_df.shape[0] == 1
             if count == 5:
                 logger.debug('stop')
                 stream.stop()
