@@ -22,3 +22,4 @@ from . import models
 from .class_label import ClassSet
 from . import feature_vector as fv
 from . import dataset as ds
+from . import spades_lab as slab
