@@ -48,8 +48,12 @@ class Scheduler:
         Arguments:
             mode: run tasks in process or in thread.
             scheme: the scheduling scheme when executing tasks.
-            max_workers: the max number of workers.
+            max_workers: the max number of workers. If None, it will be cpu count - 4 workers.
         """
+
+        if max_workers is None:
+            max_workers = loky.cpu_count() - 4
+
         if mode == Scheduler.Mode.PROCESS:
             self._executor = loky.get_reusable_executor(
                 max_workers=max_workers, timeout=10)
