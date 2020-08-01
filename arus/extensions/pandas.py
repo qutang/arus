@@ -10,6 +10,7 @@ License: see LICENSE file
 import functools
 import pandas as pd
 import numpy as np
+import tqdm
 
 
 def merge_all(*dfs, suffix_names, suffix_cols, **kwargs):
@@ -116,3 +117,30 @@ def split_into_windows(*dfs, step_size, st=None, et=None, st_col=0, et_col=None)
     window_start_markers = pd.date_range(
         start=st, end=et, freq=f'{step_size}ms', closed='left')
     return window_start_markers
+
+
+def fixed_window_slider(*dfs, slider_fn, window_size, step_size=None, st=None, et=None, st_col=0, et_col=None, show_progress=True, **slider_fn_kwargs):
+    step_size = step_size or window_size
+    window_start_markers = split_into_windows(
+        *dfs, step_size=step_size, st=st, et=et, st_col=st_col, et_col=et_col)
+    feature_sets = []
+    if show_progress:
+        bar = tqdm.tqdm(total=len(window_start_markers))
+
+    result_dfs = []
+    for window_st in window_start_markers:
+        window_et = window_st + pd.Timedelta(window_size, unit='s')
+        chunks = [segment_by_time(
+            df, seg_st=window_st, seg_et=window_et, st_col=st_col, et_col=et_col) for df in dfs]
+        result_df = slider_fn(
+            *chunks, st=window_st, et=window_et, **slider_fn_kwargs)
+        result_dfs.append(result_df)
+        if show_progress:
+            bar.set_description(
+                f'Computed features for window: {window_st}')
+            bar.update()
+    if show_progress:
+        bar.close()
+    result_df = pd.concat(
+        result_dfs, axis=0, ignore_index=True, sort=False)
+    return result_df

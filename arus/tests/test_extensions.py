@@ -175,6 +175,23 @@ class TestPandas:
         elif stop_time is not None:
             assert len(window_start_markers) == 0
 
+    def test_fixed_window_slider(self, test_sensor_data):
+        def sample_counter(*dfs, st, et, placements):
+            result = {
+                'START_TIME': [st],
+                'STOP_TIME': [et]
+            }
+            for df, p in zip(dfs, placements):
+                result[p] = [df.shape[0]]
+            return pd.DataFrame.from_dict(result)
+
+        dw_df, da_df = test_sensor_data
+        count_df = ext.pandas.fixed_window_slider(
+            *[dw_df, da_df], slider_fn=sample_counter, window_size=12.8, step_size=None, placements=['DW', 'DA'])
+        assert count_df.shape[1] == 4
+        assert count_df.shape[0] == 5
+        assert (count_df.iloc[:, 2] == 1024).all()
+
 
 class TestNumpy:
     def test_mutate_nan(self):
