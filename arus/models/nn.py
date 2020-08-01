@@ -1,5 +1,5 @@
 from .. import mhealth_format as mh
-from .. import extensions
+from .. import extensions as ext
 from .. import moment
 import pandas as pd
 
@@ -37,7 +37,7 @@ def preprocess(df, name, sr, st, et):
     X = df.iloc[:, 1:].values
     st = moment.Moment(st).to_unix_timestamp()
     et = moment.Moment(et).to_unix_timestamp()
-    new_ts, new_X = extensions.numpy.regularize_sr(ts, X, sr, st=st, et=et)
+    new_ts, new_X = ext.numpy.regularize_sr(ts, X, sr, st=st, et=et)
     new_df = pd.DataFrame(index=new_ts, data=new_X).reset_index(drop=False)
     new_df.columns = col_names
     new_df = new_df.set_index('TS')

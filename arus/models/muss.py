@@ -25,7 +25,7 @@ import enum
 
 from ..core import pipeline as arus_pipeline
 from .. import mhealth_format as mh
-from .. import extensions
+from .. import extensions as ext
 from .. import accelerometer as accel
 
 
@@ -244,7 +244,7 @@ class MUSSModel:
         }
 
         subwin_samples = subwin_secs * sr
-        X = extensions.numpy.atleast_float_2d(input_data.values[:, 1:4])
+        X = ext.numpy.atleast_float_2d(input_data.values[:, 1:4])
 
         if input_data.shape[0] < sr:
             for name in self._FEATURE_NAMES:
@@ -266,12 +266,12 @@ class MUSSModel:
                                   subwin_samples=subwin_samples, unit=ori_unit)
             ]
 
-            X_vm = accel.vector_magnitude(X)
+            X_vm = ext.numpy.vector_magnitude(X)
 
-            X_vm_filtered = extensions.numpy.butterworth(
+            X_vm_filtered = ext.numpy.butterworth(
                 X_vm, sr=sr, cut_offs=20, order=4, filter_type='low')
-            X_filtered = extensions.numpy.butterworth(X, sr=sr, cut_offs=20,
-                                                      order=4, filter_type='low')
+            X_filtered = ext.numpy.butterworth(X, sr=sr, cut_offs=20,
+                                               order=4, filter_type='low')
 
             for func in vm_feature_funcs:
                 values, names = func(X_vm_filtered)
