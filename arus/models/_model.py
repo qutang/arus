@@ -44,6 +44,18 @@ class HARModel:
         raise NotImplementedError(
             'This method must be implemented by sub classes!')
 
+    def logo_validation(self, pids=None, group_col=None, **kwargs):
+        raise NotImplementedError(
+            'This method must be implemented by sub classes!')
+
+    def learning_curve_logo(self, pids=None, group_col=None, **kwargs):
+        raise NotImplementedError(
+            'This method must be implemented by sub classes')
+
+    def learning_curve_cv(self, pids=None, n_fold=10, **kwargs):
+        raise NotImplementedError(
+            'This method must be implemented by sub classes')
+
     @staticmethod
     def confusion_matrix(true_labels, pred_labels, label_names):
         cm = confusion_matrix(true_labels, pred_labels, labels=label_names)
