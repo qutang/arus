@@ -11,8 +11,8 @@ import re
 
 
 class InputType(enum.Enum):
-    MHEALTH_FORMAT = enum.auto()
-    SIGNALIGNER = enum.auto()
+    MHEALTH_FORMAT = "MHEALTH_FORMAT"
+    SIGNALIGNER = "SIGNALIGNER"
 
 
 @dataclass
