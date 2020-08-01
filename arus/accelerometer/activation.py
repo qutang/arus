@@ -74,31 +74,35 @@ def activation_features(X,
     """
     This feature identifies the amount of activity within the window that is over the threshold, thereby providing a rough estimate of the amount of relevant activity being recorded in the window. This feature could distinguish between activities that result in relevant acceleration in most of the window and activities in which the relevant activity takes place for only a portion of the window.
     """
-    fv.append(num_active_samples / W)
-    fv_names += [
-        f'{ACTIVATION_FEATURE_NAME_PREFIX[0]}_{i}' for i in range(X.shape[1])]
+    if ACTIVATION_FEATURE_NAME_PREFIX[0] in selected:
+        fv.append(num_active_samples / W)
+        fv_names += [
+            f'{ACTIVATION_FEATURE_NAME_PREFIX[0]}_{i}' for i in range(X.shape[1])]
     """
     "This feature identifies the number of threshold crossings within the window (rising edges only), normalized to the number of active samples FS, thereby capturing movement fragmentation within the window. This feature could discriminate impulsive events from longer-lasting acceleration events, since it quantifies how many times within the window the acceleration passed from the inactive to the active condition."
     """
-    num_activations = np.atleast_2d(stats[0, :])
-    fv.append(np.divide(
-        num_activations, num_active_samples, where=num_activations != 0.0))
-    fv_names += [
-        f'{ACTIVATION_FEATURE_NAME_PREFIX[1]}_{i}' for i in range(X.shape[1])]
+    if ACTIVATION_FEATURE_NAME_PREFIX[1] in selected:
+        num_activations = np.atleast_2d(stats[0, :])
+        fv.append(np.divide(
+            num_activations, num_active_samples, where=num_activations != 0.0))
+        fv_names += [
+            f'{ACTIVATION_FEATURE_NAME_PREFIX[1]}_{i}' for i in range(X.shape[1])]
     """
     This captures the mean duration of activation intervals within the window, normalized by the window length. An activation interval is defined as the amount of samples between two consecutive threshold crossings. This feature provides information on movement bout fragmentation within the window that could help discriminate between activities that involve stable movements, such as those in natural walking, and those with short bouts, such as sport ones.
     """
-    mean_activation_durations = np.atleast_2d(stats[1, :])
-    fv.append(mean_activation_durations / W)
-    fv_names += [
-        f'{ACTIVATION_FEATURE_NAME_PREFIX[2]}_{i}' for i in range(X.shape[1])]
+    if ACTIVATION_FEATURE_NAME_PREFIX[2] in selected:
+        mean_activation_durations = np.atleast_2d(stats[1, :])
+        fv.append(mean_activation_durations / W)
+        fv_names += [
+            f'{ACTIVATION_FEATURE_NAME_PREFIX[2]}_{i}' for i in range(X.shape[1])]
     """
     This feature captures the standard deviation of the duration of activation intervals within the window, normalized by the window length, thereby providing information on uniformity of activation intervals within the window. This feature may help discriminate between activities with cyclic movements with a very stable ratio between active and inactive phases, and more random activities. A stable cyclic movement would result in lower variability of activation intervals that would repeat themselves within the window. Fast and aperiodic movements, however, such as those in recreational activities would result in highly variable activation bouts.
     """
-    std_activation_durations = np.atleast_2d(stats[2, :])
-    fv.append(std_activation_durations / W)
-    fv_names += [
-        f'{ACTIVATION_FEATURE_NAME_PREFIX[3]}_{i}' for i in range(X.shape[1])]
+    if ACTIVATION_FEATURE_NAME_PREFIX[3] in selected:
+        std_activation_durations = np.atleast_2d(stats[2, :])
+        fv.append(std_activation_durations / W)
+        fv_names += [
+            f'{ACTIVATION_FEATURE_NAME_PREFIX[3]}_{i}' for i in range(X.shape[1])]
 
     result = np.concatenate(fv, axis=1)
 
