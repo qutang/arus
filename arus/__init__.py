@@ -6,7 +6,7 @@ __arus__ python package provides a computation framework to manage and process u
 __version__ = '1.1.11'
 
 from . import accelerometer as accel
-from . import cli, dataset
+from . import cli
 from . import developer as dev
 from . import env
 from . import extensions as ext
@@ -20,4 +20,5 @@ from .scheduler import Scheduler
 from .stream import Stream
 from . import models
 from .class_label import ClassSet
-from .feature import FeatureSet
+from . import feature_vector as fv
+from . import dataset as ds
