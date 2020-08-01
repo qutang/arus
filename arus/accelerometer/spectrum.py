@@ -95,6 +95,9 @@ def spectrum_features(X, sr, n=1, freq_range=None, prev_spectrum_features=None, 
             f'{SPECTRUM_FEATURE_NAME_PREFIX[9]}_{i}' for i in range(X.shape[1])
         ]
 
+    if len(fv) == 0:
+        return None, None
+
     result = np.concatenate(fv, axis=1)
     return result, fv_names
 

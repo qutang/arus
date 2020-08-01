@@ -58,5 +58,8 @@ def orientation_features(X, subwins=None, subwin_samples=None, unit='rad', selec
         fv.append(np.nanstd(result, axis=0, keepdims=True, ddof=1))
         fv_names += [f'{ORIENTATION_FEATURE_NAME_PREFIX[2]}_{i}' for i in [0, 1, 2]]
 
+    if len(fv) == 0:
+        return None, None
+
     result = np.concatenate(fv, axis=1)
     return result, fv_names

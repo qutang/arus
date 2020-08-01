@@ -104,6 +104,9 @@ def activation_features(X,
         fv_names += [
             f'{ACTIVATION_FEATURE_NAME_PREFIX[3]}_{i}' for i in range(X.shape[1])]
 
+    if len(fv) == 0:
+        return None, None
+
     result = np.concatenate(fv, axis=1)
 
     return result, fv_names

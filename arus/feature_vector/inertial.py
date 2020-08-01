@@ -75,12 +75,16 @@ def single_triaxial(raw_df, sr, st, et, subwin_secs=2, ori_unit='rad', activatio
         feature_names = []
         for func in ts_feature_funcs:
             values, names = func(X_for_ts)
+            if values is None:
+                continue
             for value, name in zip(values.transpose(), names):
                 result[name] = value.tolist()
                 feature_names.append(name)
 
         for func in orient_feature_funcs:
             values, names = func(X_filtered)
+            if values is None:
+                continue
             for value, name in zip(values.transpose(), names):
                 result[name] = value.tolist()
                 feature_names.append(name)

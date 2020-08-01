@@ -127,5 +127,8 @@ def stat_features(X, selected=STAT_FEATURE_NAME_PREFIX):
             fv.append(result)
             fv_names += names
 
+    if len(fv) == 0:
+        return None, None
+
     result = np.concatenate(fv, axis=1)
     return result, fv_names
