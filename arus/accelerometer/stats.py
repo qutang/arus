@@ -3,7 +3,7 @@ Computing features of descriptive statistics for accelerometer data
 """
 import numpy as np
 from scipy import stats as sp_stats
-from .. import ext as ext
+from .. import extensions as ext
 
 
 STAT_FEATURE_NAME_PREFIX = [
@@ -87,14 +87,18 @@ def abs_min_value(X):
 
 def correlation(X):
     X = ext.numpy.atleast_float_2d(X)
-    corr_mat = np.corrcoef(X, rowvar=False)
-    if np.isscalar(corr_mat) and np.isnan(corr_mat):
+    if X.shape[1] != 3:
         result = np.repeat(np.nan, X.shape[1])
     else:
-        inds = np.tril_indices(n=corr_mat.shape[0], k=-1, m=corr_mat.shape[1])
-        result = []
-        for i, j in zip(inds[0], inds[1]):
-            result.append(corr_mat[i, j])
+        corr_mat = np.corrcoef(X, rowvar=False)
+        if np.isscalar(corr_mat) and np.isnan(corr_mat):
+            result = np.repeat(np.nan, X.shape[1])
+        else:
+            inds = np.tril_indices(
+                n=corr_mat.shape[0], k=-1, m=corr_mat.shape[1])
+            result = []
+            for i, j in zip(inds[0], inds[1]):
+                result.append(corr_mat[i, j])
     result = np.atleast_2d(result)
     return result, [f'{STAT_FEATURE_NAME_PREFIX[10]}_{i}' for i in range(result.shape[1])]
 

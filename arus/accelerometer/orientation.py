@@ -37,6 +37,8 @@ def gravity_angles(X, subwins=None, subwin_samples=None, unit='rad'):
 
 
 def orientation_features(X, subwins=None, subwin_samples=None, unit='rad', selected=ORIENTATION_FEATURE_NAME_PREFIX):
+
+    X = ext.numpy.atleast_float_2d(X)
     result = ext.numpy.apply_over_subwins(
         X, _gravity_angles, subwins=subwins, subwin_samples=subwin_samples, unit=unit)
 
