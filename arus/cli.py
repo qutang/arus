@@ -28,7 +28,7 @@ Options:
 
 from docopt import docopt
 from loguru import logger
-from . import dev as dev
+from . import developer as dev
 from . import dataset as ds
 from . import mhealth_format as mh
 from . import plugins
