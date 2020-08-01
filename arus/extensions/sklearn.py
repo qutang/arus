@@ -1,4 +1,5 @@
 from joblib import Parallel, delayed
+from collections.abc import Iterable
 
 
 def _val_predict(clf, X_train, y_train, X_test, y_test, fit_params=None, method='predict'):
@@ -10,6 +11,10 @@ def _val_predict(clf, X_train, y_train, X_test, y_test, fit_params=None, method=
 
 
 def cross_val_predict(clf, X, y, groups=None, cv=None, n_jobs=None, fit_params=None, method='predict'):
+    if isinstance(cv, Iterable):
+        cv = cv
+    elif hasattr(cv, "split") and hasattr(cv, "get_n_splits"):
+        cv = cv.split(X, y, groups=groups)
     with Parallel(n_jobs=n_jobs) as parallel:
         results = parallel(delayed(_val_predict)(
             clf=clf,
