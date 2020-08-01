@@ -10,6 +10,7 @@ License: GNU v3
 import os
 
 _ARUS_DATA_ = 'ARUS_DATA'
+_CACHE_ = 'CACHE'
 
 
 def get_data_home(data_home=None):
@@ -27,3 +28,13 @@ def get_data_home(data_home=None):
     if not os.path.exists(data_home):
         os.makedirs(data_home)
     return data_home
+
+
+def get_cache_home(cache_home=None):
+    if cache_home is None:
+        cache_home = os.environ.get(_CACHE_,
+                                    os.path.join('~', 'arus-cache'))
+    cache_home = os.path.expanduser(cache_home)
+    if not os.path.exists(cache_home):
+        os.makedirs(cache_home)
+    return cache_home
