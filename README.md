@@ -47,7 +47,7 @@ bluez
 
 `arus[dev]`: These optional component installs dependency supports for running some package and version management functions in the `arus.dev` module.
 
-`arus[nn]`: The optional component installs dependency supports for PyTorch and Tensorboard, which are required by `arus.models.report` module.
+`arus[nn]`: The optional component installs dependency supports for PyTorch and Tensorboard, which are required by `arus.models.report` module. Note that for Windows, you should install the `torch` package manually using `pip` following the `pytorch.org` instruction.
 
 ## Get started for development
 
