@@ -196,7 +196,7 @@ def package_command(arguments):
         nver = arguments['NEW_VERSION']
         assert nver is not None
         release = arguments['--release'] or False
-        _release_package(nver, dev=is_dev, release=release)
+        _release_package(nver, is_dev=is_dev, release=release)
     elif arguments['PACK_COMMAND'] == 'docs':
         is_dev = arguments['--dev'] or True
         release = arguments['--release'] or False
@@ -206,8 +206,8 @@ def package_command(arguments):
             dev.build_website()
 
 
-def _release_package(nver, dev=False, release=False):
-    new_version = dev.bump_package_version('.', 'arus', nver, dev)
+def _release_package(nver, is_dev=False, release=False):
+    new_version = dev.bump_package_version('.', 'arus', nver, is_dev)
     if new_version is not None and dev.command_is_available('git') and release:
         dev.commit_repo(f"Bump version to {new_version}")
         dev.tag_repo(new_version)
