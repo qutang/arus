@@ -34,9 +34,11 @@ def single_triaxial(raw_df, sr, st, et, subwin_secs=2, ori_unit='rad', activatio
         mh.STOP_TIME_COL: [et]
     }
 
-    if raw_df.shape[0] == 0 or raw_df.dropna().shape[0] < raw_df.shape[0] * 0.9:
+    num_samples = round((et - st).total_seconds() * sr)
+
+    if raw_df.shape[0] == 0 or raw_df.dropna().shape[0] < num_samples * 0.8:
         # TO BE IMPROVED
-        # Now input raw data should include no less than 90% of the whole window
+        # Now input raw data should include no less than 80% of the whole window
         fv_names = assemble_fv_names(selected=selected, use_vm=use_vm)
         for name in fv_names:
             result[name] = [np.nan]
