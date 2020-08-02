@@ -3,7 +3,7 @@ __arus__ python package provides a computation framework to manage and process u
 
 """
 
-__version__ = '1.1.14'
+__version__ = '1.1.15'
 
 from . import accelerometer as accel
 from . import cli
