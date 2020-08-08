@@ -44,6 +44,13 @@ class SensorObj:
             self.data_type = mh.parse_data_type_from_filepath(self.paths[0])
             self.device_type = mh.parse_sensor_type_from_filepath(
                 self.paths[0])
+            if self.device_type == 'ActigraphGT9X':
+                if self.data_type == 'AccelerationCalibrated' or self.data_type == 'AccelerometerCalibrated':
+                    self.sr = 80
+                elif self.data_type == 'IMUMagnetometer' or self.data_type == 'IMUAccelerometerCalibrated' or self.data_type == 'IMUGyroscope':
+                    self.sr = 100
+                else:
+                    self.sr = None
             self.start_time = mh.parse_timestamp_from_filepath_content(
                 self.paths[0])
 
@@ -203,6 +210,7 @@ class MHDataset:
             logger.info('Set placement func, loading placements...')
             for pid in self.get_pids():
                 for sensor in self.get_sensors(pid):
+                    logger.debug(f'Set placement for {pid} - {sensor.sid}')
                     sensor.placement = placement_parser(
                         self.path, pid, sensor.sid)
 
@@ -285,10 +293,10 @@ class MHDataset:
 
     def get_class_set(self, pid, task_names, window_size, step_size=None, start_time=None, stop_time=None):
         step_size = step_size or window_size
-        annotation_types = self.get_annotation_field(pid, 'annotation_type')
+        aids = self.get_annotation_field(pid, 'aid')
         raw_resources = [mh.MhealthFileReader.read_csvs(
-            *self.get_annotations(pid, annotation_type=annotation_type)[0].paths, datetime_cols=[0, 1, 2]) for annotation_type in annotation_types]
-        class_set = class_label.ClassSet(raw_resources, annotation_types)
+            *self.get_annotations(pid, aid=aid)[0].paths, datetime_cols=[0, 1, 2]) for aid in aids]
+        class_set = class_label.ClassSet(raw_resources, aids)
         class_set.compute_offline(window_size, self.class_set_parser,
                                   task_names, start_time, stop_time, step_size=step_size, pid=pid)
         return class_set.get_class_set()
