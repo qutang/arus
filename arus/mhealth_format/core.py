@@ -76,7 +76,7 @@ def get_orientation_corrections(dataset_path):
 
 def get_pids(dataset_path):
     pids = filter(lambda name: name not in [
-        constants.PROCESSED_FOLDER, constants.META_FOLDER], os.listdir(dataset_path))
+        constants.PROCESSED_FOLDER, constants.META_FOLDER, '.git', '.gitignore'], os.listdir(dataset_path))
     return list(sorted(pids))
 
 
