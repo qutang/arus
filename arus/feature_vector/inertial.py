@@ -45,7 +45,7 @@ def single_triaxial(raw_df, sr, st, et, subwin_secs=2, ori_unit='rad', activatio
         feature_names = fv_names
     else:
         # Prepare parameters
-        subwin_samples = subwin_secs * sr
+        subwin_samples = int(subwin_secs * sr)
 
         # Unify input matrix
         X = ext.numpy.atleast_float_2d(raw_df.values[:, 1:4])
