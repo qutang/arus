@@ -32,7 +32,7 @@ class ClassSet:
         self._task_names = task_names
         step_size = step_size or window_size
         window_start_markers = ext.pandas.split_into_windows(
-            *self._raw_sources, step_size=step_size, st=start_time, et=stop_time)
+            *self._raw_sources, step_size=step_size, st=start_time, et=stop_time, st_col=1, et_col=2)
         class_vectors = []
         with tqdm.tqdm(total=len(window_start_markers)) as bar:
             for window_st in window_start_markers:
