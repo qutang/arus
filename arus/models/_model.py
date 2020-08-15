@@ -18,6 +18,9 @@ class HARModel:
     train_pids: typing.List[str] = field(default_factory=list)
     data_set: ds.MHDataset = field(init=False)
 
+    def __post_init__(self):
+        logger.info(self)
+
     def reset_model(self):
         self.model = None
 

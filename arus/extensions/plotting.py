@@ -21,6 +21,13 @@ def adjust_lightness(color, amount=0.5, return_format='rgb'):
         return result
 
 
+def set_for_publication():
+    rcParams.update(rcParamsDefault)
+    rcParams['font.family'] = 'serif'
+    rcParams['font.size'] = 10
+    rcParams['font.serif'] = ['Times New Roman']
+
+
 def confusion_matrix(cm_df):
     rcParams.update(rcParamsDefault)
     rcParams['font.family'] = 'serif'
