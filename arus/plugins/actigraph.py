@@ -1,6 +1,7 @@
 from .. import generator
 from .. import mhealth_format as mh
 import pandas as pd
+from pyarrow import csv
 import datetime
 import os
 
@@ -96,8 +97,13 @@ class ActigraphReader:
             columns = None
         else:
             header = None
-        reader = pd.read_csv(
-            self._filepath, skiprows=10, chunksize=chunksize, header=header, names=columns)
+        if chunksize is None:
+            read_opts = csv.ReadOptions(skip_rows=10, column_names=columns)
+            reader = csv.read_csv(self._filepath, read_options=read_opts)
+            reader = reader.to_pandas()
+        else:
+            reader = pd.read_csv(
+                self._filepath, skiprows=10, chunksize=chunksize, header=header, names=columns, engine='c', memory_map=True)
         if type(reader) == pd.DataFrame:
             self._data = reader
         else:

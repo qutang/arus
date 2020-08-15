@@ -49,6 +49,7 @@ semver = {version = "^2.10.1", optional = true}
 tqdm = "^4.48.0"
 tensorboard = {version = "^2.3.0", optional = true}
 torch = {version = "^1.6.0", markers = "sys_platform == 'linux'", optional = true}
+pyarrow = "^1.0.0"
 
 [tool.poetry.extras]
 metawear = ["pymetawear"]
