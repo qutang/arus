@@ -1352,7 +1352,7 @@ description = "Extension pack for Python Markdown."
 name = "pymdown-extensions"
 optional = false
 python-versions = ">=2.7,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*"
-version = "7.1"
+version = "8.0"
 
 [package.dependencies]
 Markdown = ">=3.2"
@@ -1996,7 +1996,7 @@ metawear = ["pymetawear"]
 nn = ["torch", "tensorboard"]
 
 [metadata]
-content-hash = "8258376fb657c1b512f24a9f2b85e40439aa50667fe5afb9d4ddd59d6af8c435"
+content-hash = "b5956b62b9ec292d4849dd7d879d4c41c34321d1d8be1b2183aea1994547e702"
 lock-version = "1.0"
 python-versions = "^3.7.0"
 
@@ -2744,8 +2744,8 @@ pylint = [
     {file = "pylint-2.5.3.tar.gz", hash = "sha256:7dd78437f2d8d019717dbf287772d0b2dbdfd13fc016aa7faa08d67bccc46adc"},
 ]
 pymdown-extensions = [
-    {file = "pymdown-extensions-7.1.tar.gz", hash = "sha256:5bf93d1ccd8281948cd7c559eb363e59b179b5373478e8a7195cf4b78e3c11b6"},
-    {file = "pymdown_extensions-7.1-py2.py3-none-any.whl", hash = "sha256:8f415b21ee86d80bb2c3676f4478b274d0a8ccb13af672a4c86b9ffd22bd005c"},
+    {file = "pymdown-extensions-8.0.tar.gz", hash = "sha256:440b0db9823b89f9917482ce3ab3d32ac18e60f2e186770ac37836830d5e7256"},
+    {file = "pymdown_extensions-8.0-py2.py3-none-any.whl", hash = "sha256:c3b18b719adc3a441c4edbcf691157998dbd333384a8e2caf0690985a6e586f0"},
 ]
 pymetawear = [
     {file = "pymetawear-0.12.0-py3-none-any.whl", hash = "sha256:49e8efe13288489e5b949576717d2966ca5ed61166147f991ce300bbb697acef"},
