@@ -21,6 +21,7 @@ PROCESSED_FOLDER = 'DerivedCrossParticipants'
 MASTER_FOLDER = "MasterSynced"
 DERIVED_FOLDER = 'Derived'
 SUBJECT_META_FOLDER = 'Meta'
+SUBJECT_LOG_FOLDER = 'Logs'
 
 META_LOCATION_MAPPING_FILENAME = 'location_mapping.csv'
 META_SUBJECTS_FILENAME = 'subjects.csv'

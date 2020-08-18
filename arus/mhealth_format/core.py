@@ -80,6 +80,20 @@ def get_pids(dataset_path):
     return list(sorted(pids))
 
 
+def get_subject_log(dataset_path, pid, log_filename=None):
+    if log_filename is None:
+        return os.path.join(dataset_path, pid, constants.SUBJECT_LOG_FOLDER)
+    else:
+        return os.path.join(dataset_path, pid, constants.SUBJECT_LOG_FOLDER, log_filename)
+
+
+def get_subject_meta(dataset_path, pid, meta_filename=None):
+    if meta_filename is None:
+        return os.path.join(dataset_path, pid, constants.SUBJECT_META_FOLDER)
+    else:
+        return os.path.join(dataset_path, pid, constants.SUBJECT_META_FOLDER, meta_filename)
+
+
 def get_sensor_files(pid, dataset_path, sid="", given_date=None, data_type=""):
     if given_date is not None:
         date_hour_str = given_date.strftime(f'%Y-%m-%d{os.sep}%H')
