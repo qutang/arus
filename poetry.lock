@@ -662,7 +662,7 @@ description = "Store and access your passwords safely."
 name = "keyring"
 optional = false
 python-versions = ">=3.6"
-version = "21.3.0"
+version = "21.3.1"
 
 [package.dependencies]
 SecretStorage = ">=3"
@@ -886,7 +886,7 @@ description = "A Material Design theme for MkDocs"
 name = "mkdocs-material"
 optional = false
 python-versions = "*"
-version = "5.5.7"
+version = "5.5.8"
 
 [package.dependencies]
 Pygments = ">=2.4"
@@ -2365,8 +2365,8 @@ jupyter-core = [
     {file = "jupyter_core-4.6.3.tar.gz", hash = "sha256:394fd5dd787e7c8861741880bdf8a00ce39f95de5d18e579c74b882522219e7e"},
 ]
 keyring = [
-    {file = "keyring-21.3.0-py3-none-any.whl", hash = "sha256:e7a17caf40c40b6bb8c4772224a487e4a63013560ed0c521065aeba7ecd42182"},
-    {file = "keyring-21.3.0.tar.gz", hash = "sha256:22df6abfed49912fc560806030051067fba9f0069cffa79da72899aeea4ccbd5"},
+    {file = "keyring-21.3.1-py3-none-any.whl", hash = "sha256:cd4d486803d55bdb13e2d453eb61dbbc984773e4f2b98a455aa85b1f4bc421e4"},
+    {file = "keyring-21.3.1.tar.gz", hash = "sha256:182f94fc0381546489e3e4d90384a8c1d43cc09ffe2eb4a826e7312df6e1be7c"},
 ]
 kiwisolver = [
     {file = "kiwisolver-1.2.0-cp36-cp36m-macosx_10_9_x86_64.whl", hash = "sha256:443c2320520eda0a5b930b2725b26f6175ca4453c61f739fef7a5847bd262f74"},
@@ -2506,8 +2506,8 @@ mkdocs-git-revision-date-localized-plugin = [
     {file = "mkdocs_git_revision_date_localized_plugin-0.7-py3-none-any.whl", hash = "sha256:3e40126fc5d48c9d3af0f1070dbb1c781239b716b7e217a961b1eef1bffd123f"},
 ]
 mkdocs-material = [
-    {file = "mkdocs-material-5.5.7.tar.gz", hash = "sha256:6b7ecfba2da9bb0b3a0cc6a92ae543f034572ab56aba3814b6f03c30404d0410"},
-    {file = "mkdocs_material-5.5.7-py2.py3-none-any.whl", hash = "sha256:c321fc3b3ab29ad291226aac1ec3523ae2acb3580097303bd45c34c24ece4b3f"},
+    {file = "mkdocs-material-5.5.8.tar.gz", hash = "sha256:70aeb8ba818656ac67868addd8c0a869a3b06a68b8821ac3996d9a0418e3a94c"},
+    {file = "mkdocs_material-5.5.8-py2.py3-none-any.whl", hash = "sha256:4184ffda4351dd198b83357acab9468cd64384c544452b01d9a310ac4e771f8c"},
 ]
 mkdocs-material-extensions = [
     {file = "mkdocs-material-extensions-1.0.tar.gz", hash = "sha256:17d7491e189af75700310b7ec33c6c48a22060b8b445001deca040cb60471cde"},
