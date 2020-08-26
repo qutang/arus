@@ -17,6 +17,9 @@ STAT_FEATURE_NAME_PREFIX = [
     'RANGE',
     'ABS_MAX',
     'ABS_MIN',
+    'ZCR',
+    'MCR',
+    'TOTAL_POWER',
     'CORRELATION'
 ]
 
@@ -85,6 +88,37 @@ def abs_min_value(X):
     return result, [f'{STAT_FEATURE_NAME_PREFIX[9]}_{i}' for i in range(X.shape[1])]
 
 
+def zcr(X):
+    """Compute zero crossing rate
+    """
+    X = ext.numpy.atleast_float_2d(X)
+    X_offset = X[1:, :]
+    X_orig = X[:-1, :]
+    zero_crossings = np.sum(np.multiply(X_orig, X_offset)
+                            < 0, axis=0, keepdims=True)
+    zc_rates = zero_crossings / (X.shape[0] - 1)
+    return zc_rates, [f'{STAT_FEATURE_NAME_PREFIX[10]}_{i}' for i in range(X.shape[1])]
+
+
+def mcr(X):
+    """Compute mean crossing rate
+    """
+    X = ext.numpy.atleast_float_2d(X)
+    X_demean = X - np.mean(X, axis=0, keepdims=True)
+    mc_rates, _ = zcr(X_demean)
+    return mc_rates, [f'{STAT_FEATURE_NAME_PREFIX[11]}_{i}' for i in range(X.shape[1])]
+
+
+def total_power(X):
+    """Compute total power
+    """
+    X = ext.numpy.atleast_float_2d(X)
+    X = np.power(X, 2)
+    total_energy = np.sum(X, axis=0, keepdims=True)
+    result = total_energy / X.shape[0]
+    return result, [f'{STAT_FEATURE_NAME_PREFIX[12]}_{i}' for i in range(X.shape[1])]
+
+
 def correlation(X):
     X = ext.numpy.atleast_float_2d(X)
     if X.shape[1] != 3:
@@ -100,7 +134,7 @@ def correlation(X):
             for i, j in zip(inds[0], inds[1]):
                 result.append(corr_mat[i, j])
     result = np.atleast_2d(result)
-    return result, [f'{STAT_FEATURE_NAME_PREFIX[10]}_{i}' for i in range(result.shape[1])]
+    return result, [f'{STAT_FEATURE_NAME_PREFIX[13]}_{i}' for i in range(result.shape[1])]
 
 
 def stat_features(X, selected=STAT_FEATURE_NAME_PREFIX):
@@ -116,6 +150,9 @@ def stat_features(X, selected=STAT_FEATURE_NAME_PREFIX):
         max_minus_min,
         abs_max_value,
         abs_min_value,
+        zcr,
+        mcr,
+        total_power,
         correlation
     ]
 

@@ -607,6 +607,68 @@ class TestStats:
         np.testing.assert_array_equal(
             result[1], ['ABS_MIN_0', 'ABS_MIN_1', 'ABS_MIN_2'])
 
+    def test_zcr(self):
+        # test on a single row
+        X = np.array([[-1., -1., -1.]])
+        result = accel.zcr(X)
+        np.testing.assert_array_equal(
+            result[0], np.array([[np.nan, np.nan, np.nan]]))
+        np.testing.assert_array_equal(
+            result[1], ['ZCR_0', 'ZCR_1', 'ZCR_2'])
+
+        # test on a single row with nan
+        X = np.array([[-1., np.nan, -1., ]])
+        result = accel.zcr(X)
+        np.testing.assert_array_equal(result[0], np.array(
+            [[np.nan, np.nan, np.nan, ]]))
+        np.testing.assert_array_equal(
+            result[1], ['ZCR_0', 'ZCR_1', 'ZCR_2'])
+
+        # test on an array
+        X = np.array([[1., -1., 1., ], [-2., 2., 2.]])
+        result = accel.zcr(X)
+        np.testing.assert_array_equal(result[0], np.array([[1, 1, 0]]))
+        np.testing.assert_array_equal(
+            result[1], ['ZCR_0', 'ZCR_1', 'ZCR_2'])
+
+        # test on an array with nan
+        X = np.array([[1., -1., 1., ], [2., np.nan, -2.]])
+        result = accel.zcr(X)
+        np.testing.assert_array_equal(result[0], np.array([[0, 0, 1]]))
+        np.testing.assert_array_equal(
+            result[1], ['ZCR_0', 'ZCR_1', 'ZCR_2'])
+
+    def test_mcr(self):
+        # test on a single row
+        X = np.array([[-1., -1., -1.]])
+        result = accel.mcr(X)
+        np.testing.assert_array_equal(
+            result[0], np.array([[np.nan, np.nan, np.nan]]))
+        np.testing.assert_array_equal(
+            result[1], ['MCR_0', 'MCR_1', 'MCR_2'])
+
+        # test on a single row with nan
+        X = np.array([[-1., np.nan, -1., ]])
+        result = accel.mcr(X)
+        np.testing.assert_array_equal(result[0], np.array(
+            [[np.nan, np.nan, np.nan, ]]))
+        np.testing.assert_array_equal(
+            result[1], ['MCR_0', 'MCR_1', 'MCR_2'])
+
+        # test on an array
+        X = np.array([[1., -1., 1., ], [-2., 2., 2.]])
+        result = accel.mcr(X)
+        np.testing.assert_array_equal(result[0], np.array([[1, 1, 1]]))
+        np.testing.assert_array_equal(
+            result[1], ['MCR_0', 'MCR_1', 'MCR_2'])
+
+        # test on an array with nan
+        X = np.array([[1., -1., 1., ], [2., np.nan, -2.]])
+        result = accel.mcr(X)
+        np.testing.assert_array_equal(result[0], np.array([[1, 0, 1]]))
+        np.testing.assert_array_equal(
+            result[1], ['MCR_0', 'MCR_1', 'MCR_2'])
+
     def test_correlation(self):
         # test on a single row
         X = np.array([[1., 1., 1.]])
