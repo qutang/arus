@@ -8,7 +8,7 @@ from scipy import signal
 from .. import extensions as ext
 
 SPECTRUM_FEATURE_NAME_PREFIX = [
-    'DOM_FREQ', 'DOM_FREQ_POWER', 'TOTAL_FREQ_POWER', 'FREQ_POWER_ABOVE_3DOT5', 'FREQ_POWER_RATIO_ABOVE_3DOT5', 'DOM_FREQ_POWER_RATIO', 'DOM_FREQ_BETWEEN_DOT6_2DOT6', 'DOM_FREQ_POWER_BETWEEN_DOT6_2DOT6',
+    'DOM_FREQ', 'DOM_FREQ_POWER', 'TOTAL_FREQ_POWER', 'FREQ_POWER_ABOVE_3DOT5', 'FREQ_POWER_RATIO_ABOVE_3DOT5', 'DOM_FREQ_POWER_RATIO', 'FREQ_POWER_RATIO_BEWTEEN_DOT5_2DOT5', 'DOM_FREQ_POWER_BETWEEN_DOT6_2DOT6',
     'DOM_FREQ_RATIO_PREV_BOUT', 'SPECTRAL_ENTROPY'
 ]
 
@@ -63,8 +63,8 @@ def spectrum_features(X, sr, n=1, freq_range=None, prev_spectrum_features=None, 
         ]
 
     if SPECTRUM_FEATURE_NAME_PREFIX[6] in selected:
-        fv.append(_dom_freq_between_point_6_and_2_point_6(
-            freq_peaks, Sxx_peaks
+        fv.append(_freq_power_ratio_between_point_5_and_2_point_5(
+            freq, Sxx
         ))
         fv_names += [
             f'{SPECTRUM_FEATURE_NAME_PREFIX[6]}_{i}' for i in range(X.shape[1])
@@ -254,6 +254,14 @@ def _freq_power_ratio_above_3_point_5(freq, Sxx):
     highend_power = _freq_power_above_3_point_5(freq, Sxx)
     total_power = _total_freq_power(Sxx)
     result = np.divide(highend_power, total_power, out=np.zeros_like(
+        total_power), where=total_power != 0)
+    return result
+
+
+def _freq_power_ratio_between_point_5_and_2_point_5(freq, Sxx):
+    band_power = _total_freq_power_in_band(freq, Sxx, low=0.5, high=2.5)
+    total_power = _total_freq_power(Sxx)
+    result = np.divide(band_power, total_power, out=np.zeros_like(
         total_power), where=total_power != 0)
     return result
 
