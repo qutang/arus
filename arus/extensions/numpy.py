@@ -303,7 +303,7 @@ def _plot_peaks(x, mph, mpd, threshold, edge, valley, ax, ind):
         plt.show()
 
 
-def apply_over_subwins(X, func, subwins=None, subwin_samples=None, **kwargs):
+def apply_over_subwins(X, func, subwins=None, subwin_samples=None, has_names=False, **kwargs):
     X = atleast_float_2d(X)
     if subwins is not None:
         # compute the length of each sub window if the number of sub windows is given.
@@ -344,12 +344,18 @@ def apply_over_subwins(X, func, subwins=None, subwin_samples=None, **kwargs):
             (i + 1) * win_length
         ))
         subwin_X = X[indices, :]
-        subwin_result = func(subwin_X, **kwargs)
+        if has_names:
+            subwin_result, func_names = func(subwin_X, **kwargs)
+        else:
+            subwin_result = func(subwin_X, **kwargs)
         subwin_result = atleast_float_2d(subwin_result)
         result.append(subwin_result)
     # each row is the result from one sub window
     final_result = np.concatenate(result, axis=0)
-    return final_result
+    if has_names:
+        return final_result, func_names
+    else:
+        return final_result
 
 
 def vector_magnitude(X):
