@@ -181,15 +181,23 @@ class TestOrientation:
 
 class TestSpectrum:
     def test_spectrum_features(self):
-        names = ['DOM_FREQ_0', 'DOM_FREQ_POWER_0', 'TOTAL_FREQ_POWER_0', 'FREQ_POWER_ABOVE_3DOT5_0', 'FREQ_POWER_RATIO_ABOVE_3DOT5_0',
-                 'DOM_FREQ_POWER_RATIO_0', 'DOM_FREQ_BETWEEN_DOT6_2DOT6_0', 'DOM_FREQ_POWER_BETWEEN_DOT6_2DOT6_0', 'DOM_FREQ_RATIO_PREV_BOUT_0', 'SPECTRAL_ENTROPY_0']
+        names = ['DOM_FREQ_0',
+                 'DOM_FREQ_POWER_0',
+                 'TOTAL_FREQ_POWER_0',
+                 'FREQ_POWER_ABOVE_3DOT5_0',
+                 'FREQ_POWER_RATIO_ABOVE_3DOT5_0',
+                 'DOM_FREQ_POWER_RATIO_0',
+                 'FREQ_POWER_RATIO_BEWTEEN_DOT5_2DOT5_0',
+                 'DOM_FREQ_POWER_BETWEEN_DOT6_2DOT6_0',
+                 'DOM_FREQ_RATIO_PREV_BOUT_0',
+                 'SPECTRAL_ENTROPY_0']
         # test on single sample single channel signal
         X = np.array([[0, ]])
         result = accel.spectrum_features(
             X, sr=80, freq_range=None, prev_spectrum_features=None)
         np.testing.assert_array_equal(
             result[0], np.array(
-                [[0, 0, 0, 0, 0, 0, np.nan, np.nan, np.nan, np.nan]]))
+                [[0, 0, 0, 0, 0, 0, 0, np.nan, np.nan, np.nan]]))
         np.testing.assert_array_equal(result[1], names)
 
         # test on multiple sample single channel signal
@@ -224,7 +232,7 @@ class TestSpectrum:
             ['FREQ_POWER_ABOVE_3DOT5_0', 'FREQ_POWER_ABOVE_3DOT5_1', 'FREQ_POWER_ABOVE_3DOT5_2'] + \
             ['FREQ_POWER_RATIO_ABOVE_3DOT5_0', 'FREQ_POWER_RATIO_ABOVE_3DOT5_1', 'FREQ_POWER_RATIO_ABOVE_3DOT5_2'] + \
             ['DOM_FREQ_POWER_RATIO_0', 'DOM_FREQ_POWER_RATIO_1', 'DOM_FREQ_POWER_RATIO_2'] + \
-            ['DOM_FREQ_BETWEEN_DOT6_2DOT6_0', 'DOM_FREQ_BETWEEN_DOT6_2DOT6_1', 'DOM_FREQ_BETWEEN_DOT6_2DOT6_2'] + \
+            ['FREQ_POWER_RATIO_BEWTEEN_DOT5_2DOT5_0', 'FREQ_POWER_RATIO_BEWTEEN_DOT5_2DOT5_1', 'FREQ_POWER_RATIO_BEWTEEN_DOT5_2DOT5_2'] + \
             ['DOM_FREQ_POWER_BETWEEN_DOT6_2DOT6_0', 'DOM_FREQ_POWER_BETWEEN_DOT6_2DOT6_1', 'DOM_FREQ_POWER_BETWEEN_DOT6_2DOT6_2'] + \
             ['DOM_FREQ_RATIO_PREV_BOUT_0', 'DOM_FREQ_RATIO_PREV_BOUT_1',
                 'DOM_FREQ_RATIO_PREV_BOUT_2', 'SPECTRAL_ENTROPY_0', 'SPECTRAL_ENTROPY_1', 'SPECTRAL_ENTROPY_2']
@@ -240,7 +248,7 @@ class TestSpectrum:
                  [0] * 3 +
                  [0] * 3 +
                  [0] * 3 +
-                 [np.nan] * 3 +
+                 [0] * 3 +
                  [np.nan] * 3 +
                  [np.nan] * 3 +
                  [np.nan] * 3]))
