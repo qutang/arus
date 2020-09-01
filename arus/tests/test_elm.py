@@ -28,5 +28,5 @@ def test_elm():
     print(pred_y[:5])
     print(bunch['target_names'])
     print(pred_probs[:5, :])
-    print(check_estimator(elm))
+    check_estimator(elm)
     assert True
