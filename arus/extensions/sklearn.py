@@ -44,10 +44,14 @@ def cross_val_predict(clf, X, y, groups=None, cv=None, n_jobs=None, fit_params=N
 
 
 class ELM(BaseEstimator):
-    def __init__(self, hidden_layer_sizes=(10000,)):
+    def __init__(self, hidden_layer_sizes=(10000,), random_state=None):
         self.hidden_layer_sizes = hidden_layer_sizes
+        self.random_state = random_state
+        if random_state is None:
+            self.random_state = np.random.randint(100)
 
     def _init_hidden_layers(self, input_size):
+        np.random.seed(self.random_state)
         hidden_layer_sizes = self.hidden_layer_sizes
         self._input_layer_weights = np.random.normal(
             size=[input_size, hidden_layer_sizes[0]])
@@ -90,14 +94,14 @@ class ELM(BaseEstimator):
         return self
 
     def _predict_scores(self, X):
+        check_is_fitted(self)
+        X = X.astype(float)
+        X = check_array(X)
         out = self._feedforward(X)
         out = np.dot(out, self._output_layer_weights)
         return out
 
     def predict(self, X):
-        check_is_fitted(self)
-        X = X.astype(float)
-        X = check_array(X)
         scores = self._predict_scores(X)
         encoded_scores = np.zeros(scores.shape)
         for i in range(scores.shape[0]):
