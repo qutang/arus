@@ -149,10 +149,18 @@ def extrema_value(X, threshold=None):
     for i in range(X.shape[1]):
         max_ids, min_ids = get_extrema(X[:, i])
         max_values, min_values = X[max_ids, i], X[min_ids, i]
-        max_value_mean = np.nanmean(max_values)
-        max_value_std = np.nanstd(max_values)
-        min_value_mean = np.nanmean(min_values)
-        min_value_std = np.nanstd(min_values)
+        if len(max_values) == 0:
+            max_value_mean = np.nan
+            max_value_std = np.nan
+        else:
+            max_value_mean = np.nanmean(max_values)
+            max_value_std = np.nanstd(max_values)
+        if len(min_values) == 0:
+            min_value_mean = np.nan
+            min_value_std = np.nan
+        else:
+            min_value_mean = np.nanmean(min_values)
+            min_value_std = np.nanstd(min_values)
         X_extrema_value.append(max_value_mean)
         X_extrema_value.append(max_value_std)
         X_extrema_value.append(min_value_mean)
@@ -173,10 +181,13 @@ def extrema_range(X, threshold=None):
         max_ids, min_ids = get_extrema(X[:, i])
         extrema_ids = sorted(max_ids.tolist() + min_ids.tolist())
         extrema_ranges = np.abs(np.diff(X[extrema_ids, i]))
-        X_extrema_range.append(np.nanmean(extrema_ranges))
-        X_extrema_range.append(np.nanstd(extrema_ranges))
-        X_extrema_range.append(np.nanmax(extrema_ranges))
-        X_extrema_range.append(np.nanmin(extrema_ranges))
+        if len(extrema_ranges) == 0:
+            X_extrema_range += [np.nan] * 4
+        else:
+            X_extrema_range.append(np.nanmean(extrema_ranges))
+            X_extrema_range.append(np.nanstd(extrema_ranges))
+            X_extrema_range.append(np.nanmax(extrema_ranges))
+            X_extrema_range.append(np.nanmin(extrema_ranges))
         names.append(f'EXTREMA_RANGE_MEAN_{i}')
         names.append(f'EXTREMA_RANGE_STD_{i}')
         names.append(f'EXTREMA_RANGE_MAX_{i}')
@@ -193,10 +204,10 @@ def extrema_duration(X, sr, threshold=None):
         max_ids, min_ids = get_extrema(X[:, i])
         extrema_ids = sorted(max_ids.tolist() + min_ids.tolist())
         extrema_durations = np.diff(extrema_ids)
-        extrema_durations_mean = float(
-            sr) / np.nanmean(extrema_durations)  # in seconds
-        extrema_durations_std = float(
-            sr) / np.nanstd(extrema_durations)  # in seconds
+        extrema_durations_mean = np.nanmean(
+            extrema_durations) / float(sr)  # in seconds
+        extrema_durations_std = np.nanstd(
+            extrema_durations) / float(sr)  # in seconds
         X_extrema_duration.append(extrema_durations_mean)
         X_extrema_duration.append(extrema_durations_std)
         names.append(f'EXTREMA_DUR_MEAN_{i}')
