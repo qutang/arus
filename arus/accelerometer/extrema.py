@@ -240,8 +240,12 @@ def extrema_corr(X, sr, X_unfilered=None, threshold=None):
                 [start, stop], [start_value, stop_value])
             y = slope * x + intercept
             corr_list.append(np.correlate(y, y_origin)[0])
-        X_extrema_corr.append(np.nanmean(corr_list))
-        X_extrema_corr.append(np.nanstd(corr_list))
+        if len(corr_list) == 0:
+            X_extrema_corr.append(np.nan)
+            X_extrema_corr.append(np.nan)
+        else:
+            X_extrema_corr.append(np.nanmean(corr_list))
+            X_extrema_corr.append(np.nanstd(corr_list))
         names.append(f'EXTREMA_CORR_MEAN_{i}')
         names.append(f'EXTREMA_CORR_STD_{i}')
     result = ext.numpy.atleast_float_2d(X_extrema_corr)
