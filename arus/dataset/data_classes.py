@@ -56,7 +56,7 @@ class SensorObj:
 
     def get_data(self):
         if self.input_type == InputType.MHEALTH_FORMAT:
-            return mh.MhealthFileReader.read_csvs(self.paths)
+            return mh.MhealthFileReader.read_csvs(*self.paths)
         elif self.input_type == InputType.SIGNALIGNER:
             reader = plugins.actigraph.ActigraphReader(
                 self.paths[0], False, False)
@@ -210,7 +210,7 @@ class MHDataset:
             logger.info('Set placement func, loading placements...')
             for pid in self.get_pids():
                 for sensor in self.get_sensors(pid):
-                    logger.debug(f'Set placement for {pid} - {sensor.sid}')
+                    # logger.debug(f'Set placement for {pid} - {sensor.sid}')
                     sensor.placement = placement_parser(
                         self.path, pid, sensor.sid)
 
