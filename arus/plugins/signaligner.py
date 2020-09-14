@@ -23,6 +23,24 @@ def format_time(ts):
     return result
 
 
+def signify_annotation_dataframes(*dfs, data_id, output_path, session_span=None):
+    # merge and sort
+    merged = pd.concat(dfs, axis=0)
+    merged = merged.sort_values(by=['START_TIME'])
+    merged = merged.loc[merged['START_TIME']
+                        != merged['STOP_TIME'], :]
+    # segment by session span
+    if session_span is not None:
+        segmented = segment_by_time(
+            merged, seg_st=session_span[0], seg_et=session_span[1], st_col=0, et_col=1)
+    else:
+        segmented = merged
+
+    # save as signaligner label file
+    save_as_signaligner(segmented, output_path,
+                        FileType.ANNOTATION, labelset=data_id, mode='w', index=False, header=True)
+
+
 def signify_annotation_files(filepaths, data_id, output_path, session_span):
     dfs = []
     with tqdm.tqdm(total=len(filepaths)) as bar:
@@ -33,18 +51,8 @@ def signify_annotation_files(filepaths, data_id, output_path, session_span):
                 filepath, header=0, sep=',', compression="infer", quotechar='"', parse_dates=[0, 1, 2], infer_datetime_format=True)
             dfs.append(df)
             bar.update()
-    # merge and sort
-    merged = pd.concat(dfs, axis=0)
-    merged = merged.sort_values(by=['START_TIME'])
-    merged = merged.loc[merged['START_TIME']
-                        != merged['STOP_TIME'], :]
-    # segment by session span
-    segmented = segment_by_time(
-        merged, seg_st=session_span[0], seg_et=session_span[1], st_col=0, et_col=1)
-
-    # save as signaligner label file
-    save_as_signaligner(segmented, output_path,
-                        FileType.ANNOTATION, labelset=data_id, mode='w', index=False, header=True)
+    signify_annotation_dataframes(
+        *dfs, data_id=data_id, output_path=output_path, session_span=session_span)
 
 
 def auto_split_session_span(session_span, auto_range='W-SUN'):
