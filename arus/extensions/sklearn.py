@@ -83,9 +83,10 @@ class ELM(BaseEstimator):
         self._labels = np.unique(y)
 
     def fit(self, X, y, labels=None):
-        X = X.astype(float)
+        X = np.real(X).astype(float)
         X, y = check_X_y(X, y)
         self.classes_ = unique_labels(y)
+        self.n_features_in_ = X.shape[1]
 
         self._init_hidden_layers(X.shape[1])
         encoded_y = self._encode_y(y, labels=labels, from_fit=True)
@@ -95,7 +96,7 @@ class ELM(BaseEstimator):
 
     def _predict_scores(self, X):
         check_is_fitted(self)
-        X = X.astype(float)
+        X = np.real(X).astype(float)
         X = check_array(X)
         out = self._feedforward(X)
         out = np.dot(out, self._output_layer_weights)
