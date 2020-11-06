@@ -291,14 +291,14 @@ class MHDataset:
             logger.error(f'{pid} does not exist.')
             return []
 
-    def get_class_set(self, pid, task_names, window_size, step_size=None, start_time=None, stop_time=None):
+    def get_class_set(self, pid, task_names, window_size, step_size=None, start_time=None, stop_time=None, show_progress=True):
         step_size = step_size or window_size
         aids = self.get_annotation_field(pid, 'aid')
         raw_resources = [mh.MhealthFileReader.read_csvs(
             *self.get_annotations(pid, aid=aid)[0].paths, datetime_cols=[0, 1, 2]) for aid in aids]
         class_set = class_label.ClassSet(raw_resources, aids)
         class_set.compute_offline(window_size, self.class_set_parser,
-                                  task_names, start_time, stop_time, step_size=step_size, pid=pid)
+                                  task_names, start_time, stop_time, step_size=step_size, pid=pid, show_progress=show_progress)
         return class_set.get_class_set()
 
     def subset(self, name, pids=None):

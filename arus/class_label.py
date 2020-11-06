@@ -5,6 +5,7 @@ from loguru import logger
 import sys
 from . import extensions as ext
 from . import mhealth_format as mh
+from .error_code import ErrorCode
 import tqdm
 
 
@@ -27,14 +28,14 @@ class ClassSet:
                 f'[Error code: {ErrorCode.INPUT_ARGUMENT_FORMAT_ERROR.name}] To compute class labels online, the input raw data should be arus Generator object.')
             sys.exit(ErrorCode.INPUT_ARGUMENT_FORMAT_ERROR.name)
 
-    def compute_offline(self, window_size, class_func, task_names, start_time=None, stop_time=None, step_size=None, **kwargs):
+    def compute_offline(self, window_size, class_func, task_names, start_time=None, stop_time=None, step_size=None, show_progress=True, **kwargs):
         self._validate_input_as_df()
         self._task_names = task_names
         step_size = step_size or window_size
         window_start_markers = ext.pandas.split_into_windows(
             *self._raw_sources, step_size=step_size, st=start_time, et=stop_time, st_col=1, et_col=2)
         class_vectors = []
-        with tqdm.tqdm(total=len(window_start_markers)) as bar:
+        with tqdm.tqdm(total=len(window_start_markers), disable=not show_progress) as bar:
             for window_st in window_start_markers:
                 window_et = window_st + pd.Timedelta(window_size, unit='s')
                 dfs = []

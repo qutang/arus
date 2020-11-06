@@ -102,12 +102,13 @@ def _load_task_class_map():
     return pd.read_csv(map_filepath)
 
 
-def class_set(annot_df, *, task_names, st, et, pid, **kwargs):
+def class_set(*annot_dfs, task_names=None, st=None, et=None, pid=None, **kwargs):
     class_labels = {mh.TIMESTAMP_COL: [st],
                     mh.START_TIME_COL: [st],
                     mh.STOP_TIME_COL: [et]}
 
     task_class_map = _load_task_class_map()
+    annot_df = annot_dfs[0]
     activity = _annot_to_activity(annot_df, pid, st, et)
 
     for task_name in task_names:
