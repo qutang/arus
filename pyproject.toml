@@ -33,7 +33,7 @@ version = "1.1.18"
 dataclasses = {version = "^0.7", python = "~3.6"}
 dephell_versioning = {version = "^0.1.2", optional = true}
 docopt = "^0.6.2"
-joblib = "^0.16.0"
+joblib = "^0.17.0"
 loguru = "^0.5.0"
 loky = "^2.6.0"
 matplotlib = "^3.1"
@@ -41,7 +41,7 @@ numpy = "1.19.3"
 pandas = "^1.0.0"
 pathos = "^0.2.5"
 playsound = {version = "^1.2.2", optional = true}
-pyarrow = "^1.0.0"
+pyarrow = "^2.0.0"
 pymetawear = {version = "^0.12.0", optional = true}
 pysimplegui = {version = "^4.14.1", optional = true}
 python = "^3.7.0"
