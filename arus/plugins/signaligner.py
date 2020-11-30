@@ -77,21 +77,21 @@ def shrink_session_span(session_span, date_range=None):
             et = session_span[1]
         elif len(date_range) == 2:
             if date_range[0] == '':
-                if len(date_range[1].split('-')) == 2:
+                if len(date_range[1].split('-')) == 3:
                     et = datetime.datetime.strptime(date_range[1], '%Y-%m-%d')
-                elif len(date_range[1].split('-')) == 3:
+                elif len(date_range[1].split('-')) == 4:
                     et = datetime.datetime.strptime(
                         date_range[1], '%Y-%m-%d-%H')
                 st = session_span[0]
             else:
-                if len(date_range[0].split('-')) == 2:
+                if len(date_range[0].split('-')) == 3:
                     st = datetime.datetime.strptime(date_range[0], '%Y-%m-%d')
-                elif len(date_range[0].split('-')) == 3:
+                elif len(date_range[0].split('-')) == 4:
                     st = datetime.datetime.strptime(
                         date_range[0], '%Y-%m-%d-%H')
-                if len(date_range[1].split('-')) == 2:
+                if len(date_range[1].split('-')) == 3:
                     et = datetime.datetime.strptime(date_range[1], '%Y-%m-%d')
-                elif len(date_range[1].split('-')) == 3:
+                elif len(date_range[1].split('-')) == 4:
                     et = datetime.datetime.strptime(
                         date_range[1], '%Y-%m-%d-%H')
         if st > session_span[1] or et < session_span[0]:
