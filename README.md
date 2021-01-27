@@ -64,7 +64,7 @@ bluez
 > # Install optional component dependencies
 > poetry install --extras "metawear demo dev nn"
 > # Run unit tests
-> poetry run pytest
+> poetry run python -m pytest
 ```
 
 ### Development conventions
